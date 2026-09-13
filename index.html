@@ -2346,20 +2346,20 @@
         window.renderAdminClassLeaderboard(clsVal);
       }
 
-      if(id === "registerStudentModal") {
+            if(id === "registerStudentModal") {
         const liveSts = getLiveStudents();
         let maxAdmn = 0;
         
         liveSts.forEach(s => {
           if(s && s.admn) {
-            const num = parseInt(s.admn);
+            const num = parseInt(String(s.admn).replace(/[^0-9]/g, ''));
             if(!isNaN(num) && num > maxAdmn) {
               maxAdmn = num;
             }
           }
         });
 
-        const nextNum = (maxAdmn > 0 ? maxAdmn : liveSts.length) + 1;
+        const nextNum = maxAdmn > 0 ? (maxAdmn + 1) : (liveSts.length + 1);
         
         const srField = document.getElementById("regSrNo");
         const admnField = document.getElementById("regAdmn");
@@ -2378,6 +2378,10 @@
           }
         }
       }
+
+
+
+      
 
       if(id === "bulkStudentModal") {
         generateBulkStudentTable();
@@ -2810,7 +2814,7 @@
       renderAdminStudentsDirectory();
     };
 
-    async function renderAdminStudentsDirectory() {
+        async function renderAdminStudentsDirectory() {
       const container = document.getElementById("adminStudentsDirectoryContainer");
       if(!container) return;
       container.innerHTML = "";
@@ -2826,7 +2830,7 @@
       }
 
       students.forEach(s => {
-        if(selectedAdminClassFilter === "All" || cleanClassStr(s.class) === cleanClassStr(selectedAdminClassFilter)) {
+        if(s && s.name && (selectedAdminClassFilter === "All" || cleanClassStr(s.class) === cleanClassStr(selectedAdminClassFilter))) {
           count++;
           const pass = usersData[s.admn] ? usersData[s.admn].password : "MM";
           const card = document.createElement("div");
@@ -2849,6 +2853,8 @@
       if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students found in ${selectedAdminClassFilter}.</p>`;
     }
 
+
+      
     function generateBulkStudentTable() {
       const tbody = document.getElementById("bulkTableBody");
       if(!tbody) return;
@@ -4430,7 +4436,7 @@
       alert(`Attendance record cleared for Class ${std} (${month}).`);
     });
 
-    addSafeListener("saveStudentBtn", "click", () => {
+       addSafeListener("saveStudentBtn", "click", () => {
       const btn = document.getElementById("saveStudentBtn");
       runWithBtnSpinner(btn, "Submit Registration", async () => {
         const finalAdmn = document.getElementById("regAdmn").value.trim();
@@ -4440,24 +4446,42 @@
         const dob = document.getElementById("regDob").value;
         const fileInput = document.getElementById("regPhotoFile");
 
-        if(!name || !std || !rawPhone) { alert("Please fill Name, Class, and Phone number."); return; }
+        if(!name || !std || !rawPhone) { 
+          alert("Please fill Name, Class, and Phone number."); 
+          return; 
+        }
 
         let cleanPhone = rawPhone.replace(/[^0-9]/g, '');
-
         let photoUrl = "https://via.placeholder.com/150";
+
         if(fileInput && fileInput.files.length > 0) {
           const uploadedPhoto = await readFileAsDataURL(fileInput.files[0]);
           if(uploadedPhoto) photoUrl = uploadedPhoto;
         }
 
-        const studentObj = { srNo: finalAdmn, admn: finalAdmn, name: name, class: std, phone: cleanPhone, dob: dob || "-", photo: photoUrl, regDate: getTodayFormattedDate(), points: 0 };
+        const studentObj = { 
+          srNo: finalAdmn, 
+          admn: finalAdmn, 
+          name: name, 
+          class: cleanClassStr(std), 
+          phone: cleanPhone, 
+          dob: dob || "-", 
+          photo: photoUrl, 
+          regDate: getTodayFormattedDate(), 
+          points: 0 
+        };
         
+        // Save both Student profile and User login credentials
         const updates = {};
         updates[`students/${finalAdmn}`] = studentObj;
-        updates[`users/${finalAdmn}`] = { password: "MM", role: "student", admn: finalAdmn, assignedClass: std };
+        updates[`users/${finalAdmn}`] = { password: "MM", role: "student", admn: finalAdmn, assignedClass: cleanClassStr(std) };
 
         await update(ref(db), updates);
 
+        // Update local memory cache immediately
+        inMemoryStudentsData[finalAdmn] = studentObj;
+
+        // UI Refresh
         if(currentRole === "teacher") {
           await refreshAllTeacherData();
         } else {
@@ -4466,6 +4490,7 @@
         
         alert(`✔ Student registered successfully with Admission No: ${finalAdmn}`);
         
+        // Reset Form Fields
         document.getElementById("regName").value = "";
         document.getElementById("regPhone").value = "";
         document.getElementById("regDob").value = "";
@@ -4474,6 +4499,7 @@
         window.closeModal("registerStudentModal");
       });
     });
+
 
     addSafeListener("saveTeacherBtn", "click", () => {
       const btn = document.getElementById("saveTeacherBtn");
