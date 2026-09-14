@@ -1,1 +1,890 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DIGITAL CLASSES - Master Control Panel</title>
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0b132b 0%, #1c2541 100%);
+      --app-bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+      --nav-bg: #1e293b;
+      --input-bg: #0f172a;
+      --primary-btn-bg: linear-gradient(135deg, #0288d1 0%, #01579b 100%);
+    }
+
+    body.light-mode {
+      --app-bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --nav-bg: #ffffff;
+      --input-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box; margin: 0; padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+      transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+    }
+
+    html, body { background: var(--app-bg); color: var(--text-color); height: 100%; width: 100%; overflow: hidden; }
+    body { display: flex; flex-direction: column; }
+
+    .app-header {
+      background: var(--header-bg); color: white; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 100;
+      border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+    }
+
+    .header-title-box { text-align: center; flex: 1; }
+    .header-title { font-size: 15px; font-weight: 800; color: white !important; }
+    .header-subtitle { font-size: 11px; color: #fbbf24 !important; font-weight: 700; margin-top: 2px; }
+
+    .icon-btn {
+      font-size: 18px; cursor: pointer; padding: 6px 10px; color: white !important;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+    }
+
+    .left-drawer-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 400;
+    }
+    .left-drawer-overlay.active { display: block; }
+
+    .left-drawer {
+      position: fixed; top: 0; left: -80%; width: 80%; max-width: 300px; height: 100%;
+      background: var(--card-bg); z-index: 500; transition: left 0.35s ease;
+      box-shadow: 8px 0 30px rgba(0,0,0,0.35); display: flex; flex-direction: column;
+      border-top-right-radius: 22px; border-bottom-right-radius: 22px; overflow: hidden;
+    }
+    .left-drawer.active { left: 0; }
+
+    .drawer-header {
+      background: #0f172a; color: white !important; padding: 18px 16px;
+      font-size: 15px; font-weight: 800; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .dark-mode-toggle-row {
+      display: flex; align-items: center; justify-content: space-between; padding: 16px 18px;
+      border-bottom: 2px solid var(--border-color); font-weight: 800; font-size: 13px;
+    }
+
+    .drawer-item {
+      padding: 14px 18px; border-bottom: 1px solid var(--border-color); font-weight: 800; font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; gap: 10px;
+    }
+
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1; transition: .4s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #0288d1; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .menu-dropdown {
+      position: absolute; top: 55px; right: 14px; background: var(--card-bg);
+      border-radius: 18px; box-shadow: 0 12px 35px rgba(0,0,0,0.3); width: 180px; z-index: 600;
+      overflow: hidden; border: 1px solid var(--border-color);
+      transform: scale(0); opacity: 0; pointer-events: none; transition: transform 0.2s, opacity 0.2s;
+    }
+    .menu-dropdown.active { transform: scale(1); opacity: 1; pointer-events: auto; }
+    .menu-item { padding: 14px 16px; font-size: 13px; font-weight: 800; color: #ef4444; cursor: pointer; }
+
+    .main-content { flex: 1; overflow-y: auto; padding: 16px; position: relative; background-color: var(--app-bg); }
+    .main-content.login-mode { background: var(--bg-gradient); display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+    .login-box {
+      background: var(--card-bg); padding: 32px 24px; border-radius: 22px; text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.35); width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border-color);
+    }
+
+    .card { background: var(--card-bg); padding: 18px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06); margin-bottom: 16px; border: 1px solid var(--border-color); }
+    
+    label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 10px; margin-bottom: 4px; }
+    input[type="text"], input[type="password"], select {
+      width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-color);
+    }
+
+    .btn-primary {
+      width: 100%; padding: 13px; background: var(--primary-btn-bg); color: white !important; border: none; border-radius: 25px;
+      font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-green { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important; }
+    .btn-red { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important; }
+
+    /* CLASS CHIPS OVAL DESIGN */
+    .class-chips-container {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 14px; scrollbar-width: none;
+    }
+    .class-chips-container::-webkit-scrollbar { display: none; }
+    .class-chip {
+      padding: 8px 18px; border-radius: 20px; background: var(--card-bg); border: 1px solid var(--border-color);
+      font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; whitespace: nowrap; flex-shrink: 0;
+    }
+    .class-chip.active { background: #ffffff; color: #000000; border-color: #ffffff; box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
+
+    .tab-section { display: none; padding-bottom: 80px; }
+    .tab-section.active { display: block; }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--nav-bg); display: flex; justify-content: space-between; padding: 8px 4px;
+      box-shadow: 0 -6px 25px rgba(0,0,0,0.15); z-index: 100; height: 64px; align-items: center; border-top-left-radius: 24px; border-top-right-radius: 24px; border-top: 1px solid var(--border-color);
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 800; cursor: pointer; flex: 1; text-align: center; }
+    .nav-item.active { color: #0288d1 !important; }
+
+    .profile-card {
+      display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-color); border-radius: 16px; margin-bottom: 10px; cursor: pointer;
+    }
+    .profile-card:active { transform: scale(0.98); }
+
+    .avatar-img {
+      width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #0288d1; background: #334155;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--card-bg); border-radius: 22px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 45px rgba(0,0,0,0.45); border: 1px solid var(--border-color); }
+    .modal-header { background: var(--header-bg); color: white !important; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 15px; border-top-left-radius: 22px; border-top-right-radius: 22px; }
+    .modal-body { padding: 20px; }
+
+    /* BULK TABLE STYLES */
+    .bulk-table-wrapper { overflow-x: auto; max-height: 50vh; border: 1px solid var(--border-color); border-radius: 12px; margin-top: 10px; }
+    .bulk-table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 11px; }
+    .bulk-table th, .bulk-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; }
+    .bulk-table th { background: #0f172a; position: sticky; top: 0; color: white; }
+    .bulk-table input { padding: 6px; font-size: 11px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header id="topBar" class="app-header" style="display: none;">
+    <button id="hamburgerBtn" class="icon-btn">☰</button>
+    <div class="header-title-box">
+      <div class="header-title">USER MANAGEMENT</div>
+      <div class="header-subtitle">MASTER ACCESS CONTROL</div>
+    </div>
+    <button id="threeDotBtn" class="icon-btn">⋮</button>
+
+    <div id="menuDropdown" class="menu-dropdown">
+      <div class="menu-item" id="logoutBtn">🚪 Logout</div>
+    </div>
+  </header>
+
+  <!-- LEFT DRAWER -->
+  <div id="drawerOverlay" class="left-drawer-overlay"></div>
+  <div id="leftDrawer" class="left-drawer">
+    <div class="drawer-header">
+      <span>⚙️ Menu Options</span>
+      <span style="cursor:pointer;" id="closeDrawerBtn">✕</span>
+    </div>
+
+    <div class="drawer-item" id="bulkStudentDrawerBtn">
+      <span>📋 Add Bulk Students</span>
+    </div>
+
+    <div class="dark-mode-toggle-row">
+      <span>🌙 Light Theme</span>
+      <label class="switch">
+        <input type="checkbox" id="darkModeCheckbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div style="padding: 18px; margin-top: auto;">
+      <button id="checkForUpdatesBtn" class="btn-primary" style="font-size:12px;">🔄 Check for Updates</button>
+      <div id="updateStatusText" style="display:none; font-size:11px; font-weight:800; text-align:center; margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main id="mainContainer" class="main-content login-mode">
+
+    <!-- LOGIN SCREEN -->
+    <section id="loginScreen" style="width: 100%;">
+      <div class="login-box" style="margin: 0 auto;">
+        <div>
+          <h2 style="color: #0288d1; font-size: 16px; font-weight: 800;">DIGITAL CLASSED</h2>
+          <h4 style="color: #ea580c; font-size: 12px; font-weight: 800; margin-top:4px;">MASTER ACCESS CONTROL/h4>
+        </div>
+        <input type="text" id="loginUsername" placeholder="User ID">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button id="loginBtn" class="btn-primary">LOGIN MANAGER</button>
+        <p id="loginError" style="color:red; font-size:12px; display:none;">Invalid Master ID or Password!</p>
+      </div>
+    </section>
+
+    <!-- ADMIN USER TAB -->
+    <section id="adminTab" class="tab-section">
+      <div class="card">
+        <button onclick="window.openAddUserModal('admin')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Admin</button>
+      </div>
+      <div class="card">
+        <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🛡️ Active Admin Accounts (<span id="adminCountText">0</span>)</div>
+        <div id="adminListContainer">Loading...</div>
+      </div>
+    </section>
+
+    <!-- TEACHER USER TAB -->
+    <section id="teacherTab" class="tab-section">
+      <div class="card">
+        <button onclick="window.openAddUserModal('teacher')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Teacher</button>
+      </div>
+      <div class="card">
+        <div style="font-size:14px; font-weight:800; margin-bottom:12px;">👩‍🏫 Active Teacher Accounts (<span id="teacherCountText">0</span>)</div>
+        <div id="teacherListContainer">Loading...</div>
+      </div>
+    </section>
+
+    <!-- STUDENT USER TAB -->
+    <section id="studentTab" class="tab-section">
+      <!-- CLASS CHIPS OVALS -->
+      <div class="class-chips-container">
+        <div class="class-chip active" onclick="filterStudentByClass('All', this)">All</div>
+        <div class="class-chip" onclick="filterStudentByClass('Nursery', this)">Nursery</div>
+        <div class="class-chip" onclick="filterStudentByClass('Jr. KG', this)">Jr. KG</div>
+        <div class="class-chip" onclick="filterStudentByClass('Sr. KG', this)">Sr. KG</div>
+        <div class="class-chip" onclick="filterStudentByClass('1', this)">Class 1</div>
+        <div class="class-chip" onclick="filterStudentByClass('2', this)">Class 2</div>
+        <div class="class-chip" onclick="filterStudentByClass('3', this)">Class 3</div>
+        <div class="class-chip" onclick="filterStudentByClass('4', this)">Class 4</div>
+        <div class="class-chip" onclick="filterStudentByClass('5', this)">Class 5</div>
+        <div class="class-chip" onclick="filterStudentByClass('6', this)">class 6</div>
+        <div class="class-chip" onclick="filterAdminStudentByClass('7', this)">Class 7</div>
+        <div class="class-chip" onclick="filterAdminStudentByClass('8', this)">Class 8</div>
+        <div class="class-chip" onclick="filterAdminStudentByClass('9', this)">Class 9</div>
+        <div class="class-chip" onclick="filterAdminStudentByClass('10', this)">Class 10</div>
+      
+      </div>
+
+      <div class="card">
+        <button onclick="window.openAddUserModal('student')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Student</button>
+      </div>
+      <div class="card">
+        <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🎓 Active Student Accounts (<span id="studentCountText">0</span>)</div>
+        <div id="studentListContainer">Loading...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- EDIT / ADD USER MODAL -->
+  <div id="userModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="modalHeaderTitle">Edit Profile</span>
+        <span style="cursor:pointer;" onclick="window.closeModal('userModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modalOldUserKey">
+        <input type="hidden" id="modalUserType">
+
+        <!-- PHOTO UPLOAD SECTION FOR STUDENTS -->
+        <div id="photoUploadSection" style="text-align:center; display:none; margin-bottom:10px;">
+          <img id="modalPhotoPreview" class="avatar-img" style="width:70px; height:70px; margin:0 auto; font-size:30px;" src="" alt="👤">
+          <label for="photoFileInput" style="color:#0288d1; cursor:pointer; font-size:11px; margin-top:6px;">📷 Upload / Change Photo</label>
+          <input type="file" id="photoFileInput" accept="image/*" style="display:none;">
+        </div>
+
+        <label>Full Name / Title:</label>
+        <input type="text" id="modalNameInput" placeholder="Name">
+
+        <label>Username / User ID (Editable):</label>
+        <input type="text" id="modalUsernameInput" placeholder="Username">
+
+        <label>Password:</label>
+        <input type="text" id="modalPasswordInput" placeholder="Password">
+
+        <div id="classSelectBox" style="display:none;">
+          <label>Assigned Class:</label>
+          <select id="modalClassSelect">
+            <option value="Nursery">Nursery</option>
+            <option value="Jr. KG">Jr. KG</option>
+            <option value="Sr. KG">Sr. KG</option>
+            <option value="1">Class 1</option>
+            <option value="2">Class 2</option>
+            <option value="3">Class 3</option>
+            <option value="4">Class 4</option>
+            <option value="5">Class 5</option>
+            <option value="6">Class 6</option>
+        <option value="7">Class 7</option>
+<option value="8">Class 8</option>
+<option value="9">Class 9</option>
+<option value="10">Class 10</option>
+
+          </select>
+
+          <label>WhatsApp Number:</label>
+          <input type="text" id="modalWhatsAppInput" placeholder="WhatsApp Number">
+        </div>
+
+        <button id="saveUserBtn" class="btn-primary btn-green">💾 Save Changes</button>
+        <button id="deleteUserBtn" class="btn-primary btn-red" style="margin-top:8px;">🗑️ Delete User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK STUDENTS MODAL -->
+  <div id="bulkModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <span>📋 Bulk Students Register (50 Rows)</span>
+        <span style="cursor:pointer;" onclick="window.closeModal('bulkModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Standard for Bulk Add:</label>
+        <select id="bulkClassSelect" onchange="window.updateBulkClassColumn(this.value)">
+          <option value="1">Class 1</option>
+          <option value="Nursery">Nursery</option>
+          <option value="Jr. KG">Jr. KG</option>
+          <option value="Sr. KG">Sr. KG</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+<option value="8">Class 8</option>
+<option value="9">Class 9</option>
+<option value="10">Class 10</option>
+
+        </select>
+
+        <div class="bulk-table-wrapper">
+          <table class="bulk-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student Name *</th>
+                <th>Standard</th>
+                <th>WhatsApp Number *</th>
+              </tr>
+            </thead>
+            <tbody id="bulkTableBody">
+              <!-- 50 ROWS GENERATED BY JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <button id="saveBulkStudentsBtn" class="btn-primary btn-green" style="margin-top:14px;">🚀 Save All Registered Students</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav id="bottomNav" class="bottom-nav" style="display: none;">
+    <div class="nav-item active" onclick="window.switchTab('adminTab', this)"><div style="font-size:18px;">🛡️</div>Admin</div>
+    <div class="nav-item" onclick="window.switchTab('teacherTab', this)"><div style="font-size:18px;">👩‍🏫</div>Teacher</div>
+    <div class="nav-item" onclick="window.switchTab('studentTab', this)"><div style="font-size:18px;">🎓</div>Student</div>
+  </nav>
+
+  <script type="module">
+
+     /* ====================================================================
+       UPDATED FIREBASE CONFIGURATION & INITIALIZATION
+       ==================================================================== */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+    import { getDatabase, ref, onValue, set, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDSdTvqbCn-UMi2cUiyNPQN3UbKfqsfNoI",
+      authDomain: "digital-classes-app-14235.firebaseapp.com",
+      databaseURL: "https://digital-classes-app-14235-default-rtdb.firebaseio.com",
+      projectId: "digital-classes-app-14235",
+      storageBucket: "digital-classes-app-14235.firebasestorage.app",
+      messagingSenderId: "889883419588",
+      appId: "1:889883419588:web:0ae24d6da84740f127ba91",
+      measurementId: "G-0B2V3DXV7G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    
+      
+    
+    // YAHAN ERROR BYPASS LAGAYA HAI TAAKI APP CRASH NA HO
+    try {
+      if (typeof initializeAppCheck === 'function') {
+        const appCheck = initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider('6LeGfbktAAAAAJH1mQYnIlrviupgxfFNPO3AbRj1'),
+          isTokenAutoRefreshEnabled: true
+        });
+      }
+    } catch (err) {
+      console.warn("App Check bypass:", err);
+    }
+    
+    const db = getDatabase(app);
+
+
+    let currentRole = "admin";
+    let assignedClass = "1";
+    let currentStudentAdmn = null;
+    let lastGeneratedReceipt = null;
+
+    let studentStarDisplayMode = "star";
+    let currentStudentTotalDueAmount = 0;
+    let selectedAdminClassFilter = "All";
+    let isAdminLbEditMode = false;
+
+    let inMemoryStudentsData = {};
+    let fullDbCache = {}; 
+
+    let activeLiveTestTimer = null;
+    let currentLiveTestObj = null;
+
+
+    const ICON_PORTAL = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
+    const ICON_BOOK = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
+    const ICON_TEACHER = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
+    const ICON_ANALYTICS = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
+
+      
+    function updateAppRoleIcon(role) {
+      const dynamicIcon = document.getElementById("dynamicAppIcon");
+      const appleIcon = document.getElementById("appleAppIcon");
+      let selectedIcon = ICON_PORTAL;
+
+      if(role === "student") selectedIcon = ICON_BOOK;
+      else if(role === "teacher") selectedIcon = ICON_TEACHER;
+      else if(role === "admin") selectedIcon = ICON_ANALYTICS;
+
+      if(dynamicIcon) dynamicIcon.href = selectedIcon;
+      if(appleIcon) appleIcon.href = selectedIcon;
+    }
+
+    
+    // LOGIN EXECUTION
+    function executeLogin() {
+      document.getElementById("mainContainer").classList.remove("login-mode");
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("topBar").style.display = "flex";
+      document.getElementById("bottomNav").style.display = "flex";
+      
+      window.switchTab("adminTab", document.getElementById("bottomNav").children[0]);
+      loadAllProfiles();
+    }
+
+    // AUTO-LOGIN CHECK WITH LOCALSTORAGE
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedUser = localStorage.getItem("mm_admin_user");
+      const savedPass = localStorage.getItem("mm_admin_pass");
+
+      if (savedUser === "adminnn123" && savedPass === "7302132270@123") {
+        executeLogin();
+      }
+    });
+
+    // LOGIN BUTTON CLICK
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const u = document.getElementById("loginUsername").value.trim();
+      const p = document.getElementById("loginPassword").value.trim();
+
+      if(u === "adminnn123" && p === "7302132270@123") {
+        // SAVE LOGIN INFO TO LOCALSTORAGE
+        localStorage.setItem("mm_admin_user", u);
+        localStorage.setItem("mm_admin_pass", p);
+        executeLogin();
+      } else {
+        document.getElementById("loginError").style.display = "block";
+      }
+    });
+
+    // LOGOUT & CLEAR LOCALSTORAGE
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("mm_admin_user");
+      localStorage.removeItem("mm_admin_pass");
+      location.reload();
+    };
+
+    // NAVIGATION TABS
+    window.switchTab = function(tabId, el) {
+      document.querySelectorAll(".tab-section").forEach(t => t.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      if(el) el.classList.add("active");
+    };
+
+    // DRAWER & MENUS
+    document.getElementById("hamburgerBtn").onclick = () => {
+      document.getElementById("leftDrawer").classList.add("active");
+      document.getElementById("drawerOverlay").classList.add("active");
+    };
+
+    const closeDrawer = () => {
+      document.getElementById("leftDrawer").classList.remove("active");
+      document.getElementById("drawerOverlay").classList.remove("active");
+    };
+
+    document.getElementById("closeDrawerBtn").onclick = closeDrawer;
+    document.getElementById("drawerOverlay").onclick = closeDrawer;
+
+    document.getElementById("threeDotBtn").onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById("menuDropdown").classList.toggle("active");
+    };
+
+    document.addEventListener("click", () => document.getElementById("menuDropdown").classList.remove("active"));
+
+    document.getElementById("darkModeCheckbox").onchange = (e) => {
+      if(e.target.checked) document.body.classList.add("light-mode");
+      else document.body.classList.remove("light-mode");
+    };
+
+    document.getElementById("checkForUpdatesBtn").onclick = () => {
+      const statusText = document.getElementById("updateStatusText");
+      statusText.style.display = "block";
+      statusText.innerText = "Checking updates...";
+      setTimeout(() => { statusText.innerText = "✔ Version Up-to-date (v3.5)"; }, 600);
+    };
+
+    // PHOTO BASE64 HANDLER
+    document.getElementById("photoFileInput").onchange = function(e) {
+      const file = e.target.files[0];
+      if(file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          base64PhotoTemp = event.target.result;
+          document.getElementById("modalPhotoPreview").src = base64PhotoTemp;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    // SAFE FETCH WITH TIMEOUT
+    async function safeDataFetch(path) {
+      const fetchPromise = get(child(ref(db), path)).then(snap => snap.exists() ? snap.val() : {});
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({}), 4000));
+      try {
+        return await Promise.race([fetchPromise, timeoutPromise]);
+      } catch(e) { return {}; }
+    }
+
+    // LOAD PROFILES FROM FIREBASE
+    async function loadAllProfiles() {
+      globalUsersCache = await safeDataFetch("users");
+      const teachers = await safeDataFetch("teachers");
+      globalStudentsCache = await safeDataFetch("students");
+
+      renderAdminList(globalUsersCache);
+      renderTeacherList(teachers, globalUsersCache);
+      renderStudentList();
+    }
+
+    function renderAdminList(users) {
+      const container = document.getElementById("adminListContainer");
+      container.innerHTML = "";
+      let count = 0;
+
+      Object.entries(users).forEach(([uKey, uData]) => {
+        if(uData.role === "admin" || uKey === "admin") {
+          count++;
+          container.innerHTML += `
+            <div class="profile-card" onclick="window.openEditUserModal('${uKey}', 'admin', 'Administrator', '${uData.password || 'admin112233'}')">
+              <div class="avatar-img">🛡️</div>
+              <div style="flex:1;">
+                <div style="font-weight:800; font-size:13px;">Administrator</div>
+                <div style="font-size:11px; color:var(--text-muted);">User ID: ${uKey}</div>
+              </div>
+              <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${uData.password || 'admin112233'} ✏️</div>
+            </div>
+          `;
+        }
+      });
+
+      if(count === 0) {
+        count = 1;
+        container.innerHTML = `
+          <div class="profile-card" onclick="window.openEditUserModal('admin', 'admin', 'Administrator', 'admin112233')">
+            <div class="avatar-img">🛡️</div>
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:13px;">Default Administrator</div>
+              <div style="font-size:11px; color:var(--text-muted);">User ID: admin</div>
+            </div>
+            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: admin112233 ✏️</div>
+          </div>
+        `;
+      }
+      document.getElementById("adminCountText").innerText = count;
+    }
+
+    function renderTeacherList(teachers, users) {
+      const container = document.getElementById("teacherListContainer");
+      container.innerHTML = "";
+      let count = Object.keys(teachers).length;
+
+      if(count === 0) {
+        container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No teachers registered yet.</p>`;
+        document.getElementById("teacherCountText").innerText = "0";
+        return;
+      }
+
+      Object.entries(teachers).forEach(([tKey, tData]) => {
+        const pass = users[tKey] ? users[tKey].password : "123456";
+        container.innerHTML += `
+          <div class="profile-card" onclick="window.openEditUserModal('${tKey}', 'teacher', '${tData.name}', '${pass}', '${tData.assignedClass}')">
+            <div class="avatar-img">👩‍🏫</div>
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:13px;">${tData.name}</div>
+              <div style="font-size:11px; color:var(--text-muted);">Username: ${tKey} | Class: ${tData.assignedClass || '-'}</div>
+            </div>
+            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
+          </div>
+        `;
+      });
+      document.getElementById("teacherCountText").innerText = count;
+    }
+
+    // STUDENT FILTER & RENDER
+    window.filterStudentByClass = function(cls, el) {
+      selectedClassFilter = cls;
+      document.querySelectorAll(".class-chip").forEach(c => c.classList.remove("active"));
+      if(el) el.classList.add("active");
+      renderStudentList();
+    };
+
+    function renderStudentList() {
+      const container = document.getElementById("studentListContainer");
+      container.innerHTML = "";
+      let count = 0;
+
+      const totalStudents = Object.keys(globalStudentsCache).length;
+
+      if(totalStudents === 0) {
+        container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students found.</p>`;
+        document.getElementById("studentCountText").innerText = "0";
+        return;
+      }
+
+      Object.entries(globalStudentsCache).forEach(([sKey, sData]) => {
+        if(selectedClassFilter === "All" || String(sData.class) === String(selectedClassFilter)) {
+          count++;
+          const pass = globalUsersCache[sKey] ? globalUsersCache[sKey].password : "MM";
+          const photoSrc = sData.photo || "";
+          const imgHtml = photoSrc ? `<img src="${photoSrc}" class="avatar-img">` : `<div class="avatar-img">🎓</div>`;
+
+          container.innerHTML += `
+            <div class="profile-card" onclick="window.openEditUserModal('${sKey}', 'student', '${sData.name}', '${pass}', '${sData.class}', '${sData.whatsapp || ''}', '${photoSrc}')">
+              ${imgHtml}
+              <div style="flex:1;">
+                <div style="font-weight:800; font-size:13px;">${sData.name}</div>
+                <div style="font-size:11px; color:var(--text-muted);">ID: ${sKey} | Class: ${sData.class}</div>
+              </div>
+              <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
+            </div>
+          `;
+        }
+      });
+
+      document.getElementById("studentCountText").innerText = count;
+      if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students in ${selectedClassFilter}.</p>`;
+    }
+
+    // OPEN EDIT MODAL
+    window.openEditUserModal = function(key, type, name, pass, cls = "1", phone = "", photo = "") {
+      document.getElementById("modalHeaderTitle").innerText = `Edit ${type.toUpperCase()} Profile`;
+      document.getElementById("modalOldUserKey").value = key;
+      document.getElementById("modalUserType").value = type;
+      document.getElementById("modalNameInput").value = name;
+      document.getElementById("modalUsernameInput").value = key;
+      document.getElementById("modalPasswordInput").value = pass;
+      document.getElementById("deleteUserBtn").style.display = "block";
+      base64PhotoTemp = photo;
+
+      if(type === "student") {
+        document.getElementById("photoUploadSection").style.display = "block";
+        document.getElementById("modalPhotoPreview").src = photo || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><circle cx='25' cy='25' r='20' fill='%23334155'/></svg>";
+        document.getElementById("classSelectBox").style.display = "block";
+        document.getElementById("modalClassSelect").value = cls;
+        document.getElementById("modalWhatsAppInput").value = phone;
+      } else {
+        document.getElementById("photoUploadSection").style.display = "none";
+        document.getElementById("classSelectBox").style.display = (type === "teacher") ? "block" : "none";
+      }
+
+      document.getElementById("userModal").classList.add("active");
+    };
+
+    // OPEN ADD MODAL
+    window.openAddUserModal = function(type) {
+      document.getElementById("modalHeaderTitle").innerText = `Add New ${type.toUpperCase()}`;
+      document.getElementById("modalOldUserKey").value = "";
+      document.getElementById("modalUserType").value = type;
+      document.getElementById("modalNameInput").value = "";
+      document.getElementById("modalUsernameInput").value = "";
+      document.getElementById("modalPasswordInput").value = "";
+      document.getElementById("deleteUserBtn").style.display = "none";
+      base64PhotoTemp = "";
+
+      if(type === "student") {
+        document.getElementById("photoUploadSection").style.display = "block";
+        document.getElementById("modalPhotoPreview").src = "";
+        document.getElementById("classSelectBox").style.display = "block";
+      } else {
+        document.getElementById("photoUploadSection").style.display = "none";
+        document.getElementById("classSelectBox").style.display = (type === "teacher") ? "block" : "none";
+      }
+
+      document.getElementById("userModal").classList.add("active");
+    };
+
+    window.closeModal = function(id) {
+      document.getElementById(id).classList.remove("active");
+    };
+
+    // SAVE USER CHANGES
+    document.getElementById("saveUserBtn").onclick = async () => {
+      const oldKey = document.getElementById("modalOldUserKey").value;
+      const type = document.getElementById("modalUserType").value;
+      const name = document.getElementById("modalNameInput").value.trim();
+      const newKey = document.getElementById("modalUsernameInput").value.trim();
+      const pass = document.getElementById("modalPasswordInput").value.trim();
+      const cls = document.getElementById("modalClassSelect").value;
+      const phone = document.getElementById("modalWhatsAppInput").value.trim();
+
+      if(!newKey || !pass) { alert("Please enter both Username and Password."); return; }
+
+      const updates = {};
+
+      if(oldKey && oldKey !== newKey) {
+        await remove(ref(db, `users/${oldKey}`));
+        if(type === "teacher") await remove(ref(db, `teachers/${oldKey}`));
+        if(type === "student") await remove(ref(db, `students/${oldKey}`));
+      }
+
+      updates[`users/${newKey}`] = { password: pass, role: type, assignedClass: cls, admn: newKey };
+
+      if(type === "teacher") {
+        updates[`teachers/${newKey}`] = { name: name || newKey, username: newKey, assignedClass: cls };
+      } else if(type === "student") {
+        updates[`students/${newKey}`] = { name: name || newKey, class: cls, admn: newKey, whatsapp: phone, photo: base64PhotoTemp };
+      }
+
+      await update(ref(db), updates).catch(() => {});
+      alert("Profile updated successfully!");
+      window.closeModal("userModal");
+      loadAllProfiles();
+    };
+
+    // DELETE USER
+    document.getElementById("deleteUserBtn").onclick = async () => {
+      const key = document.getElementById("modalOldUserKey").value;
+      const type = document.getElementById("modalUserType").value;
+
+      if(confirm(`Are you sure you want to delete this ${type} account?`)) {
+        await remove(ref(db, `users/${key}`)).catch(() => {});
+        if(type === "teacher") await remove(ref(db, `teachers/${key}`)).catch(() => {});
+        if(type === "student") await remove(ref(db, `students/${key}`)).catch(() => {});
+
+        alert("Account deleted successfully!");
+        window.closeModal("userModal");
+        loadAllProfiles();
+      }
+    };
+
+    // BULK STUDENTS DRAWER TRIGGER & TABLE GENERATION
+    document.getElementById("bulkStudentDrawerBtn").onclick = () => {
+      closeDrawer();
+      generateBulkTable();
+      document.getElementById("bulkModal").classList.add("active");
+    };
+
+    function generateBulkTable() {
+      const tbody = document.getElementById("bulkTableBody");
+      tbody.innerHTML = "";
+      const cls = document.getElementById("bulkClassSelect").value;
+
+      for(let i = 1; i <= 50; i++) {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i}</td>
+            <td><input type="text" id="bulk_name_${i}" placeholder="Student Name"></td>
+            <td><input type="text" id="bulk_cls_${i}" value="${cls}" disabled style="background:#334155; color:white;"></td>
+            <td><input type="text" id="bulk_phone_${i}" placeholder="WhatsApp No"></td>
+          </tr>
+        `;
+      }
+    }
+
+    window.updateBulkClassColumn = function(val) {
+      for(let i = 1; i <= 50; i++) {
+        const input = document.getElementById(`bulk_cls_${i}`);
+        if(input) input.value = val;
+      }
+    };
+
+    // SAVE BULK REGISTERED STUDENTS
+    document.getElementById("saveBulkStudentsBtn").onclick = async () => {
+      const btn = document.getElementById("saveBulkStudentsBtn");
+      btn.innerText = "⏳ Saving Students...";
+      btn.disabled = true;
+
+      const updates = {};
+      let count = 0;
+      const baseTimestamp = Date.now();
+
+      for(let i = 1; i <= 50; i++) {
+        const nameEl = document.getElementById(`bulk_name_${i}`);
+        const clsEl = document.getElementById(`bulk_cls_${i}`);
+        const phoneEl = document.getElementById(`bulk_phone_${i}`);
+
+        if(nameEl && phoneEl) {
+          const name = nameEl.value.trim();
+          const cls = clsEl.value.trim();
+          const phone = phoneEl.value.trim();
+
+          if(name && phone) {
+            count++;
+            const admnKey = "S" + (baseTimestamp + i).toString().slice(-5);
+            updates[`students/${admnKey}`] = { admn: admnKey, name: name, class: cls, whatsapp: phone, photo: "" };
+            updates[`users/${admnKey}`] = { admn: admnKey, password: "MM", role: "student", assignedClass: cls };
+          }
+        }
+      }
+
+      if(count === 0) {
+        alert("Please fill Name and WhatsApp number for at least 1 student.");
+        btn.innerText = "🚀 Save All Registered Students";
+        btn.disabled = false;
+        return;
+      }
+
+      try {
+        await update(ref(db), updates);
+        alert(`✔ Successfully registered ${count} students!`);
+        window.closeModal("bulkModal");
+        loadAllProfiles();
+      } catch(err) {
+        alert("Error saving students: " + err.message);
+      } finally {
+        btn.innerText = "🚀 Save All Registered Students";
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
