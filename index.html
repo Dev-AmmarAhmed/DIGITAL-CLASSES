@@ -674,7 +674,7 @@
       <div class="drawer-item admin-only" onclick="openModal('removeTeacherModal')">👩‍🏫 Remove Teacher</div>
       <div class="drawer-item admin-only" onclick="openModal('removeExpenseModal')">📊 Remove Expense</div>
       <div class="drawer-item admin-only" onclick="window.openLogsTab(event)">📜 Logs & Entries</div>
-            <div class="drawer-item admin-only" onclick="window.openMasterControlPanel()" style="color: #ea580c; background: rgba(234, 88, 12, 0.05); border-left: 3px solid #ea580c;">
+      <div class="drawer-item admin-only" onclick="window.openMasterControlPanel()" style="color: #ea580c; background: rgba(234, 88, 12, 0.05); border-left: 3px solid #ea580c;">
         🛡️ Master Access Control
       </div>
 
@@ -2338,8 +2338,7 @@
     });
 
 
-
-          function safeDataFetch(refPath) {
+    function safeDataFetch(refPath) {
       try {
         if (!refPath) return fullDbCache;
         const parts = refPath.split('/').filter(p => p.length > 0);
@@ -2353,10 +2352,10 @@
         }
         return current;
       } catch(err) {
-        console.warn("Fast Memory Sync Read error on path " + refPath + ":", err);
         return null;
       }
     }
+
 
 
       
@@ -2817,19 +2816,24 @@
       }
     }
 
-    async function getStudentRecord(admnId) {
+
+
+          function getStudentRecord(admnId) {
       if (!admnId) return null;
       let students = getLiveStudents();
       let found = students.find(s => String(s.admn) === String(admnId));
       if (found) return found;
 
-      const studentData = await safeDataFetch(`students/${admnId}`);
+      const studentData = safeDataFetch(`students/${admnId}`);
       if (studentData) {
         inMemoryStudentsData[admnId] = studentData;
         return studentData;
       }
       return null;
     }
+
+
+      
 
     addSafeListener("hamburgerBtn", "click", () => {
       document.getElementById("leftDrawer").classList.add("active");
@@ -3277,45 +3281,58 @@
       }
     }
 
-    addSafeListener("sClaimDailyPointsBtn", "click", () => {
+
+
+
+          addSafeListener("sClaimDailyPointsBtn", "click", async () => {
       const btn = document.getElementById("sClaimDailyPointsBtn");
-      runWithBtnSpinner(btn, "Claiming...", async () => {
-        const student = await getStudentRecord(currentStudentAdmn);
-        if(!student) return;
+      btn.disabled = true;
+      btn.innerText = "Claiming...";
 
-        const todayKey = getTodayKey();
-        const userClaims = await safeDataFetch(`daily_claims/${student.admn}`) || {};
-        
-        if(userClaims[todayKey] === true) {
-          alert("You have already claimed today's daily points.");
-          checkAndRenderDailyRewardStatus(student);
-          return;
-        }
+      const student = getStudentRecord(currentStudentAdmn);
+      if(!student) {
+        btn.disabled = false;
+        btn.innerText = "🎁 Claim Today's Points";
+        alert("Student data loading, please try again in 1 second.");
+        return;
+      }
 
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-        const pointsToAward = isWeekend ? 80 : 50;
+      const todayKey = getTodayKey();
+      const userClaims = safeDataFetch(`daily_claims/${student.admn}`) || {};
+      
+      if(userClaims[todayKey] === true) {
+        alert("You have already claimed today's daily points.");
+        checkAndRenderDailyRewardStatus(student);
+        return;
+      }
 
-        const currentPts = student.points || 0;
-        const newPts = currentPts + pointsToAward;
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      const pointsToAward = isWeekend ? 80 : 50;
 
-        student.points = newPts;
-        inMemoryStudentsData[student.admn] = student;
+      const currentPts = student.points || 0;
+      const newPts = currentPts + pointsToAward;
 
-        triggerStarBurstAnimation();
+      student.points = newPts;
+      inMemoryStudentsData[student.admn] = student;
 
-        document.getElementById("sClaimDailyPointsBtn").style.display = "none";
-        document.getElementById("sDailyClaimedBadge").style.display = "block";
-        await updateHeaderStarBadge();
+      triggerStarBurstAnimation();
 
-        await set(ref(db, `daily_claims/${student.admn}/${todayKey}`), true);
-        await update(ref(db, `students/${student.admn}`), { points: newPts });
+      btn.style.display = "none";
+      document.getElementById("sDailyClaimedBadge").style.display = "block";
+      updateHeaderStarBadge();
 
-        alert(`Congratulations! You have claimed +${pointsToAward} points for today.`);
-        refreshStudentDashboard();
-      });
+      // Background Async Save to Firebase (Bina UI Ko Freeze Kiye)
+      set(ref(db, `daily_claims/${student.admn}/${todayKey}`), true);
+      update(ref(db, `students/${student.admn}`), { points: newPts });
+
+      alert(`Congratulations! You have claimed +${pointsToAward} points for today.`);
+      refreshStudentDashboard();
     });
+
+
+      
 
         async function calculateRealtimeStudentDues(student) {
       if(!student) return;
