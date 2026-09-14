@@ -2250,10 +2250,10 @@
     
       
     
-    // YAHAN ERROR BYPASS LAGAYA HAI TAAKI APP CRASH NA HO
+       // App Check ReCAPTCHA Ko Safe Banao
     try {
-      if (typeof initializeAppCheck === 'function') {
-        const appCheck = initializeAppCheck(app, {
+      if (typeof initializeAppCheck === 'function' && window.location.hostname !== 'localhost') {
+        initializeAppCheck(app, {
           provider: new ReCaptchaEnterpriseProvider('6LeGfbktAAAAAJH1mQYnIlrviupgxfFNPO3AbRj1'),
           isTokenAutoRefreshEnabled: true
         });
@@ -2261,7 +2261,8 @@
     } catch (err) {
       console.warn("App Check bypass:", err);
     }
-    
+
+      
     const db = getDatabase(app);
 
 
@@ -3249,7 +3250,7 @@
       }
     }
 
-    async function checkAndRenderDailyRewardStatus(student) {
+    async     function checkAndRenderDailyRewardStatus(student) {
       if(!student) return;
 
       const today = new Date();
@@ -3261,7 +3262,7 @@
       if (titleEl) titleEl.innerText = `+${pointsToAward} Points Today (${isWeekend ? 'Weekend Bonus' : 'Weekday'})`;
 
       const todayKey = getTodayKey();
-      const userClaims = await safeDataFetch(`daily_claims/${student.admn}`) || {};
+      const userClaims = safeDataFetch(`daily_claims/${student.admn}`) || {};
 
       const claimBtn = document.getElementById("sClaimDailyPointsBtn");
       const claimedBadge = document.getElementById("sDailyClaimedBadge");
@@ -3276,6 +3277,7 @@
       } else {
         claimBtn.style.display = "block";
         claimBtn.innerText = `🎁 Claim Today's +${pointsToAward} Points`;
+        claimBtn.disabled = false;
         claimedBadge.style.display = "none";
         expiredBadge.style.display = "none";
       }
@@ -3284,7 +3286,7 @@
 
 
 
-          addSafeListener("sClaimDailyPointsBtn", "click", async () => {
+    addSafeListener("sClaimDailyPointsBtn", "click", () => {
       const btn = document.getElementById("sClaimDailyPointsBtn");
       btn.disabled = true;
       btn.innerText = "Claiming...";
@@ -3314,22 +3316,37 @@
       const currentPts = student.points || 0;
       const newPts = currentPts + pointsToAward;
 
+      // 1. Memory and UI Update (Instant Execution)
       student.points = newPts;
       inMemoryStudentsData[student.admn] = student;
+
+      // Cache claim in memory
+      if(!fullDbCache.daily_claims) fullDbCache.daily_claims = {};
+      if(!fullDbCache.daily_claims[student.admn]) fullDbCache.daily_claims[student.admn] = {};
+      fullDbCache.daily_claims[student.admn][todayKey] = true;
 
       triggerStarBurstAnimation();
 
       btn.style.display = "none";
-      document.getElementById("sDailyClaimedBadge").style.display = "block";
+      const badge = document.getElementById("sDailyClaimedBadge");
+      if(badge) badge.style.display = "block";
+      
       updateHeaderStarBadge();
 
-      // Background Async Save to Firebase (Bina UI Ko Freeze Kiye)
-      set(ref(db, `daily_claims/${student.admn}/${todayKey}`), true);
-      update(ref(db, `students/${student.admn}`), { points: newPts });
+      // 2. Non-blocking Async Firebase Sync (Fail-safe)
+      setTimeout(() => {
+        try {
+          set(ref(db, `daily_claims/${student.admn}/${todayKey}`), true);
+          update(ref(db, `students/${student.admn}`), { points: newPts });
+        } catch(e) {
+          console.warn("Background sync delay ignored:", e);
+        }
+      }, 50);
 
       alert(`Congratulations! You have claimed +${pointsToAward} points for today.`);
       refreshStudentDashboard();
     });
+
 
 
       
