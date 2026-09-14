@@ -2339,7 +2339,7 @@
     });
 
 
-    function safeDataFetch(refPath) {
+   async function safeDataFetch(refPath) {
       try {
         if (!refPath) return fullDbCache;
         const parts = refPath.split('/').filter(p => p.length > 0);
