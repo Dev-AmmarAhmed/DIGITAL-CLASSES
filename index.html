@@ -2321,13 +2321,15 @@
     }
 
 
-    // Realtime Listener for Entire DB Cache
+      // Realtime Listener for Entire DB Cache with Instant Student Auto-Render
     onValue(ref(db), (snap) => {
       if (snap.exists()) {
         fullDbCache = snap.val();
         if (fullDbCache.students) {
           inMemoryStudentsData = fullDbCache.students;
           if(currentRole === "admin") renderAdminStudentsDirectory();
+          if(currentRole === "student") refreshStudentDashboard();
+          if(currentRole === "teacher") refreshAllTeacherData();
         }
       } else {
         fullDbCache = {};
@@ -2872,12 +2874,13 @@
         const usersData = await safeDataFetch("users");
         const uData = usersData ? usersData[u] : null;
 
-        if(uData && uData.password === p) {
+                if(uData && uData.password === p) {
           localStorage.setItem("loggedUser", u);
           localStorage.setItem("loggedRole", uData.role);
           if(uData.assignedClass) localStorage.setItem("assignedClass", uData.assignedClass);
           if(uData.admn) localStorage.setItem("studentAdmn", uData.admn);
           renderDashboardForRole(uData.role, uData.assignedClass, uData.admn);
+          setTimeout(() => { if(uData.role === "student") refreshStudentDashboard(); }, 100);
         } else {
           document.getElementById("loginError").style.display = "block";
           document.getElementById("loginError").innerText = "Invalid credentials. Please try again.";
