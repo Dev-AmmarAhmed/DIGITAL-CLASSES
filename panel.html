@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,14 +128,13 @@
     .btn-green { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important; }
     .btn-red { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important; }
 
-    /* CLASS CHIPS OVAL DESIGN */
     .class-chips-container {
       display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 14px; scrollbar-width: none;
     }
     .class-chips-container::-webkit-scrollbar { display: none; }
     .class-chip {
       padding: 8px 18px; border-radius: 20px; background: var(--card-bg); border: 1px solid var(--border-color);
-      font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; whitespace: nowrap; flex-shrink: 0;
+      font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
     .class-chip.active { background: #ffffff; color: #000000; border-color: #ffffff; box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
 
@@ -171,7 +169,6 @@
     .modal-header { background: var(--header-bg); color: white !important; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 15px; border-top-left-radius: 22px; border-top-right-radius: 22px; }
     .modal-body { padding: 20px; }
 
-    /* BULK TABLE STYLES */
     .bulk-table-wrapper { overflow-x: auto; max-height: 50vh; border: 1px solid var(--border-color); border-radius: 12px; margin-top: 10px; }
     .bulk-table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 11px; }
     .bulk-table th, .bulk-table td { padding: 8px; border: 1px solid var(--border-color); text-align: left; }
@@ -228,8 +225,8 @@
     <section id="loginScreen" style="width: 100%;">
       <div class="login-box" style="margin: 0 auto;">
         <div>
-          <h2 style="color: #0288d1; font-size: 16px; font-weight: 800;">DIGITAL CLASSED</h2>
-          <h4 style="color: #ea580c; font-size: 12px; font-weight: 800; margin-top:4px;">MASTER ACCESS CONTROL/h4>
+          <h2 style="color: #0288d1; font-size: 16px; font-weight: 800;">DIGITAL CLASSES</h2>
+          <h4 style="color: #ea580c; font-size: 12px; font-weight: 800; margin-top:4px;">MASTER ACCESS CONTROL</h4>
         </div>
         <input type="text" id="loginUsername" placeholder="User ID">
         <input type="password" id="loginPassword" placeholder="Password">
@@ -262,23 +259,21 @@
 
     <!-- STUDENT USER TAB -->
     <section id="studentTab" class="tab-section">
-      <!-- CLASS CHIPS OVALS -->
       <div class="class-chips-container">
-        <div class="class-chip active" onclick="filterStudentByClass('All', this)">All</div>
-        <div class="class-chip" onclick="filterStudentByClass('Nursery', this)">Nursery</div>
-        <div class="class-chip" onclick="filterStudentByClass('Jr. KG', this)">Jr. KG</div>
-        <div class="class-chip" onclick="filterStudentByClass('Sr. KG', this)">Sr. KG</div>
-        <div class="class-chip" onclick="filterStudentByClass('1', this)">Class 1</div>
-        <div class="class-chip" onclick="filterStudentByClass('2', this)">Class 2</div>
-        <div class="class-chip" onclick="filterStudentByClass('3', this)">Class 3</div>
-        <div class="class-chip" onclick="filterStudentByClass('4', this)">Class 4</div>
-        <div class="class-chip" onclick="filterStudentByClass('5', this)">Class 5</div>
-        <div class="class-chip" onclick="filterStudentByClass('6', this)">class 6</div>
-        <div class="class-chip" onclick="filterAdminStudentByClass('7', this)">Class 7</div>
-        <div class="class-chip" onclick="filterAdminStudentByClass('8', this)">Class 8</div>
-        <div class="class-chip" onclick="filterAdminStudentByClass('9', this)">Class 9</div>
-        <div class="class-chip" onclick="filterAdminStudentByClass('10', this)">Class 10</div>
-      
+        <div class="class-chip active" onclick="window.filterStudentByClass('All', this)">All</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('Nursery', this)">Nursery</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('Jr. KG', this)">Jr. KG</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('Sr. KG', this)">Sr. KG</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('1', this)">Class 1</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('2', this)">Class 2</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('3', this)">Class 3</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('4', this)">Class 4</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('5', this)">Class 5</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('6', this)">Class 6</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('7', this)">Class 7</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('8', this)">Class 8</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('9', this)">Class 9</div>
+        <div class="class-chip" onclick="window.filterStudentByClass('10', this)">Class 10</div>
       </div>
 
       <div class="card">
@@ -303,7 +298,6 @@
         <input type="hidden" id="modalOldUserKey">
         <input type="hidden" id="modalUserType">
 
-        <!-- PHOTO UPLOAD SECTION FOR STUDENTS -->
         <div id="photoUploadSection" style="text-align:center; display:none; margin-bottom:10px;">
           <img id="modalPhotoPreview" class="avatar-img" style="width:70px; height:70px; margin:0 auto; font-size:30px;" src="" alt="👤">
           <label for="photoFileInput" style="color:#0288d1; cursor:pointer; font-size:11px; margin-top:6px;">📷 Upload / Change Photo</label>
@@ -331,11 +325,10 @@
             <option value="4">Class 4</option>
             <option value="5">Class 5</option>
             <option value="6">Class 6</option>
-        <option value="7">Class 7</option>
-<option value="8">Class 8</option>
-<option value="9">Class 9</option>
-<option value="10">Class 10</option>
-
+            <option value="7">Class 7</option>
+            <option value="8">Class 8</option>
+            <option value="9">Class 9</option>
+            <option value="10">Class 10</option>
           </select>
 
           <label>WhatsApp Number:</label>
@@ -368,10 +361,9 @@
           <option value="5">Class 5</option>
           <option value="6">Class 6</option>
           <option value="7">Class 7</option>
-<option value="8">Class 8</option>
-<option value="9">Class 9</option>
-<option value="10">Class 10</option>
-
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
         </select>
 
         <div class="bulk-table-wrapper">
@@ -403,10 +395,6 @@
   </nav>
 
   <script type="module">
-
-     /* ====================================================================
-       UPDATED FIREBASE CONFIGURATION & INITIALIZATION
-       ==================================================================== */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
     import { getDatabase, ref, onValue, set, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -424,12 +412,9 @@
 
     const app = initializeApp(firebaseConfig);
     
-      
-    
-    // YAHAN ERROR BYPASS LAGAYA HAI TAAKI APP CRASH NA HO
     try {
       if (typeof initializeAppCheck === 'function') {
-        const appCheck = initializeAppCheck(app, {
+        initializeAppCheck(app, {
           provider: new ReCaptchaEnterpriseProvider('6LeGfbktAAAAAJH1mQYnIlrviupgxfFNPO3AbRj1'),
           isTokenAutoRefreshEnabled: true
         });
@@ -440,45 +425,16 @@
     
     const db = getDatabase(app);
 
-
-    let currentRole = "admin";
-    let assignedClass = "1";
-    let currentStudentAdmn = null;
-    let lastGeneratedReceipt = null;
-
-    let studentStarDisplayMode = "star";
-    let currentStudentTotalDueAmount = 0;
-    let selectedAdminClassFilter = "All";
-    let isAdminLbEditMode = false;
-
-    let inMemoryStudentsData = {};
-    let fullDbCache = {}; 
-
-    let activeLiveTestTimer = null;
-    let currentLiveTestObj = null;
-
+    let globalStudentsCache = {};
+    let globalUsersCache = {};
+    let selectedClassFilter = "All";
+    let base64PhotoTemp = "";
 
     const ICON_PORTAL = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
     const ICON_BOOK = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
     const ICON_TEACHER = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
     const ICON_ANALYTICS = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
 
-      
-    function updateAppRoleIcon(role) {
-      const dynamicIcon = document.getElementById("dynamicAppIcon");
-      const appleIcon = document.getElementById("appleAppIcon");
-      let selectedIcon = ICON_PORTAL;
-
-      if(role === "student") selectedIcon = ICON_BOOK;
-      else if(role === "teacher") selectedIcon = ICON_TEACHER;
-      else if(role === "admin") selectedIcon = ICON_ANALYTICS;
-
-      if(dynamicIcon) dynamicIcon.href = selectedIcon;
-      if(appleIcon) appleIcon.href = selectedIcon;
-    }
-
-    
-    // LOGIN EXECUTION
     function executeLogin() {
       document.getElementById("mainContainer").classList.remove("login-mode");
       document.getElementById("loginScreen").style.display = "none";
@@ -489,7 +445,6 @@
       loadAllProfiles();
     }
 
-    // AUTO-LOGIN CHECK WITH LOCALSTORAGE
     window.addEventListener("DOMContentLoaded", () => {
       const savedUser = localStorage.getItem("mm_admin_user");
       const savedPass = localStorage.getItem("mm_admin_pass");
@@ -499,13 +454,11 @@
       }
     });
 
-    // LOGIN BUTTON CLICK
     document.getElementById("loginBtn").addEventListener("click", () => {
       const u = document.getElementById("loginUsername").value.trim();
       const p = document.getElementById("loginPassword").value.trim();
 
       if(u === "adminnn123" && p === "7302132270@123") {
-        // SAVE LOGIN INFO TO LOCALSTORAGE
         localStorage.setItem("mm_admin_user", u);
         localStorage.setItem("mm_admin_pass", p);
         executeLogin();
@@ -514,14 +467,12 @@
       }
     });
 
-    // LOGOUT & CLEAR LOCALSTORAGE
     document.getElementById("logoutBtn").onclick = () => {
       localStorage.removeItem("mm_admin_user");
       localStorage.removeItem("mm_admin_pass");
       location.reload();
     };
 
-    // NAVIGATION TABS
     window.switchTab = function(tabId, el) {
       document.querySelectorAll(".tab-section").forEach(t => t.classList.remove("active"));
       document.getElementById(tabId).classList.add("active");
@@ -529,7 +480,6 @@
       if(el) el.classList.add("active");
     };
 
-    // DRAWER & MENUS
     document.getElementById("hamburgerBtn").onclick = () => {
       document.getElementById("leftDrawer").classList.add("active");
       document.getElementById("drawerOverlay").classList.add("active");
@@ -562,7 +512,6 @@
       setTimeout(() => { statusText.innerText = "✔ Version Up-to-date (v3.5)"; }, 600);
     };
 
-    // PHOTO BASE64 HANDLER
     document.getElementById("photoFileInput").onchange = function(e) {
       const file = e.target.files[0];
       if(file) {
@@ -575,7 +524,6 @@
       }
     };
 
-    // SAFE FETCH WITH TIMEOUT
     async function safeDataFetch(path) {
       const fetchPromise = get(child(ref(db), path)).then(snap => snap.exists() ? snap.val() : {});
       const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({}), 4000));
@@ -584,7 +532,6 @@
       } catch(e) { return {}; }
     }
 
-    // LOAD PROFILES FROM FIREBASE
     async function loadAllProfiles() {
       globalUsersCache = await safeDataFetch("users");
       const teachers = await safeDataFetch("teachers");
@@ -659,7 +606,6 @@
       document.getElementById("teacherCountText").innerText = count;
     }
 
-    // STUDENT FILTER & RENDER
     window.filterStudentByClass = function(cls, el) {
       selectedClassFilter = cls;
       document.querySelectorAll(".class-chip").forEach(c => c.classList.remove("active"));
@@ -704,7 +650,6 @@
       if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students in ${selectedClassFilter}.</p>`;
     }
 
-    // OPEN EDIT MODAL
     window.openEditUserModal = function(key, type, name, pass, cls = "1", phone = "", photo = "") {
       document.getElementById("modalHeaderTitle").innerText = `Edit ${type.toUpperCase()} Profile`;
       document.getElementById("modalOldUserKey").value = key;
@@ -729,7 +674,6 @@
       document.getElementById("userModal").classList.add("active");
     };
 
-    // OPEN ADD MODAL
     window.openAddUserModal = function(type) {
       document.getElementById("modalHeaderTitle").innerText = `Add New ${type.toUpperCase()}`;
       document.getElementById("modalOldUserKey").value = "";
@@ -756,7 +700,6 @@
       document.getElementById(id).classList.remove("active");
     };
 
-    // SAVE USER CHANGES
     document.getElementById("saveUserBtn").onclick = async () => {
       const oldKey = document.getElementById("modalOldUserKey").value;
       const type = document.getElementById("modalUserType").value;
@@ -790,7 +733,6 @@
       loadAllProfiles();
     };
 
-    // DELETE USER
     document.getElementById("deleteUserBtn").onclick = async () => {
       const key = document.getElementById("modalOldUserKey").value;
       const type = document.getElementById("modalUserType").value;
@@ -806,7 +748,6 @@
       }
     };
 
-    // BULK STUDENTS DRAWER TRIGGER & TABLE GENERATION
     document.getElementById("bulkStudentDrawerBtn").onclick = () => {
       closeDrawer();
       generateBulkTable();
@@ -837,7 +778,6 @@
       }
     };
 
-    // SAVE BULK REGISTERED STUDENTS
     document.getElementById("saveBulkStudentsBtn").onclick = async () => {
       const btn = document.getElementById("saveBulkStudentsBtn");
       btn.innerText = "⏳ Saving Students...";
