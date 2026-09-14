@@ -238,7 +238,7 @@
     <!-- ADMIN USER TAB -->
     <section id="adminTab" class="tab-section">
       <div class="card">
-        <button onclick="window.openAddUserModal('admin')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Admin</button>
+        <button id="addAdminBtn" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Admin</button>
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🛡️ Active Admin Accounts (<span id="adminCountText">0</span>)</div>
@@ -249,7 +249,7 @@
     <!-- TEACHER USER TAB -->
     <section id="teacherTab" class="tab-section">
       <div class="card">
-        <button onclick="window.openAddUserModal('teacher')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Teacher</button>
+        <button id="addTeacherBtn" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Teacher</button>
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">👩‍🏫 Active Teacher Accounts (<span id="teacherCountText">0</span>)</div>
@@ -260,24 +260,24 @@
     <!-- STUDENT USER TAB -->
     <section id="studentTab" class="tab-section">
       <div class="class-chips-container">
-        <div class="class-chip active" onclick="window.filterStudentByClass('All', this)">All</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('Nursery', this)">Nursery</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('Jr. KG', this)">Jr. KG</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('Sr. KG', this)">Sr. KG</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('1', this)">Class 1</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('2', this)">Class 2</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('3', this)">Class 3</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('4', this)">Class 4</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('5', this)">Class 5</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('6', this)">Class 6</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('7', this)">Class 7</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('8', this)">Class 8</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('9', this)">Class 9</div>
-        <div class="class-chip" onclick="window.filterStudentByClass('10', this)">Class 10</div>
+        <div class="class-chip active" data-cls="All">All</div>
+        <div class="class-chip" data-cls="Nursery">Nursery</div>
+        <div class="class-chip" data-cls="Jr. KG">Jr. KG</div>
+        <div class="class-chip" data-cls="Sr. KG">Sr. KG</div>
+        <div class="class-chip" data-cls="1">Class 1</div>
+        <div class="class-chip" data-cls="2">Class 2</div>
+        <div class="class-chip" data-cls="3">Class 3</div>
+        <div class="class-chip" data-cls="4">Class 4</div>
+        <div class="class-chip" data-cls="5">Class 5</div>
+        <div class="class-chip" data-cls="6">Class 6</div>
+        <div class="class-chip" data-cls="7">Class 7</div>
+        <div class="class-chip" data-cls="8">Class 8</div>
+        <div class="class-chip" data-cls="9">Class 9</div>
+        <div class="class-chip" data-cls="10">Class 10</div>
       </div>
 
       <div class="card">
-        <button onclick="window.openAddUserModal('student')" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Student</button>
+        <button id="addStudentBtn" class="btn-primary btn-green" style="margin-top:0;">➕ Add New Student</button>
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🎓 Active Student Accounts (<span id="studentCountText">0</span>)</div>
@@ -292,7 +292,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <span id="modalHeaderTitle">Edit Profile</span>
-        <span style="cursor:pointer;" onclick="window.closeModal('userModal')">✕</span>
+        <span style="cursor:pointer;" id="closeUserModalBtn">✕</span>
       </div>
       <div class="modal-body">
         <input type="hidden" id="modalOldUserKey">
@@ -346,11 +346,11 @@
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-header">
         <span>📋 Bulk Students Register (50 Rows)</span>
-        <span style="cursor:pointer;" onclick="window.closeModal('bulkModal')">✕</span>
+        <span style="cursor:pointer;" id="closeBulkModalBtn">✕</span>
       </div>
       <div class="modal-body">
         <label>Select Standard for Bulk Add:</label>
-        <select id="bulkClassSelect" onchange="window.updateBulkClassColumn(this.value)">
+        <select id="bulkClassSelect">
           <option value="1">Class 1</option>
           <option value="Nursery">Nursery</option>
           <option value="Jr. KG">Jr. KG</option>
@@ -389,9 +389,9 @@
 
   <!-- BOTTOM NAVIGATION -->
   <nav id="bottomNav" class="bottom-nav" style="display: none;">
-    <div class="nav-item active" onclick="window.switchTab('adminTab', this)"><div style="font-size:18px;">🛡️</div>Admin</div>
-    <div class="nav-item" onclick="window.switchTab('teacherTab', this)"><div style="font-size:18px;">👩‍🏫</div>Teacher</div>
-    <div class="nav-item" onclick="window.switchTab('studentTab', this)"><div style="font-size:18px;">🎓</div>Student</div>
+    <div class="nav-item active" id="navAdminTab"><div style="font-size:18px;">🛡️</div>Admin</div>
+    <div class="nav-item" id="navTeacherTab"><div style="font-size:18px;">👩‍🏫</div>Teacher</div>
+    <div class="nav-item" id="navStudentTab"><div style="font-size:18px;">🎓</div>Student</div>
   </nav>
 
   <script type="module">
@@ -430,18 +430,13 @@
     let selectedClassFilter = "All";
     let base64PhotoTemp = "";
 
-    const ICON_PORTAL = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
-    const ICON_BOOK = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
-    const ICON_TEACHER = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
-    const ICON_ANALYTICS = `https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png`;
-
     function executeLogin() {
       document.getElementById("mainContainer").classList.remove("login-mode");
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("topBar").style.display = "flex";
       document.getElementById("bottomNav").style.display = "flex";
       
-      window.switchTab("adminTab", document.getElementById("bottomNav").children[0]);
+      switchTab("adminTab", document.getElementById("navAdminTab"));
       loadAllProfiles();
     }
 
@@ -473,12 +468,16 @@
       location.reload();
     };
 
-    window.switchTab = function(tabId, el) {
+    function switchTab(tabId, el) {
       document.querySelectorAll(".tab-section").forEach(t => t.classList.remove("active"));
       document.getElementById(tabId).classList.add("active");
       document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
       if(el) el.classList.add("active");
-    };
+    }
+
+    document.getElementById("navAdminTab").onclick = (e) => switchTab("adminTab", e.currentTarget);
+    document.getElementById("navTeacherTab").onclick = (e) => switchTab("teacherTab", e.currentTarget);
+    document.getElementById("navStudentTab").onclick = (e) => switchTab("studentTab", e.currentTarget);
 
     document.getElementById("hamburgerBtn").onclick = () => {
       document.getElementById("leftDrawer").classList.add("active");
@@ -512,24 +511,36 @@
       setTimeout(() => { statusText.innerText = "✔ Version Up-to-date (v3.5)"; }, 600);
     };
 
+    // PHOTO UPLOAD WITH CANVAS COMPRESSION TO PREVENT FIREBASE CRASH
     document.getElementById("photoFileInput").onchange = function(e) {
       const file = e.target.files[0];
       if(file) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          base64PhotoTemp = event.target.result;
-          document.getElementById("modalPhotoPreview").src = base64PhotoTemp;
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = 150;
+            canvas.height = 150;
+            ctx.drawImage(img, 0, 0, 150, 150);
+            base64PhotoTemp = canvas.toDataURL("image/jpeg", 0.7);
+            document.getElementById("modalPhotoPreview").src = base64PhotoTemp;
+          };
+          img.src = event.target.result;
         };
         reader.readAsDataURL(file);
       }
     };
 
     async function safeDataFetch(path) {
-      const fetchPromise = get(child(ref(db), path)).then(snap => snap.exists() ? snap.val() : {});
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({}), 4000));
       try {
-        return await Promise.race([fetchPromise, timeoutPromise]);
-      } catch(e) { return {}; }
+        const snap = await get(child(ref(db), path));
+        return snap.exists() ? snap.val() : {};
+      } catch(e) { 
+        console.error("Fetch error on path:", path, e);
+        return {}; 
+      }
     }
 
     async function loadAllProfiles() {
@@ -550,31 +561,35 @@
       Object.entries(users).forEach(([uKey, uData]) => {
         if(uData.role === "admin" || uKey === "admin") {
           count++;
-          container.innerHTML += `
-            <div class="profile-card" onclick="window.openEditUserModal('${uKey}', 'admin', 'Administrator', '${uData.password || 'admin112233'}')">
-              <div class="avatar-img">🛡️</div>
-              <div style="flex:1;">
-                <div style="font-weight:800; font-size:13px;">Administrator</div>
-                <div style="font-size:11px; color:var(--text-muted);">User ID: ${uKey}</div>
-              </div>
-              <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${uData.password || 'admin112233'} ✏️</div>
+          const card = document.createElement("div");
+          card.className = "profile-card";
+          card.innerHTML = `
+            <div class="avatar-img">🛡️</div>
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:13px;">Administrator</div>
+              <div style="font-size:11px; color:var(--text-muted);">User ID: ${uKey}</div>
             </div>
+            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${uData.password || 'admin112233'} ✏️</div>
           `;
+          card.onclick = () => openEditUserModal(uKey, 'admin', 'Administrator', uData.password || 'admin112233');
+          container.appendChild(card);
         }
       });
 
       if(count === 0) {
         count = 1;
-        container.innerHTML = `
-          <div class="profile-card" onclick="window.openEditUserModal('admin', 'admin', 'Administrator', 'admin112233')">
-            <div class="avatar-img">🛡️</div>
-            <div style="flex:1;">
-              <div style="font-weight:800; font-size:13px;">Default Administrator</div>
-              <div style="font-size:11px; color:var(--text-muted);">User ID: admin</div>
-            </div>
-            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: admin112233 ✏️</div>
+        const card = document.createElement("div");
+        card.className = "profile-card";
+        card.innerHTML = `
+          <div class="avatar-img">🛡️</div>
+          <div style="flex:1;">
+            <div style="font-weight:800; font-size:13px;">Default Administrator</div>
+            <div style="font-size:11px; color:var(--text-muted);">User ID: admin</div>
           </div>
+          <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: admin112233 ✏️</div>
         `;
+        card.onclick = () => openEditUserModal('admin', 'admin', 'Administrator', 'admin112233');
+        container.appendChild(card);
       }
       document.getElementById("adminCountText").innerText = count;
     }
@@ -592,26 +607,30 @@
 
       Object.entries(teachers).forEach(([tKey, tData]) => {
         const pass = users[tKey] ? users[tKey].password : "123456";
-        container.innerHTML += `
-          <div class="profile-card" onclick="window.openEditUserModal('${tKey}', 'teacher', '${tData.name}', '${pass}', '${tData.assignedClass}')">
-            <div class="avatar-img">👩‍🏫</div>
-            <div style="flex:1;">
-              <div style="font-weight:800; font-size:13px;">${tData.name}</div>
-              <div style="font-size:11px; color:var(--text-muted);">Username: ${tKey} | Class: ${tData.assignedClass || '-'}</div>
-            </div>
-            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
+        const card = document.createElement("div");
+        card.className = "profile-card";
+        card.innerHTML = `
+          <div class="avatar-img">👩‍🏫</div>
+          <div style="flex:1;">
+            <div style="font-weight:800; font-size:13px;">${tData.name}</div>
+            <div style="font-size:11px; color:var(--text-muted);">Username: ${tKey} | Class: ${tData.assignedClass || '-'}</div>
           </div>
+          <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
         `;
+        card.onclick = () => openEditUserModal(tKey, 'teacher', tData.name, pass, tData.assignedClass);
+        container.appendChild(card);
       });
       document.getElementById("teacherCountText").innerText = count;
     }
 
-    window.filterStudentByClass = function(cls, el) {
-      selectedClassFilter = cls;
-      document.querySelectorAll(".class-chip").forEach(c => c.classList.remove("active"));
-      if(el) el.classList.add("active");
-      renderStudentList();
-    };
+    document.querySelectorAll(".class-chip").forEach(chip => {
+      chip.onclick = function() {
+        document.querySelectorAll(".class-chip").forEach(c => c.classList.remove("active"));
+        this.classList.add("active");
+        selectedClassFilter = this.getAttribute("data-cls");
+        renderStudentList();
+      };
+    });
 
     function renderStudentList() {
       const container = document.getElementById("studentListContainer");
@@ -633,16 +652,18 @@
           const photoSrc = sData.photo || "";
           const imgHtml = photoSrc ? `<img src="${photoSrc}" class="avatar-img">` : `<div class="avatar-img">🎓</div>`;
 
-          container.innerHTML += `
-            <div class="profile-card" onclick="window.openEditUserModal('${sKey}', 'student', '${sData.name}', '${pass}', '${sData.class}', '${sData.whatsapp || ''}', '${photoSrc}')">
-              ${imgHtml}
-              <div style="flex:1;">
-                <div style="font-weight:800; font-size:13px;">${sData.name}</div>
-                <div style="font-size:11px; color:var(--text-muted);">ID: ${sKey} | Class: ${sData.class}</div>
-              </div>
-              <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
+          const card = document.createElement("div");
+          card.className = "profile-card";
+          card.innerHTML = `
+            ${imgHtml}
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:13px;">${sData.name || sKey}</div>
+              <div style="font-size:11px; color:var(--text-muted);">ID: ${sKey} | Class: ${sData.class || '-'}</div>
             </div>
+            <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
           `;
+          card.onclick = () => openEditUserModal(sKey, 'student', sData.name || sKey, pass, sData.class || '1', sData.whatsapp || '', photoSrc);
+          container.appendChild(card);
         }
       });
 
@@ -650,7 +671,7 @@
       if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students in ${selectedClassFilter}.</p>`;
     }
 
-    window.openEditUserModal = function(key, type, name, pass, cls = "1", phone = "", photo = "") {
+    function openEditUserModal(key, type, name, pass, cls = "1", phone = "", photo = "") {
       document.getElementById("modalHeaderTitle").innerText = `Edit ${type.toUpperCase()} Profile`;
       document.getElementById("modalOldUserKey").value = key;
       document.getElementById("modalUserType").value = type;
@@ -669,12 +690,13 @@
       } else {
         document.getElementById("photoUploadSection").style.display = "none";
         document.getElementById("classSelectBox").style.display = (type === "teacher") ? "block" : "none";
+        if(type === "teacher") document.getElementById("modalClassSelect").value = cls;
       }
 
       document.getElementById("userModal").classList.add("active");
-    };
+    }
 
-    window.openAddUserModal = function(type) {
+    function openAddUserModal(type) {
       document.getElementById("modalHeaderTitle").innerText = `Add New ${type.toUpperCase()}`;
       document.getElementById("modalOldUserKey").value = "";
       document.getElementById("modalUserType").value = type;
@@ -686,7 +708,7 @@
 
       if(type === "student") {
         document.getElementById("photoUploadSection").style.display = "block";
-        document.getElementById("modalPhotoPreview").src = "";
+        document.getElementById("modalPhotoPreview").src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><circle cx='25' cy='25' r='20' fill='%23334155'/></svg>";
         document.getElementById("classSelectBox").style.display = "block";
       } else {
         document.getElementById("photoUploadSection").style.display = "none";
@@ -694,13 +716,24 @@
       }
 
       document.getElementById("userModal").classList.add("active");
-    };
+    }
 
-    window.closeModal = function(id) {
+    document.getElementById("addAdminBtn").onclick = () => openAddUserModal("admin");
+    document.getElementById("addTeacherBtn").onclick = () => openAddUserModal("teacher");
+    document.getElementById("addStudentBtn").onclick = () => openAddUserModal("student");
+
+    function closeModal(id) {
       document.getElementById(id).classList.remove("active");
-    };
+    }
+
+    document.getElementById("closeUserModalBtn").onclick = () => closeModal("userModal");
+    document.getElementById("closeBulkModalBtn").onclick = () => closeModal("bulkModal");
 
     document.getElementById("saveUserBtn").onclick = async () => {
+      const saveBtn = document.getElementById("saveUserBtn");
+      saveBtn.innerText = "⏳ Saving...";
+      saveBtn.disabled = true;
+
       const oldKey = document.getElementById("modalOldUserKey").value;
       const type = document.getElementById("modalUserType").value;
       const name = document.getElementById("modalNameInput").value.trim();
@@ -709,28 +742,39 @@
       const cls = document.getElementById("modalClassSelect").value;
       const phone = document.getElementById("modalWhatsAppInput").value.trim();
 
-      if(!newKey || !pass) { alert("Please enter both Username and Password."); return; }
-
-      const updates = {};
-
-      if(oldKey && oldKey !== newKey) {
-        await remove(ref(db, `users/${oldKey}`));
-        if(type === "teacher") await remove(ref(db, `teachers/${oldKey}`));
-        if(type === "student") await remove(ref(db, `students/${oldKey}`));
+      if(!newKey || !pass) { 
+        alert("Please enter both Username and Password."); 
+        saveBtn.innerText = "💾 Save Changes";
+        saveBtn.disabled = false;
+        return; 
       }
 
-      updates[`users/${newKey}`] = { password: pass, role: type, assignedClass: cls, admn: newKey };
+      try {
+        if(oldKey && oldKey !== newKey) {
+          await remove(ref(db, `users/${oldKey}`));
+          if(type === "teacher") await remove(ref(db, `teachers/${oldKey}`));
+          if(type === "student") await remove(ref(db, `students/${oldKey}`));
+        }
 
-      if(type === "teacher") {
-        updates[`teachers/${newKey}`] = { name: name || newKey, username: newKey, assignedClass: cls };
-      } else if(type === "student") {
-        updates[`students/${newKey}`] = { name: name || newKey, class: cls, admn: newKey, whatsapp: phone, photo: base64PhotoTemp };
+        const updates = {};
+        updates[`users/${newKey}`] = { password: pass, role: type, assignedClass: cls, admn: newKey };
+
+        if(type === "teacher") {
+          updates[`teachers/${newKey}`] = { name: name || newKey, username: newKey, assignedClass: cls };
+        } else if(type === "student") {
+          updates[`students/${newKey}`] = { name: name || newKey, class: cls, admn: newKey, whatsapp: phone, photo: base64PhotoTemp };
+        }
+
+        await update(ref(db), updates);
+        alert("Profile updated successfully!");
+        closeModal("userModal");
+        await loadAllProfiles();
+      } catch(err) {
+        alert("Error saving user: " + err.message);
+      } finally {
+        saveBtn.innerText = "💾 Save Changes";
+        saveBtn.disabled = false;
       }
-
-      await update(ref(db), updates).catch(() => {});
-      alert("Profile updated successfully!");
-      window.closeModal("userModal");
-      loadAllProfiles();
     };
 
     document.getElementById("deleteUserBtn").onclick = async () => {
@@ -743,7 +787,7 @@
         if(type === "student") await remove(ref(db, `students/${key}`)).catch(() => {});
 
         alert("Account deleted successfully!");
-        window.closeModal("userModal");
+        closeModal("userModal");
         loadAllProfiles();
       }
     };
@@ -771,7 +815,8 @@
       }
     }
 
-    window.updateBulkClassColumn = function(val) {
+    document.getElementById("bulkClassSelect").onchange = function() {
+      const val = this.value;
       for(let i = 1; i <= 50; i++) {
         const input = document.getElementById(`bulk_cls_${i}`);
         if(input) input.value = val;
@@ -816,7 +861,7 @@
       try {
         await update(ref(db), updates);
         alert(`✔ Successfully registered ${count} students!`);
-        window.closeModal("bulkModal");
+        closeModal("bulkModal");
         loadAllProfiles();
       } catch(err) {
         alert("Error saving students: " + err.message);
