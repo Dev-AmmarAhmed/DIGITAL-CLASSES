@@ -674,7 +674,12 @@
       <div class="drawer-item admin-only" onclick="openModal('removeTeacherModal')">👩‍🏫 Remove Teacher</div>
       <div class="drawer-item admin-only" onclick="openModal('removeExpenseModal')">📊 Remove Expense</div>
       <div class="drawer-item admin-only" onclick="window.openLogsTab(event)">📜 Logs & Entries</div>
+            <div class="drawer-item admin-only" onclick="window.openMasterControlPanel()" style="color: #ea580c; background: rgba(234, 88, 12, 0.05); border-left: 3px solid #ea580c;">
+        🛡️ Master Access Control
+      </div>
 
+      <div class="drawer-item admin-only" style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted);">ADMIN MASTER PANEL</div>
+   
       <div class="drawer-item admin-only" onclick="openModal('registerStudentModal')">👤 Register Student</div>
 
       <div class="drawer-update-bottom">
@@ -2604,7 +2609,20 @@
 
 
 
+          // ====================================================================
+    // MASTER ACCESS CONTROL REDIRECT
+    // ====================================================================
+    window.openMasterControlPanel = function() {
+      // Yahan apna GitHub ya jahan bhi host kiya hai, uska permalink daal dein
+      const masterPanelURL = "https://github.com/Dev-AmmarAhmed/DIGITAL-CLASSES/blob/7b3b4349a666745c55d5666bf7c994c3585a96e0/panel.html"; 
+      
+      if(confirm("Opening Master Access Control Panel. You will be redirected to a secure vault. Continue?")) {
+        window.open(masterPanelURL, "_blank");
+        window.closeDrawer();
+      }
+    };
 
+      
       
 
       if(id === "bulkStudentModal") {
@@ -3947,6 +3965,8 @@
         container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students registered in Class ${assignedClass}</p>`;
         return;
       }
+
+  
 
       students.forEach(s => {
         const card = document.createElement("div");
