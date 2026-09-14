@@ -2148,6 +2148,24 @@
             <option value="">-- Select Subject --</option>
           </select>
 
+                
+          <!-- YEH NAYA HISSA ADD KAREIN -->
+          <label>Select Classes to Assign Test (Check all that apply) *:</label>
+          <div class="checkbox-grid" style="margin-bottom:12px;">
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="1"> Class 1</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="2"> Class 2</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="3"> Class 3</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="4"> Class 4</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="5"> Class 5</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="6"> Class 6</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="7"> Class 7</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="8"> Class 8</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="9"> Class 9</div>
+            <div class="checkbox-item"><input type="checkbox" class="test-cls-chk" value="10"> Class 10</div>
+          </div>
+          <!-- YAHAN TAK -->
+
+
           <label>No. of Questions *:</label>
           <input type="number" id="cTestNumQuestions" placeholder="e.g. 5" min="1" max="50">
 
@@ -2272,10 +2290,25 @@
       if(appleIcon) appleIcon.href = selectedIcon;
     }
 
-    function cleanClassStr(str) {
+
+
+          function cleanClassStr(str) {
       if (!str) return "";
       return String(str).replace(/class\s*/i, "").trim();
     }
+
+    // NEW HELPER: Teacher ki multi-class handling ke liye (1 to 8, 9th, 10th)
+    function isClassInTeacherGroup(stClass, group) {
+      if (!stClass || !group) return false;
+      const c = cleanClassStr(stClass);
+      const g = cleanClassStr(group).toLowerCase();
+      if (g === c) return true;
+      if (g === "1 to 8") return ["1","2","3","4","5","6","7","8","nursery","jr. kg","sr. kg"].includes(c.toLowerCase());
+      if (g === "9th" || g === "9") return c === "9";
+      if (g === "10th" || g === "10") return c === "10";
+      return false;
+    }
+
 
     // Realtime Listener for Entire DB Cache
     onValue(ref(db), (snap) => {
@@ -2509,7 +2542,7 @@
         window.renderAdminClassLeaderboard(clsVal);
       }
 
-            if(id === "registerStudentModal") {
+                if(id === "registerStudentModal") {
         const liveSts = getLiveStudents();
         let maxAdmn = 0;
         
@@ -2533,14 +2566,36 @@
         const regStdSelect = document.getElementById("regStd");
         if(regStdSelect) {
           if(currentRole === "teacher") {
-            regStdSelect.value = assignedClass;
-            regStdSelect.disabled = true;
+            const g = cleanClassStr(assignedClass).toLowerCase();
+            regStdSelect.innerHTML = `<option value="">-- Select Class --</option>`;
+            if (g === "1 to 8") {
+              ["1","2","3","4","5","6","7","8"].forEach(c => regStdSelect.innerHTML += `<option value="${c}">Class ${c}</option>`);
+            } else if (g === "9th" || g === "9") {
+              regStdSelect.innerHTML += `<option value="9">Class 9</option>`;
+            } else if (g === "10th" || g === "10") {
+              regStdSelect.innerHTML += `<option value="10">Class 10</option>`;
+            } else {
+              regStdSelect.innerHTML += `<option value="${g}">Class ${g}</option>`;
+            }
+            regStdSelect.disabled = false;
           } else {
+            regStdSelect.innerHTML = `
+              <option value="">-- Select Class --</option>
+              <option value="Nursery">Nursery</option>
+              <option value="Jr. KG">Jr. KG</option>
+              <option value="Sr. KG">Sr. KG</option>
+              <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+              <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+              <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
+              <option value="10">Class 10</option>
+            `;
             regStdSelect.value = "";
             regStdSelect.disabled = false;
           }
         }
       }
+
+
 
 
 
@@ -3404,6 +3459,7 @@
       if (c === "8") return 400;
       return 0; // 9th & 10th follow installment system
     }
+      
 
     async function loadStudentStudyMaterials() {
       const container = document.getElementById("sStudyMatContainer");
@@ -3676,7 +3732,7 @@
     };
 
     function populateDelTestStudentDropdown() {
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       const delSelect = document.getElementById("delTestStudentSelect");
       if(delSelect) {
         delSelect.innerHTML = `<option value="">-- Select Student --</option>` + students.map(s => `<option value="${s.admn}">${s.name}</option>`).join("");
@@ -3728,7 +3784,7 @@
       }
 
       document.getElementById("bulkHeaderDetails").innerText = `Test: ${testName} | Total Marks: ${totalMarks}`;
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       const tbody = document.getElementById("bulkStudentsTableBody");
       tbody.innerHTML = "";
 
@@ -3809,7 +3865,7 @@
       savedBadge.style.display = "none";
       holidayBadge.style.display = "none";
 
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       const tbody = document.getElementById("todayAttendanceTableBody");
       tbody.innerHTML = "";
 
@@ -3862,7 +3918,7 @@
       if(confirm("Are you sure you want to mark today as a Holiday for this class?")) {
         const currentMonth = getAutoMonthName();
         const todayNum = new Date().getDate();
-        const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+        const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
         const updates = {};
 
         students.forEach(st => {
@@ -3878,7 +3934,7 @@
 
     function loadTeacherStudentsDirectory() {
       const container = document.getElementById("studentsTabDirectoryContainer");
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       container.innerHTML = "";
 
       if(students.length === 0) {
@@ -4000,7 +4056,7 @@
 
     async function loadTeacherLeaderboard() {
       const container = document.getElementById("leaderboardListContainer");
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       students.sort((a,b) => (b.points || 0) - (a.points || 0));
 
       container.innerHTML = "";
@@ -4023,7 +4079,7 @@
     }
 
     function populateTeacherStudentDropdowns() {
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const students = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
       const pSelect = document.getElementById("performStudentSelect");
       const tSelect = document.getElementById("testStudentSelect");
       const trSelect = document.getElementById("trackTestStudentSelect");
@@ -4108,7 +4164,11 @@
       });
     });
 
-    function setupStudentSearch(inputId, resultsBoxId, hiddenAdmnId, filterStdId = null) {
+
+
+
+          // Enhanced search setup to trigger callbacks
+    function setupStudentSearchEnhanced(inputId, resultsBoxId, hiddenAdmnId, filterStdId = null, onSelectCallback = null) {
       const input = document.getElementById(inputId);
       const resultsBox = document.getElementById(resultsBoxId);
       const hiddenAdmn = document.getElementById(hiddenAdmnId);
@@ -4124,7 +4184,7 @@
           const stdVal = document.getElementById(filterStdId).value;
           if(stdVal) students = students.filter(s => cleanClassStr(s.class) === cleanClassStr(stdVal));
         } else if(currentRole === "teacher") {
-          students = students.filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+          students = students.filter(s => isClassInTeacherGroup(s.class, assignedClass));
         }
 
         const filtered = students.filter(s => s && s.name && (s.name.toLowerCase().includes(q) || String(s.admn).includes(q)));
@@ -4138,6 +4198,7 @@
             input.value = "All Students";
             if(hiddenAdmn) hiddenAdmn.value = "ALL";
             resultsBox.style.display = "none";
+            if(onSelectCallback) onSelectCallback("ALL");
           };
           resultsBox.appendChild(allItem);
         }
@@ -4153,6 +4214,7 @@
               input.value = s.name;
               if(hiddenAdmn) hiddenAdmn.value = s.admn;
               resultsBox.style.display = "none";
+              if(onSelectCallback) onSelectCallback(s.admn);
             };
             resultsBox.appendChild(item);
           });
@@ -4161,12 +4223,60 @@
       });
     }
 
-    setupStudentSearch("feeStudentSearchInput", "feeSearchResultsBox", "feeSelectedStudentAdmn", "feeModalStd");
-    setupStudentSearch("cardSearchInput", "cardSearchResultsBox", "cardSelectedAdmn", "cardStdSelect");
-    setupStudentSearch("rmFeeSearchInput", "rmFeeSearchResultsBox", "rmFeeSelectedAdmn");
-    setupStudentSearch("attTrackSearchInput", "attTrackResultsBox", "attTrackSelectedAdmn", "attTrackStdSelect");
-    setupStudentSearch("tAttTrackSearchInput", "tAttTrackResultsBox", "tAttTrackSelectedAdmn");
+    // Advanced Fees Entry Callback
+    setupStudentSearchEnhanced("feeStudentSearchInput", "feeSearchResultsBox", "feeSelectedStudentAdmn", "feeModalStd", async (admn) => {
+      const std = document.getElementById("feeModalStd").value;
+      const cleanCls = cleanClassStr(std);
+      const grid = document.getElementById("feeCheckboxGrid");
+      grid.innerHTML = "";
+      
+      let feeTypes = [];
+      if (cleanCls === "9" || cleanCls === "10") {
+        feeTypes = [
+          {val: "1st Installment", label: "1st Inst.", color: "#d97706"},
+          {val: "2nd Installment", label: "2nd Inst.", color: "#d97706"},
+          {val: "3rd Installment", label: "3rd Inst.", color: "#d97706"}
+        ];
+      } else {
+        feeTypes = [
+          {val: "June", label: "June"}, {val: "July", label: "July"}, {val: "August", label: "August"},
+          {val: "September", label: "Sept"}, {val: "October", label: "Oct"}, {val: "November", label: "Nov"},
+          {val: "December", label: "Dec"}, {val: "January", label: "Jan"}, {val: "February", label: "Feb"},
+          {val: "March", label: "March"}, {val: "April", label: "April"}, {val: "May", label: "May"},
+          {val: "1st Term", label: "1st Term"}, {val: "1st Exam", label: "1st Exam"},
+          {val: "2nd Term", label: "2nd Term"}, {val: "2nd Exam", label: "2nd Exam"}
+        ];
+      }
 
+      const matrix = await safeDataFetch("fees_matrix") || {};
+      const studentMatrix = matrix[admn] || {};
+
+      feeTypes.forEach(ft => {
+        const isPaid = studentMatrix[ft.val] && studentMatrix[ft.val].paid;
+        const colorStyle = ft.color ? `color:${ft.color};` : "";
+        const paidStyle = isPaid ? `text-decoration:line-through; opacity:0.6;` : "";
+        grid.innerHTML += `
+          <div class="checkbox-item" style="${colorStyle} ${paidStyle}">
+            <input type="checkbox" class="fee-chk" value="${ft.val}" ${isPaid ? "checked disabled" : ""}> ${ft.label}
+          </div>
+        `;
+      });
+    });
+    
+    addSafeListener("feeModalStd", "change", () => {
+      document.getElementById("feeCheckboxGrid").innerHTML = "<div style='grid-column: span 3; font-size:11px; color:var(--text-muted); padding:10px;'>Please search & select student to load fee types.</div>";
+      document.getElementById("feeStudentSearchInput").value = "";
+      document.getElementById("feeSelectedStudentAdmn").value = "";
+    });
+
+    setupStudentSearchEnhanced("cardSearchInput", "cardSearchResultsBox", "cardSelectedAdmn", "cardStdSelect");
+    setupStudentSearchEnhanced("rmFeeSearchInput", "rmFeeSearchResultsBox", "rmFeeSelectedAdmn");
+    setupStudentSearchEnhanced("attTrackSearchInput", "attTrackResultsBox", "attTrackSelectedAdmn", "attTrackStdSelect");
+    setupStudentSearchEnhanced("tAttTrackSearchInput", "tAttTrackResultsBox", "tAttTrackSelectedAdmn");
+
+
+
+      
     addSafeListener("getStatsBtn", "click", () => {
       const btn = document.getElementById("getStatsBtn");
       runWithBtnSpinner(btn, "Get Stats", async () => {
@@ -4226,10 +4336,15 @@
         const student = await getStudentRecord(admn);
         lastGeneratedReceipt = { studentName: student ? student.name : "Student", phone: student ? student.phone : "", amount: total, types: selectedChks.join(", "), date: dateStr };
 
-        document.getElementById("feeSubmittedStatusBox").style.display = "block";
-        alert("Fee entry saved successfully.");
+                document.getElementById("feeSubmittedStatusBox").style.display = "block";
+        // Paid hone ke baad form clear karein taaki user check kar sake aur dubara na dabe
+        Array.from(document.querySelectorAll(".fee-chk")).forEach(c => {
+           if(c.checked) { c.disabled = true; c.parentElement.style.opacity = "0.6"; c.parentElement.style.textDecoration = "line-through"; }
+        });
       });
     });
+        document.getElementById("feeModalTotal").value = "";
+
 
     addSafeListener("sendWhatsappReceiptBtn", "click", () => {
       if(!lastGeneratedReceipt) return;
@@ -4268,7 +4383,7 @@
       });
     });
 
-       addSafeListener("generateCardBtn", "click", () => {
+           addSafeListener("generateCardBtn", "click", () => {
       const btn = document.getElementById("generateCardBtn");
       runWithBtnSpinner(btn, "Generate Fees Card", async () => {
         const admn = document.getElementById("cardSelectedAdmn").value;
@@ -4287,7 +4402,6 @@
         const tbody = document.getElementById("cardDisplayBody");
         tbody.innerHTML = "";
 
-        // 9th and 10th Class - 3 Installment Logic
         if (clsClean === "9" || clsClean === "10") {
           const totalFeeText = clsClean === "9" ? "₹9,000 (3 Installments)" : "₹14,000 (3 Installments)";
           document.getElementById("cardStudentHeaderClass").innerText += ` | Total Fee: ${totalFeeText}`;
@@ -4310,7 +4424,6 @@
             `;
           });
         } 
-        // 1st to 8th Class & Primary - Monthly Logic
         else {
           const monthlyRate = getMonthlyFeeRateByClass(student.class);
           const feeItems = [
@@ -5236,26 +5349,36 @@
           return;
         }
 
-        const testId = Date.now().toString();
-        const cleanClass = cleanClassStr(assignedClass);
+              const testId = Date.now().toString();
+        
+        // Naya Feature: Multiple Classes Selection
+        const checkedClasses = Array.from(document.querySelectorAll('.test-cls-chk:checked')).map(c => c.value);
+        if (checkedClasses.length === 0) {
+          alert("Please select at least one class to assign the test.");
+          return;
+        }
 
-        const testObject = {
-          id: testId,
-          title: name,
-          subject: subject,
-          numQuestions: numQ,
-          marksPerQ: marksPerQ,
-          totalMarks: numQ * marksPerQ,
-          timeMinutes: timeMins,
-          expiry: expiry,
-          questions: questionsList,
-          class: cleanClass,
-          createdDate: getTodayFormattedDate()
-        };
+        const updates = {};
+        checkedClasses.forEach(cls => {
+          const testObject = {
+            id: testId,
+            title: name,
+            subject: subject,
+            numQuestions: numQ,
+            marksPerQ: marksPerQ,
+            totalMarks: numQ * marksPerQ,
+            timeMinutes: timeMins,
+            expiry: expiry,
+            questions: questionsList,
+            class: cls,
+            createdDate: getTodayFormattedDate()
+          };
+          updates[`online_tests/${cls}/${testId}`] = testObject;
+        });
 
-        await set(ref(db, `online_tests/${cleanClass}/${testId}`), testObject);
+        await update(ref(db), updates);
 
-        alert(`✔ Online Test "${name}" published successfully for Class ${assignedClass}!`);
+        alert(`✔ Online Test "${name}" published successfully for selected classes!`);
         window.closeModal("createOnlineTestModal");
       });
     });
@@ -5541,7 +5664,7 @@ window.removeOnlineTest = async function(testId) {
       
       try {
          // Get students of this specific assigned class
-         const classStudents = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+         const classStudents = getLiveStudents().filter(s => isClassInTeacherGroup(s.class, assignedClass));
          
          // Fetch marks/attempts from Firebase (Assuming structure: test_attempts/testId/admnId)
          const attemptsSnap = await get(ref(db, `test_attempts/${testId}`));
