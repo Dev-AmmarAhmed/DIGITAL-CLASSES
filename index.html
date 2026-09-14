@@ -2532,10 +2532,23 @@
       setTimeout(() => btn.classList.remove("shake-btn"), 400);
     };
 
-    window.claimPointsFromModal = function() {
+       window.claimPointsFromModal = function() {
       window.closeModal("weeklyRewardDetailsModal");
       const mainClaimBtn = document.getElementById("sClaimDailyPointsBtn");
       if (mainClaimBtn) mainClaimBtn.click();
+    };
+
+    // ====================================================================
+    // MASTER ACCESS CONTROL REDIRECT (Fix: Now outside openModal function)
+    // ====================================================================
+    window.openMasterControlPanel = function() {
+      // Sahi link jo browser me website ki tarah khulega (GitHub pages/raw hack)
+      const masterPanelURL = "https://raw.githack.com/Dev-AmmarAhmed/DIGITAL-CLASSES/7b3b4349a666745c55d5666bf7c994c3585a96e0/panel.html"; 
+      
+      if(confirm("Opening Master Access Control Panel. You will be redirected to a secure vault. Continue?")) {
+        window.open(masterPanelURL, "_blank");
+        window.closeDrawer();
+      }
     };
 
     window.openModal = function(id) {
@@ -2553,7 +2566,7 @@
         window.renderAdminClassLeaderboard(clsVal);
       }
 
-                if(id === "registerStudentModal") {
+      if(id === "registerStudentModal") {
         const liveSts = getLiveStudents();
         let maxAdmn = 0;
         
@@ -2606,26 +2619,8 @@
         }
       }
 
-
-
-
-          // ====================================================================
-    // MASTER ACCESS CONTROL REDIRECT
-    // ====================================================================
-    window.openMasterControlPanel = function() {
-      // Yahan apna GitHub ya jahan bhi host kiya hai, uska permalink daal dein
-      const masterPanelURL = "https://github.com/Dev-AmmarAhmed/DIGITAL-CLASSES/blob/7b3b4349a666745c55d5666bf7c994c3585a96e0/panel.html"; 
-      
-      if(confirm("Opening Master Access Control Panel. You will be redirected to a secure vault. Continue?")) {
-        window.open(masterPanelURL, "_blank");
-        window.closeDrawer();
-      }
-    };
-
-      
-      
-
       if(id === "bulkStudentModal") {
+
         generateBulkStudentTable();
       }
 
