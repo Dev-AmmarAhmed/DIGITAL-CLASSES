@@ -242,7 +242,7 @@
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🛡️ Active Admin Accounts (<span id="adminCountText">0</span>)</div>
-        <div id="adminListContainer">Loading...</div>
+        <div id="adminListContainer">⚡ Loading Realtime Data...</div>
       </div>
     </section>
 
@@ -253,7 +253,7 @@
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">👩‍🏫 Active Teacher Accounts (<span id="teacherCountText">0</span>)</div>
-        <div id="teacherListContainer">Loading...</div>
+        <div id="teacherListContainer">⚡ Loading Realtime Data...</div>
       </div>
     </section>
 
@@ -281,7 +281,7 @@
       </div>
       <div class="card">
         <div style="font-size:14px; font-weight:800; margin-bottom:12px;">🎓 Active Student Accounts (<span id="studentCountText">0</span>)</div>
-        <div id="studentListContainer">Loading...</div>
+        <div id="studentListContainer">⚡ Loading Realtime Data...</div>
       </div>
     </section>
 
@@ -396,8 +396,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-    import { getDatabase, ref, onValue, set, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDSdTvqbCn-UMi2cUiyNPQN3UbKfqsfNoI",
@@ -411,22 +410,11 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    
-    try {
-      if (typeof initializeAppCheck === 'function') {
-        initializeAppCheck(app, {
-          provider: new ReCaptchaEnterpriseProvider('6LeGfbktAAAAAJH1mQYnIlrviupgxfFNPO3AbRj1'),
-          isTokenAutoRefreshEnabled: true
-        });
-      }
-    } catch (err) {
-      console.warn("App Check bypass:", err);
-    }
-    
     const db = getDatabase(app);
 
-    let globalStudentsCache = {};
-    let globalUsersCache = {};
+    let liveUsers = {};
+    let liveTeachers = {};
+    let liveStudents = {};
     let selectedClassFilter = "All";
     let base64PhotoTemp = "";
 
@@ -437,19 +425,17 @@
       document.getElementById("bottomNav").style.display = "flex";
       
       switchTab("adminTab", document.getElementById("navAdminTab"));
-      loadAllProfiles();
+      initRealtimeStream();
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const savedUser = localStorage.getItem("mm_admin_user");
-      const savedPass = localStorage.getItem("mm_admin_pass");
+    // Direct Instant Auth Check
+    const savedUser = localStorage.getItem("mm_admin_user");
+    const savedPass = localStorage.getItem("mm_admin_pass");
+    if (savedUser === "adminnn123" && savedPass === "7302132270@123") {
+      executeLogin();
+    }
 
-      if (savedUser === "adminnn123" && savedPass === "7302132270@123") {
-        executeLogin();
-      }
-    });
-
-    document.getElementById("loginBtn").addEventListener("click", () => {
+    document.getElementById("loginBtn").onclick = () => {
       const u = document.getElementById("loginUsername").value.trim();
       const p = document.getElementById("loginPassword").value.trim();
 
@@ -460,7 +446,7 @@
       } else {
         document.getElementById("loginError").style.display = "block";
       }
-    });
+    };
 
     document.getElementById("logoutBtn").onclick = () => {
       localStorage.removeItem("mm_admin_user");
@@ -508,10 +494,9 @@
       const statusText = document.getElementById("updateStatusText");
       statusText.style.display = "block";
       statusText.innerText = "Checking updates...";
-      setTimeout(() => { statusText.innerText = "✔ Version Up-to-date (v3.5)"; }, 600);
+      setTimeout(() => { statusText.innerText = "✔ Version Up-to-date (v3.5)"; }, 300);
     };
 
-    // PHOTO UPLOAD WITH CANVAS COMPRESSION TO PREVENT FIREBASE CRASH
     document.getElementById("photoFileInput").onchange = function(e) {
       const file = e.target.files[0];
       if(file) {
@@ -521,10 +506,10 @@
           img.onload = function() {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
-            canvas.width = 150;
-            canvas.height = 150;
-            ctx.drawImage(img, 0, 0, 150, 150);
-            base64PhotoTemp = canvas.toDataURL("image/jpeg", 0.7);
+            canvas.width = 120;
+            canvas.height = 120;
+            ctx.drawImage(img, 0, 0, 120, 120);
+            base64PhotoTemp = canvas.toDataURL("image/jpeg", 0.6);
             document.getElementById("modalPhotoPreview").src = base64PhotoTemp;
           };
           img.src = event.target.result;
@@ -533,33 +518,33 @@
       }
     };
 
-    async function safeDataFetch(path) {
-      try {
-        const snap = await get(child(ref(db), path));
-        return snap.exists() ? snap.val() : {};
-      } catch(e) { 
-        console.error("Fetch error on path:", path, e);
-        return {}; 
-      }
+    // HIGH SPEED WEBSOCKET REALTIME STREAMING (< 1 SEC)
+    function initRealtimeStream() {
+      onValue(ref(db, "users"), (snap) => {
+        liveUsers = snap.val() || {};
+        renderAdminList();
+        renderTeacherList();
+        renderStudentList();
+      });
+
+      onValue(ref(db, "teachers"), (snap) => {
+        liveTeachers = snap.val() || {};
+        renderTeacherList();
+      });
+
+      onValue(ref(db, "students"), (snap) => {
+        liveStudents = snap.val() || {};
+        renderStudentList();
+      });
     }
 
-    async function loadAllProfiles() {
-      globalUsersCache = await safeDataFetch("users");
-      const teachers = await safeDataFetch("teachers");
-      globalStudentsCache = await safeDataFetch("students");
-
-      renderAdminList(globalUsersCache);
-      renderTeacherList(teachers, globalUsersCache);
-      renderStudentList();
-    }
-
-    function renderAdminList(users) {
+    function renderAdminList() {
       const container = document.getElementById("adminListContainer");
       container.innerHTML = "";
       let count = 0;
 
-      Object.entries(users).forEach(([uKey, uData]) => {
-        if(uData.role === "admin" || uKey === "admin") {
+      Object.entries(liveUsers).forEach(([uKey, uData]) => {
+        if(uData && (uData.role === "admin" || uKey === "admin")) {
           count++;
           const card = document.createElement("div");
           card.className = "profile-card";
@@ -594,10 +579,10 @@
       document.getElementById("adminCountText").innerText = count;
     }
 
-    function renderTeacherList(teachers, users) {
+    function renderTeacherList() {
       const container = document.getElementById("teacherListContainer");
       container.innerHTML = "";
-      let count = Object.keys(teachers).length;
+      let count = Object.keys(liveTeachers).length;
 
       if(count === 0) {
         container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No teachers registered yet.</p>`;
@@ -605,19 +590,20 @@
         return;
       }
 
-      Object.entries(teachers).forEach(([tKey, tData]) => {
-        const pass = users[tKey] ? users[tKey].password : "123456";
+      Object.entries(liveTeachers).forEach(([tKey, tData]) => {
+        if(!tData) return;
+        const pass = liveUsers[tKey] ? liveUsers[tKey].password : "123456";
         const card = document.createElement("div");
         card.className = "profile-card";
         card.innerHTML = `
           <div class="avatar-img">👩‍🏫</div>
           <div style="flex:1;">
-            <div style="font-weight:800; font-size:13px;">${tData.name}</div>
+            <div style="font-weight:800; font-size:13px;">${tData.name || tKey}</div>
             <div style="font-size:11px; color:var(--text-muted);">Username: ${tKey} | Class: ${tData.assignedClass || '-'}</div>
           </div>
           <div style="font-size:12px; font-weight:800; color:#0288d1;">Pass: ${pass} ✏️</div>
         `;
-        card.onclick = () => openEditUserModal(tKey, 'teacher', tData.name, pass, tData.assignedClass);
+        card.onclick = () => openEditUserModal(tKey, 'teacher', tData.name || tKey, pass, tData.assignedClass || '1');
         container.appendChild(card);
       });
       document.getElementById("teacherCountText").innerText = count;
@@ -637,7 +623,7 @@
       container.innerHTML = "";
       let count = 0;
 
-      const totalStudents = Object.keys(globalStudentsCache).length;
+      const totalStudents = Object.keys(liveStudents).length;
 
       if(totalStudents === 0) {
         container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students found.</p>`;
@@ -645,10 +631,10 @@
         return;
       }
 
-      Object.entries(globalStudentsCache).forEach(([sKey, sData]) => {
-        if(selectedClassFilter === "All" || String(sData.class) === String(selectedClassFilter)) {
+      Object.entries(liveStudents).forEach(([sKey, sData]) => {
+        if(sData && (selectedClassFilter === "All" || String(sData.class) === String(selectedClassFilter))) {
           count++;
-          const pass = globalUsersCache[sKey] ? globalUsersCache[sKey].password : "MM";
+          const pass = liveUsers[sKey] ? liveUsers[sKey].password : "MM";
           const photoSrc = sData.photo || "";
           const imgHtml = photoSrc ? `<img src="${photoSrc}" class="avatar-img">` : `<div class="avatar-img">🎓</div>`;
 
@@ -743,20 +729,20 @@
       const phone = document.getElementById("modalWhatsAppInput").value.trim();
 
       if(!newKey || !pass) { 
-        alert("Please enter both Username and Password."); 
+        alert("Please enter Username and Password."); 
         saveBtn.innerText = "💾 Save Changes";
         saveBtn.disabled = false;
         return; 
       }
 
       try {
+        const updates = {};
         if(oldKey && oldKey !== newKey) {
-          await remove(ref(db, `users/${oldKey}`));
-          if(type === "teacher") await remove(ref(db, `teachers/${oldKey}`));
-          if(type === "student") await remove(ref(db, `students/${oldKey}`));
+          updates[`users/${oldKey}`] = null;
+          if(type === "teacher") updates[`teachers/${oldKey}`] = null;
+          if(type === "student") updates[`students/${oldKey}`] = null;
         }
 
-        const updates = {};
         updates[`users/${newKey}`] = { password: pass, role: type, assignedClass: cls, admn: newKey };
 
         if(type === "teacher") {
@@ -766,11 +752,9 @@
         }
 
         await update(ref(db), updates);
-        alert("Profile updated successfully!");
         closeModal("userModal");
-        await loadAllProfiles();
       } catch(err) {
-        alert("Error saving user: " + err.message);
+        alert("Error: " + err.message);
       } finally {
         saveBtn.innerText = "💾 Save Changes";
         saveBtn.disabled = false;
@@ -781,14 +765,14 @@
       const key = document.getElementById("modalOldUserKey").value;
       const type = document.getElementById("modalUserType").value;
 
-      if(confirm(`Are you sure you want to delete this ${type} account?`)) {
-        await remove(ref(db, `users/${key}`)).catch(() => {});
-        if(type === "teacher") await remove(ref(db, `teachers/${key}`)).catch(() => {});
-        if(type === "student") await remove(ref(db, `students/${key}`)).catch(() => {});
+      if(confirm(`Are you sure you want to delete this ${type}?`)) {
+        const updates = {};
+        updates[`users/${key}`] = null;
+        if(type === "teacher") updates[`teachers/${key}`] = null;
+        if(type === "student") updates[`students/${key}`] = null;
 
-        alert("Account deleted successfully!");
+        await update(ref(db), updates).catch(() => {});
         closeModal("userModal");
-        loadAllProfiles();
       }
     };
 
@@ -825,7 +809,7 @@
 
     document.getElementById("saveBulkStudentsBtn").onclick = async () => {
       const btn = document.getElementById("saveBulkStudentsBtn");
-      btn.innerText = "⏳ Saving Students...";
+      btn.innerText = "⏳ Saving...";
       btn.disabled = true;
 
       const updates = {};
@@ -852,7 +836,7 @@
       }
 
       if(count === 0) {
-        alert("Please fill Name and WhatsApp number for at least 1 student.");
+        alert("Please fill Name and WhatsApp for at least 1 student.");
         btn.innerText = "🚀 Save All Registered Students";
         btn.disabled = false;
         return;
@@ -860,11 +844,9 @@
 
       try {
         await update(ref(db), updates);
-        alert(`✔ Successfully registered ${count} students!`);
         closeModal("bulkModal");
-        loadAllProfiles();
       } catch(err) {
-        alert("Error saving students: " + err.message);
+        alert("Error: " + err.message);
       } finally {
         btn.innerText = "🚀 Save All Registered Students";
         btn.disabled = false;
