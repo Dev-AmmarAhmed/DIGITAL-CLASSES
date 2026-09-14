@@ -2335,15 +2335,29 @@
       }
     });
 
-    async function safeDataFetch(refPath) {
+
+
+          function safeDataFetch(refPath) {
       try {
-        const snap = await get(child(ref(db), refPath));
-        return snap.exists() ? snap.val() : null;
+        if (!refPath) return fullDbCache;
+        const parts = refPath.split('/').filter(p => p.length > 0);
+        let current = fullDbCache;
+        for (let p of parts) {
+          if (current && typeof current === 'object' && p in current) {
+            current = current[p];
+          } else {
+            return null;
+          }
+        }
+        return current;
       } catch(err) {
-        console.warn("Database fetch error on path " + refPath + ":", err);
+        console.warn("Fast Memory Sync Read error on path " + refPath + ":", err);
         return null;
       }
     }
+
+
+      
 
     function readFileAsDataURL(file) {
       return new Promise((resolve) => {
@@ -5752,42 +5766,79 @@ addSafeListener("adminGenerateAttPdfBtn", "click", () => {
   window.downloadAttendancePdf(std, month);
 });
 
-          // ADMIN FEES CARD PDF DOWNLOAD FIX
+          // FAST VECTOR BASED ADMIN FEES CARD PDF GENERATION
     addSafeListener("adminGenerateFeesCardPdfBtn", "click", () => {
       const btn = document.getElementById("adminGenerateFeesCardPdfBtn");
       runWithBtnSpinner(btn, "📄 Download Fees Card PDF", async () => {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const cardArea = document.getElementById("feesCardDisplayArea");
+        const admn = document.getElementById("cardSelectedAdmn").value;
+        const student = safeDataFetch(`students/${admn}`);
         
-        try {
-          const canvas = await html2canvas(cardArea, { scale: 2 });
-          const imgData = canvas.toDataURL('image/png');
+        if (!student) { alert("Student record missing!"); return; }
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.setTextColor(2, 136, 209);
+        pdf.text("DIGITAL CLASSES", 105, 15, { align: "center" });
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(`Student: ${student.name} | Class: ${student.class} | ID: ${student.admn}`, 105, 23, { align: "center" });
+
+        let y = 35;
+        pdf.setFillColor(30, 41, 59);
+        pdf.rect(15, y, 180, 8, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(10);
+        pdf.text("Fee Type / Detail", 20, y + 5.5);
+        pdf.text("Status", 110, y + 5.5);
+        pdf.text("Date", 160, y + 5.5);
+
+        y += 8;
+        const matrix = safeDataFetch(`fees_matrix/${admn}`) || {};
+        const feeItems = ["June", "July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May", "1st Term", "1st Exam", "2nd Term", "2nd Exam"];
+
+        feeItems.forEach((item, idx) => {
+          const rec = matrix[item];
+          const isPaid = rec && rec.paid;
           
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          if(idx % 2 === 0) {
+            pdf.setFillColor(248, 250, 252);
+            pdf.rect(15, y, 180, 7, 'F');
+          }
+          pdf.setTextColor(30, 41, 59);
+          pdf.text(`${item} Fee`, 20, y + 5);
           
-          pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-          pdf.save(`Student_Fees_Card_${document.getElementById("cardSelectedAdmn").value}.pdf`);
-        } catch (e) {
-          console.error("PDF generation error:", e);
-          alert("Error generating PDF.");
-        }
+          if(isPaid) {
+            pdf.setTextColor(22, 163, 74);
+            pdf.text("PAID", 110, y + 5);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(rec.date || "Recorded", 160, y + 5);
+          } else {
+            pdf.setTextColor(220, 38, 38);
+            pdf.text("PENDING", 110, y + 5);
+            pdf.text("-", 160, y + 5);
+          }
+          y += 7;
+        });
+
+        pdf.save(`Fees_Card_${admn}.pdf`);
       });
     });
 
-        // ====================================================================
-    // REGISTER PWA SERVICE WORKER FOR FAST LOADING
-    // ====================================================================
+
+      
+
+       // UNREGISTER SERVICE WORKER TO PREVENT NETWORK INTERCEPTION DELAYS
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-          console.log('✔ ServiceWorker registered successfully!');
-        }).catch(err => {
-          console.error('❌ ServiceWorker registration failed: ', err);
-        });
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
       });
     }
+
 
   </script>
 </body>
