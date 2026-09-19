@@ -831,8 +831,9 @@ body.dark-mode .btn-status-claimed {
     <div class="menu-item admin-only" onclick="openModal('registerStudentModal')">👤 Register Student</div>
     <div class="menu-item admin-only" onclick="openModal('registerTeacherModal')">👩‍🏫 Register Teacher</div>
     <div class="menu-item admin-only" onclick="openModal('credentialsModal')">🔑 Login IDs & Passwords</div>
+    <div class="menu-item admin-only" onclick="openModal('addConcessionModal')">💸 Add Concession</div>
     <div class="menu-item logout" id="logoutBtn">🚪 Logout</div>
-  </div>
+</div>
 </header>
 
 <div id="drawerOverlay" class="left-drawer-overlay"></div>
@@ -903,6 +904,46 @@ body.dark-mode .btn-status-claimed {
      SECTION 3: MAIN APP VIEWS & SECTIONS
      ==================================================================== -->
 <main id="mainContainer" class="main-content login-mode">
+
+
+    <!-- ADD CONCESSION MODAL -->
+  <div id="addConcessionModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>💸 Add Student Concession</span>
+        <span class="close-modal" onclick="closeModal('addConcessionModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Standard:</label>
+        <select id="concessionStdSelect">
+          <option value="">-- Select Standard --</option>
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <label>Search Student Name:</label>
+        <div class="search-input-wrapper">
+          <input type="text" id="concessionSearchInput" placeholder="Type student name..." autocomplete="off">
+          <input type="hidden" id="concessionSelectedAdmn">
+          <div id="concessionSearchResultsBox" class="search-results-box"></div>
+        </div>
+
+        <button class="btn-primary btn-purple" onclick="window.loadConcessionDetails()" style="margin-top:12px;">🔍 Load Student Fee</button>
+
+        <div id="concessionUpdateBox" style="display:none; margin-top:16px; padding:16px; border:1px solid var(--border-color); border-radius:12px; background:rgba(0,0,0,0.02);">
+          <div style="font-size:14px; font-weight:900; color:#0288d1; margin-bottom:4px;" id="concessionStudentName">Student Name</div>
+          <div style="font-size:11px; font-weight:800; color:#ea580c; margin-bottom:12px;" id="concessionFeeTypeLabel">Monthly / Yearly Amount</div>
+          
+          <label>Update Fee Amount (₹):</label>
+          <input type="number" id="concessionAmountInput" placeholder="Enter new fee amount">
+          
+          <button id="saveConcessionBtn" class="btn-primary btn-green" style="margin-top:14px;">💾 Save Concession</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <section id="loginScreen" class="tab-section active animate-in">
     <div class="login-box">
@@ -3599,19 +3640,22 @@ body.dark-mode .btn-status-claimed {
       let totalDue = 0;
       const pendingItems = [];
 
+          const feeRate = student.customFee !== undefined ? parseFloat(student.customFee) : struct.rate;
+      
       if (struct.type === "monthly") {
         const academicMonths = ["June", "July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May"];
         const currentMonthName = getAutoMonthName();
         const activeMonthsToEvaluate = [];
         for(let m of academicMonths) { activeMonthsToEvaluate.push(m); if(m === currentMonthName) break; }
         activeMonthsToEvaluate.forEach(mName => {
-          if(!studentMatrix[mName] || !studentMatrix[mName].paid) { totalDue += struct.rate; pendingItems.push(mName); }
+          if(!studentMatrix[mName] || !studentMatrix[mName].paid) { totalDue += feeRate; pendingItems.push(mName); }
         });
       } else {
         struct.list.forEach(inst => {
-          if(!studentMatrix[inst] || !studentMatrix[inst].paid) { totalDue += struct.rate; pendingItems.push(inst.replace("Installment", "Inst")); }
+          if(!studentMatrix[inst] || !studentMatrix[inst].paid) { totalDue += feeRate; pendingItems.push(inst.replace("Installment", "Inst")); }
         });
       }
+
 
       currentStudentTotalDueAmount = totalDue;
       const clearedBox = document.getElementById("sHomeDuesClearedBox");
@@ -4101,7 +4145,7 @@ body.dark-mode .btn-status-claimed {
           if(uploadedPhoto) photoUrl = uploadedPhoto;
         }
 
-        const updatedStudentObj = { srNo: newAdmn, admn: newAdmn, name: name, class: cls, phone: phone, dob: dob || "-", points: pts, photo: photoUrl, regDate: currentStudent ? (currentStudent.regDate || getTodayFormattedDate()) : getTodayFormattedDate() };
+        const updatedStudentObj = { srNo: newAdmn, admn: newAdmn, name: name, class: cls, phone: phone, dob: dob || "-", points: pts, photo: photoUrl, regDate: currentStudent ? (currentStudent.regDate || getTodayFormattedDate()) : getTodayFormattedDate() };         if (currentStudent && currentStudent.customFee !== undefined) { updatedStudentObj.customFee = currentStudent.customFee; }         if (currentStudent && currentStudent.customFee !== undefined) { updatedStudentObj.customFee = currentStudent.customFee; }         if (currentStudent && currentStudent.customFee !== undefined) { updatedStudentObj.customFee = currentStudent.customFee; }         if (currentStudent && currentStudent.customFee !== undefined) { updatedStudentObj.customFee = currentStudent.customFee; }
         const updates = {};
         if(String(oldAdmn) !== String(newAdmn)) { updates[`students/${oldAdmn}`] = null; updates[`users/${oldAdmn}`] = null; }
         updates[`students/${newAdmn}`] = updatedStudentObj;
@@ -4253,6 +4297,66 @@ body.dark-mode .btn-status-claimed {
     setupStudentSearch("attTrackSearchInput", "attTrackResultsBox", "attTrackSelectedAdmn", "attTrackStdSelect");
     setupStudentSearch("tAttTrackSearchInput", "tAttTrackResultsBox", "tAttTrackSelectedAdmn");
 
+
+        setupStudentSearch("concessionSearchInput", "concessionSearchResultsBox", "concessionSelectedAdmn", "concessionStdSelect");
+
+    window.loadConcessionDetails = async function() {
+      const admn = document.getElementById("concessionSelectedAdmn").value;
+      if(!admn) { alert("Pehle search karke student select karein."); return; }
+      
+      const student = await getStudentRecord(admn);
+      if(!student) return;
+      
+      const struct = window.getFeeStructure(student.class);
+      const isYearly = struct.type === "installment";
+      
+      document.getElementById("concessionStudentName").innerText = `${student.name} (Class ${student.class})`;
+      
+      // Calculate current active rate (Custom if exists, else Default)
+      const activeRate = student.customFee !== undefined ? parseFloat(student.customFee) : struct.rate;
+      
+      if(isYearly) {
+        document.getElementById("concessionFeeTypeLabel").innerText = "Yearly Amount (For 4 Installments)";
+        document.getElementById("concessionAmountInput").value = activeRate * 4; // Yearly banakar dikhayenge
+      } else {
+        document.getElementById("concessionFeeTypeLabel").innerText = "Monthly Amount";
+        document.getElementById("concessionAmountInput").value = activeRate;
+      }
+      
+      document.getElementById("concessionUpdateBox").style.display = "block";
+    };
+
+    addSafeListener("saveConcessionBtn", "click", () => {
+      const btn = document.getElementById("saveConcessionBtn");
+      runWithBtnSpinner(btn, "💾 Save Concession", async () => {
+        const admn = document.getElementById("concessionSelectedAdmn").value;
+        const inputAmount = parseFloat(document.getElementById("concessionAmountInput").value);
+        
+        if(!admn || isNaN(inputAmount) || inputAmount < 0) { alert("Invalid amount entered."); return; }
+        
+        const student = await getStudentRecord(admn);
+        const isYearly = window.getFeeStructure(student.class).type === "installment";
+        
+        // Agar yearly hai, to wapas 4 se divide karke per installment rate save karenge
+        const finalRate = isYearly ? (inputAmount / 4) : inputAmount;
+        
+        await update(ref(db), { [`students/${admn}/customFee`]: finalRate });
+        
+        // Memory me bhi update karein
+        if (inMemoryStudentsData[admn]) inMemoryStudentsData[admn].customFee = finalRate;
+        
+        alert("✔ Student fee concession updated successfully!");
+        window.closeModal("addConcessionModal");
+        
+        // Reset Box
+        document.getElementById("concessionSearchInput").value = "";
+        document.getElementById("concessionSelectedAdmn").value = "";
+        document.getElementById("concessionUpdateBox").style.display = "none";
+      });
+    });
+
+
+    
     addSafeListener("getStatsBtn", "click", () => {
       const btn = document.getElementById("getStatsBtn");
       runWithBtnSpinner(btn, "Get Stats", async () => {
