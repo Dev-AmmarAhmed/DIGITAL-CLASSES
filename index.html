@@ -1361,7 +1361,7 @@ body.dark-mode .btn-status-claimed {
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div>
         <h2 id="tWelcomeTeacherName" style="font-size: 19px; font-weight: 800; color: var(--text-color); margin-bottom: 4px; letter-spacing: 0.3px;">Teacher Name</h2>
-        <p style="font-size:13px; font-weight:700;">Assigned Class: <b id="tWelcomeClassText" style="color:#7c3aed;">Class 1</b></p>
+        <div style="font-size:13px; font-weight:700; margin-top:4px;">           Active Class:            <select id="teacherActiveSelect" onchange="window.changeTeacherActiveClass(this.value)" style="padding: 4px 8px; font-size: 12px; font-weight: bold; border-radius: 8px; border: 1px solid #7c3aed; color: #7c3aed; background: rgba(124, 58, 237, 0.1); display: inline-block; width: auto; appearance: auto !important; -webkit-appearance: auto !important; background-image: none !important; margin-left: 6px;">           </select>         </div>
         <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Manage attendance, study materials, tests, and claim daily rewards.</p>
       </div>
       
@@ -2419,12 +2419,14 @@ body.dark-mode .btn-status-claimed {
         <label>Password *:</label>
         <input type="text" id="editTeacherPass">
 
-        <label>Assigned Class *:</label>
-        <select id="editTeacherClass">
+                <label>Assigned Classes (Hold Ctrl to select multiple) *:</label>
+        <select id="editTeacherClass" multiple size="6" style="height: 130px; background-image: none !important;">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
           <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
           <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
           <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
         </select>
+
 
         <button id="updateTeacherBtn" onclick="window.saveUpdatedTeacherDetails()" class="btn-primary btn-green" style="margin-top: 16px;">
           💾 Update Teacher
@@ -2440,12 +2442,14 @@ body.dark-mode .btn-status-claimed {
         <label>Teacher Name:</label><input type="text" id="tRegName">
         <label>Username:</label><input type="text" id="tRegUser">
         <label>Password:</label><input type="text" id="tRegPass">
-        <label>Assigned Class:</label>
-        <select id="tRegClass">
+              <label>Assigned Classes (Hold Ctrl to select multiple):</label>
+        <select id="tRegClass" multiple size="6" style="height: 130px; background-image: none !important;">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
           <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
           <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
           <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
         </select>
+
         <button id="saveTeacherBtn" class="btn-primary btn-green">Create Teacher</button>
       </div>
     </div>
@@ -3234,9 +3238,18 @@ body.dark-mode .btn-status-claimed {
       location.reload(); 
     });
 
+     window.changeTeacherActiveClass = function(newClass) {
+      assignedClass = newClass;
+      document.getElementById("classBadgeContainer").innerText = `Class: ${newClass}`;
+      if (typeof window.refreshTeacherDashboardData === 'function') window.refreshTeacherDashboardData();
+      refreshAllTeacherData();
+    };
+
     function renderDashboardForRole(role, aClass, sAdmn) {
       currentRole = role; 
-      assignedClass = aClass || "1"; 
+      // Split assigned classes by comma and pick the first one as default
+      const tClasses = (aClass || "1").split(",");
+      assignedClass = role === "teacher" ? tClasses[0] : (aClass || "1"); 
       currentStudentAdmn = sAdmn || localStorage.getItem("studentAdmn");
 
       document.getElementById("mainContainer").classList.remove("login-mode");
@@ -3269,6 +3282,7 @@ body.dark-mode .btn-status-claimed {
         `;
         refreshStudentDashboard();
         window.switchTab('studentTabHome', bottomNav.children[0]);
+
       } else if(role === "teacher") {
         document.body.classList.remove("student-mode");
         document.body.classList.add("teacher-mode");
@@ -3289,9 +3303,18 @@ body.dark-mode .btn-status-claimed {
           <div class="nav-item" onclick="switchTab('teacherTabPerform', this, event)"><div class="nav-icon">⭐</div>Perform</div>
           <div class="nav-item" onclick="switchTab('teacherTabTest', this, event)"><div class="nav-icon">📋</div>Test</div>
         `;
-        document.getElementById("tWelcomeClassText").innerText = `Class ${assignedClass}`;
+        
+        // POPULATE THE DROPDOWN WITH ASSIGNED CLASSES
+        const activeSelect = document.getElementById("teacherActiveSelect");
+        if(activeSelect) {
+          activeSelect.innerHTML = "";
+          tClasses.forEach(c => { activeSelect.innerHTML += `<option value="${c}">Class ${c}</option>`; });
+          activeSelect.value = assignedClass;
+        }
+
         window.switchTab('teacherTabHome', bottomNav.children[0]);
         setTimeout(() => { if(typeof window.refreshTeacherDashboardData === 'function') window.refreshTeacherDashboardData(); refreshAllTeacherData(); }, 100);
+
       } else {
         document.body.classList.remove("teacher-mode", "student-mode");
         document.getElementById("portalRoleSubHeader").innerText = "ADMINISTRATOR DASHBOARD PRO";
@@ -4590,14 +4613,18 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-    addSafeListener("saveTeacherBtn", "click", () => {
+      addSafeListener("saveTeacherBtn", "click", () => {
       const btn = document.getElementById("saveTeacherBtn");
       runWithBtnSpinner(btn, "Create Teacher", async () => {
         const name = document.getElementById("tRegName").value.trim();
         const user = document.getElementById("tRegUser").value.trim();
         const pass = document.getElementById("tRegPass").value.trim();
-        const cls = document.getElementById("tRegClass").value;
-        if(!name || !user || !pass) { alert("Please fill all required fields."); return; }
+        
+        // Multi-select reading logic
+        const clsOptions = document.getElementById("tRegClass").selectedOptions;
+        const cls = Array.from(clsOptions).map(opt => opt.value).join(",");
+
+        if(!name || !user || !pass || !cls) { alert("Please fill all required fields and select at least 1 class."); return; }
         await set(ref(db, `teachers/${user}`), { name: name, username: user, assignedClass: cls });
         await set(ref(db, `users/${user}`), { password: pass, role: "teacher", assignedClass: cls });
         alert("Teacher account created successfully.");
@@ -5473,21 +5500,33 @@ body.dark-mode .btn-status-claimed {
       });
     };
 
-    window.openEditTeacherModal = function(username, name, pass, assignedClass) {
+      window.openEditTeacherModal = function(username, name, pass, assignedClass) {
       document.getElementById("editTeacherOldUsername").value = username;
       document.getElementById("editTeacherName").value = name;
       document.getElementById("editTeacherUser").value = username;
       document.getElementById("editTeacherPass").value = pass;
-      document.getElementById("editTeacherClass").value = assignedClass || "1";
+      
+      const classArr = (assignedClass || "1").split(",");
+      const options = document.getElementById("editTeacherClass").options;
+      for(let i=0; i<options.length; i++) {
+        options[i].selected = classArr.includes(options[i].value);
+      }
       window.openModal("editTeacherModal");
     };
 
     window.saveUpdatedTeacherDetails = async function() {
-      const username = document.getElementById("editTeacherOldUsername").value, name = document.getElementById("editTeacherName").value.trim(), pass = document.getElementById("editTeacherPass").value.trim(), assignedClass = document.getElementById("editTeacherClass").value;
-      if(!name || !pass) { alert("Teacher name and password are required."); return; }
+      const username = document.getElementById("editTeacherOldUsername").value;
+      const name = document.getElementById("editTeacherName").value.trim();
+      const pass = document.getElementById("editTeacherPass").value.trim();
+      
+      const clsOptions = document.getElementById("editTeacherClass").selectedOptions;
+      const assignedClass = Array.from(clsOptions).map(opt => opt.value).join(",");
+
+      if(!name || !pass || !assignedClass) { alert("Teacher name, password and at least 1 class is required."); return; }
       await update(ref(db), { [`teachers/${username}/name`]: name, [`teachers/${username}/assignedClass`]: assignedClass, [`users/${username}/password`]: pass, [`users/${username}/assignedClass`]: assignedClass });
       alert("✔ Teacher details updated successfully!"); window.closeModal("editTeacherModal"); window.loadManageTeacherList();
     };
+
 
     window.deleteTeacherAccount = async function(username) {
       if(confirm(`Are you sure you want to delete teacher account: ${username}?`)) {
