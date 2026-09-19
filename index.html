@@ -2419,13 +2419,25 @@ body.dark-mode .btn-status-claimed {
         <label>Password *:</label>
         <input type="text" id="editTeacherPass">
 
-                <label>Assigned Classes (Hold Ctrl to select multiple) *:</label>
-        <select id="editTeacherClass" multiple size="6" style="height: 130px; background-image: none !important;">
-          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-        </select>
+        
+                 <label>Assign Classes (Select Multiple) *:</label>
+        <div class="checkbox-grid" id="editTeacherClassCheckboxes">
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="Nursery"> Nursery</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="Jr. KG"> Jr. KG</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="Sr. KG"> Sr. KG</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="1"> Class 1</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="2"> Class 2</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="3"> Class 3</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="4"> Class 4</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="5"> Class 5</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="6"> Class 6</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="7"> Class 7</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="8"> Class 8</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="9"> Class 9</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="10"> Class 10</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="11"> Class 11</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-edit-chk" value="12"> Class 12</div>
+        </div>
 
 
         <button id="updateTeacherBtn" onclick="window.saveUpdatedTeacherDetails()" class="btn-primary btn-green" style="margin-top: 16px;">
@@ -2442,13 +2454,26 @@ body.dark-mode .btn-status-claimed {
         <label>Teacher Name:</label><input type="text" id="tRegName">
         <label>Username:</label><input type="text" id="tRegUser">
         <label>Password:</label><input type="text" id="tRegPass">
-              <label>Assigned Classes (Hold Ctrl to select multiple):</label>
-        <select id="tRegClass" multiple size="6" style="height: 130px; background-image: none !important;">
-          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-        </select>
+       
+        
+                <label>Assign Classes (Select Multiple) *:</label>
+        <div class="checkbox-grid" id="tRegClassCheckboxes">
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="Nursery"> Nursery</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="Jr. KG"> Jr. KG</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="Sr. KG"> Sr. KG</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="1"> Class 1</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="2"> Class 2</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="3"> Class 3</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="4"> Class 4</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="5"> Class 5</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="6"> Class 6</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="7"> Class 7</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="8"> Class 8</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="9"> Class 9</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="10"> Class 10</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="11"> Class 11</div>
+          <div class="checkbox-item"><input type="checkbox" class="t-reg-chk" value="12"> Class 12</div>
+        </div>
 
         <button id="saveTeacherBtn" class="btn-primary btn-green">Create Teacher</button>
       </div>
@@ -4613,24 +4638,34 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-      addSafeListener("saveTeacherBtn", "click", () => {
+          addSafeListener("saveTeacherBtn", "click", () => {
       const btn = document.getElementById("saveTeacherBtn");
       runWithBtnSpinner(btn, "Create Teacher", async () => {
         const name = document.getElementById("tRegName").value.trim();
         const user = document.getElementById("tRegUser").value.trim();
         const pass = document.getElementById("tRegPass").value.trim();
         
-        // Multi-select reading logic
-        const clsOptions = document.getElementById("tRegClass").selectedOptions;
-        const cls = Array.from(clsOptions).map(opt => opt.value).join(",");
+        // Checkbox reading logic
+        const checkedClasses = Array.from(document.querySelectorAll(".t-reg-chk:checked")).map(c => c.value);
+        const cls = checkedClasses.join(",");
 
-        if(!name || !user || !pass || !cls) { alert("Please fill all required fields and select at least 1 class."); return; }
+        if(!name || !user || !pass || !cls) { alert("Please fill all required fields and tick at least 1 class."); return; }
+        
         await set(ref(db, `teachers/${user}`), { name: name, username: user, assignedClass: cls });
         await set(ref(db, `users/${user}`), { password: pass, role: "teacher", assignedClass: cls });
+        
         alert("Teacher account created successfully.");
+        
+        // Form reset
+        document.getElementById("tRegName").value = "";
+        document.getElementById("tRegUser").value = "";
+        document.getElementById("tRegPass").value = "";
+        document.querySelectorAll(".t-reg-chk").forEach(c => c.checked = false);
+        
         window.closeModal("registerTeacherModal");
       });
     });
+
 
     async function loadCredentialsVault() {
       const tbodyTeacher = document.getElementById("credTeachersTableBody");
@@ -5500,17 +5535,17 @@ body.dark-mode .btn-status-claimed {
       });
     };
 
-      window.openEditTeacherModal = function(username, name, pass, assignedClass) {
+         window.openEditTeacherModal = function(username, name, pass, assignedClass) {
       document.getElementById("editTeacherOldUsername").value = username;
       document.getElementById("editTeacherName").value = name;
       document.getElementById("editTeacherUser").value = username;
       document.getElementById("editTeacherPass").value = pass;
       
       const classArr = (assignedClass || "1").split(",");
-      const options = document.getElementById("editTeacherClass").options;
-      for(let i=0; i<options.length; i++) {
-        options[i].selected = classArr.includes(options[i].value);
-      }
+      document.querySelectorAll(".t-edit-chk").forEach(chk => {
+        chk.checked = classArr.includes(chk.value);
+      });
+      
       window.openModal("editTeacherModal");
     };
 
@@ -5519,12 +5554,16 @@ body.dark-mode .btn-status-claimed {
       const name = document.getElementById("editTeacherName").value.trim();
       const pass = document.getElementById("editTeacherPass").value.trim();
       
-      const clsOptions = document.getElementById("editTeacherClass").selectedOptions;
-      const assignedClass = Array.from(clsOptions).map(opt => opt.value).join(",");
+      const checkedClasses = Array.from(document.querySelectorAll(".t-edit-chk:checked")).map(c => c.value);
+      const assignedClass = checkedClasses.join(",");
 
       if(!name || !pass || !assignedClass) { alert("Teacher name, password and at least 1 class is required."); return; }
+      
       await update(ref(db), { [`teachers/${username}/name`]: name, [`teachers/${username}/assignedClass`]: assignedClass, [`users/${username}/password`]: pass, [`users/${username}/assignedClass`]: assignedClass });
-      alert("✔ Teacher details updated successfully!"); window.closeModal("editTeacherModal"); window.loadManageTeacherList();
+      
+      alert("✔ Teacher details updated successfully!"); 
+      window.closeModal("editTeacherModal"); 
+      window.loadManageTeacherList();
     };
 
 
