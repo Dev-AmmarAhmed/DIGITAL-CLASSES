@@ -6016,7 +6016,7 @@ body.dark-mode .btn-status-claimed {
     };
 
 
-        // Original openModal function ko override kiya taake Muster Modal par extra checks chal sakein
+           // Original openModal function ko override kiya taake Muster Modal par extra checks chal sakein
     const originalOpenModal = window.openModal;
     window.openModal = async function(id) {
       originalOpenModal(id);
@@ -6025,10 +6025,45 @@ body.dark-mode .btn-status-claimed {
         await window.checkMusterButtonStates();
       }
       if(id === 'teacherMusterDetailsModal') {
-        document.getElementById("myMusterMonthSelect").value = getAutoMonthName();
+        const monthSel = document.getElementById("myMusterMonthSelect");
+        if(monthSel) monthSel.value = getAutoMonthName();
         window.loadMyMusterDetails();
       }
     };
+
+    window.loadMyMusterDetails = async function() {
+        const month = document.getElementById("myMusterMonthSelect").value;
+        const loggedUser = localStorage.getItem("loggedUser");
+        
+        // Show loading state immediately
+        document.getElementById("musterDetailsTeacherName").innerText = "Loading...";
+        const tbody = document.getElementById("myMusterTableBody");
+        tbody.innerHTML = `<tr><td colspan="3">⏳ Loading data...</td></tr>`;
+        document.getElementById("myMusterTableArea").style.display = "block";
+
+        // Fetch Name
+        const tData = await safeDataFetch(`teachers/${loggedUser}`);
+        const tName = tData ? tData.name : "Teacher";
+        document.getElementById("musterDetailsTeacherName").innerText = tName + " Teacher";
+        
+        // Fetch Table Data
+        const musterData = await safeDataFetch(`muster/${month}`) || {};
+        const daysCount = getDaysInMonth(month);
+        let hasData = false;
+        let html = "";
+        
+        for(let d=1; d<=daysCount; d++) {
+            const dayData = musterData[`day_${d}`] ? musterData[`day_${d}`][loggedUser] : null;
+            if(dayData) {
+                hasData = true;
+                html += `<tr><td>${d} ${month}</td><td><b style="color:#16a34a;">${dayData.in || '-'}</b></td><td><b style="color:#ea580c;">${dayData.out || '-'}</b></td></tr>`;
+            }
+        }
+        
+        tbody.innerHTML = hasData ? html : `<tr><td colspan="3" style="color:var(--text-muted); padding:12px;">No attendance records found for ${month}</td></tr>`;
+    };
+
+   
 
 
     window.checkMusterButtonStates = async function() {
