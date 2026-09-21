@@ -1449,10 +1449,23 @@ body.dark-mode .btn-status-claimed {
         </div>
       </div>
     </div>
-    <button id="refreshTeacherDashboardBtn" class="btn-primary btn-purple" style="margin-top:14px;">🔄 Refresh Dashboard</button>
+        <button id="refreshTeacherDashboardBtn" class="btn-primary btn-purple" style="margin-top:14px;">🔄 Refresh Dashboard</button>
+  </div>
+
+  <!-- Teacher Daily Muster Card -->
+  <div class="card unfold-card" style="position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <div class="card-title" style="border:none; margin:0;">⏱️ Daily Muster</div>
+      <a href="javascript:void(0)" onclick="openModal('teacherMusterDetailsModal')" style="font-size:11px; font-weight:800; color:#0288d1; text-decoration:none;">Details &rarr;</a>
+    </div>
+    <p style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Mark your daily attendance time (In/Out).</p>
+    <button class="btn-primary btn-blue" onclick="openModal('teacherMusterModal')" style="margin-top:0; padding:10px; font-size:13px;">
+      Access Muster Panel
+    </button>
   </div>
 
   <!-- Daily Rewards Card (Same as Student Dashboard with Details Button) -->
+
   <div class="card unfold-card daily-reward-card" style="position: relative;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
       <div style="font-size:11px; font-weight:800; color:#d97706; text-transform:uppercase; letter-spacing:0.5px;">🎁 DAILY REWARD POINTS</div>
@@ -1726,7 +1739,7 @@ body.dark-mode .btn-status-claimed {
         <button id="sViewTestScoresBtn" class="btn-primary btn-blue">View Scores</button>
       </div>
 
-      <div class="card" id="sTestScoresDisplayArea" style="display:none;">
+           <div class="card" id="sTestScoresDisplayArea" style="display:none;">
         <div class="table-container">
           <table style="min-width:100%;">
             <thead><tr><th>Date</th><th>Test Name</th><th>Obtained</th><th>Total</th><th>%</th></tr></thead>
@@ -1735,7 +1748,40 @@ body.dark-mode .btn-status-claimed {
         </div>
       </div>
     </section>
+
+    <!-- ADMIN MUSTER SECTION (Moved inside Main Container to fix layout) -->
+    <section id="adminTabMuster" class="tab-section admin-tab">
+      <div class="card">
+        <div class="card-title">📖 Teachers' Muster Record</div>
+        <label>Select Month:</label>
+        <select id="adminMusterMonthSelect">
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September">September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+        <button id="loadMusterDataBtn" class="btn-primary btn-blue" style="margin-top:14px;" onclick="window.loadAdminMusterTable()">Load Muster</button>
+      </div>
+
+      <div class="card" id="adminMusterTableCard" style="display:none; padding: 12px 6px;">
+        <div class="table-container" id="adminMusterTableContainer">
+          <table class="muster-table" style="min-width: 100%;">
+            <thead id="adminMusterHead"></thead>
+            <tbody id="adminMusterBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 14px; background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.3);">
+        <div class="card-title" style="color: #dc2626; border-bottom-color: rgba(239,68,68,0.2);">🗑️ Delete Muster Data</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; font-weight:700;">Remove a specific teacher's muster record for a selected month.</p>
+        <button class="btn-primary btn-red" onclick="openModal('deleteMusterModal')">Delete Teacher Muster Data</button>
+      </div>
+    </section>
   </main>
+
+  
+
 
 
     <!-- ====================================================================
@@ -2688,8 +2734,37 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
+  <!-- TEACHER MUSTER DETAILS MODAL -->
+  <div id="teacherMusterDetailsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📖 My Muster Details</span>
+        <span class="close-modal" onclick="closeModal('teacherMusterDetailsModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center; margin-bottom:14px;">
+          <h3 id="musterDetailsTeacherName" style="color:#0288d1; font-weight:900;">Teacher Name</h3>
+        </div>
+        <label>Select Month:</label>
+        <select id="myMusterMonthSelect">
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September">September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+        <button class="btn-primary btn-purple" style="margin-top:10px;" onclick="window.loadMyMusterDetails()">Load Details</button>
+        
+        <div class="table-container" style="margin-top:14px; display:none;" id="myMusterTableArea">
+          <table style="min-width:100%;">
+            <thead><tr><th>Date</th><th>In Time</th><th>Out Time</th></tr></thead>
+            <tbody id="myMusterTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- TEACHER MUSTER MODAL -->
+  <!-- TEACHER MUSTER MODAL -->
   <div id="teacherMusterModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 360px; text-align: center;">
       <div class="modal-header">
