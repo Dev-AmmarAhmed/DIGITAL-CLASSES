@@ -23,11 +23,41 @@
   <!-- ====================================================================
        SECTION 1: STYLESHEETS & REFINED PREMIUM DESIGN SYSTEM
        ==================================================================== -->
-  <style>
+   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+
+    /* ====================================================================
+       TEST UI PATCHES & URDU FONT CSS
+       ==================================================================== */
+    .test-q-patch {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      border: 1px solid var(--border-color);
+    }
+    .opt-patch {
+      padding: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-top: 10px;
+      background: rgba(0,0,0,0.02);
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    body.dark-mode .opt-patch { background: rgba(255,255,255,0.03); }
+    .opt-patch:active { transform: scale(0.98); }
+    .opt-patch.correct { background: rgba(34, 197, 94, 0.15) !important; border-color: #16a34a !important; color: #16a34a !important; font-weight: 800; }
+    .opt-patch.wrong { background: rgba(239, 68, 68, 0.15) !important; border-color: #dc2626 !important; color: #dc2626 !important; font-weight: 800; }
+    
+    .live-test-header {
+      display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; 
+      background: var(--header-bg); color: white; border-top-left-radius: 22px; border-top-right-radius: 22px;
+    }
 
     /* ====================================================================
    NATIVE CUSTOM SELECT & SHEET STYLING
-   ==================================================================== */
 
 /* Select Elements ko Clickable Card Look Dena */
 select {
@@ -154,7 +184,7 @@ body.dark-mode.teacher-mode {
   --border-color: #1e293b;
 }
 
-/* Unfolding / Rolling Animation for Home Page Cards */
+/* ====================================================================    MUSTER SHIMMER & UNBLUR ANIMATION    ==================================================================== */ .btn-grayed {   background: #94a3b8 !important;   color: #f8fafc !important;   box-shadow: none !important;   cursor: not-allowed !important; }  .muster-table {   transition: filter 0.8s ease, opacity 0.8s ease; }  .shimmer-wrapper {   position: relative;   overflow: hidden;   background: rgba(0,0,0,0.02); }  body.dark-mode .shimmer-wrapper { background: rgba(255,255,255,0.02); }  .shimmer-wrapper::after {   content: "";   position: absolute;   top: 0; right: 0; bottom: 0; left: 0;   transform: translateX(-100%);   background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0));   animation: shimmer 1.5s infinite;   z-index: 10; }  @keyframes shimmer { 100% { transform: translateX(100%); } }  .shimmer-wrapper .muster-table {   filter: blur(5px);   opacity: 0.4;   pointer-events: none; }  .muster-time { font-size: 9px; font-weight: 800; color: #16a34a; display: block; margin: 2px 0; } .muster-time.out { color: #ea580c; } .muster-table th, .muster-table td { padding: 8px 4px; font-size: 10px; }
 .unfold-card {
   animation: unfoldRoll 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top center;
@@ -864,10 +894,12 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="setAppTheme('slate')" style="font-size:12px; padding:10px 18px;">🏛️ Slate & Crimson Tech</div>
     </div>
 
-    <!-- TEACHER DRAWER OPTIONS -->
+        <!-- TEACHER DRAWER OPTIONS -->
     <div class="teacher-only" style="display:none;">
       <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted);">TEACHER QUICK ACTIONS</div>
+      <div class="drawer-item" onclick="openModal('teacherMusterModal')">⏱️ Access Muster</div>
       <div class="drawer-item" onclick="openModal('registerStudentModal')">👤 Register Student</div>
+
       <div class="drawer-item" onclick="openModal('deleteTestDataModal')">🗑️ Delete Test Data</div>
       <div class="drawer-item" onclick="openModal('bulkAddTestModal')">📝 Bulk Add Test Marks</div>
       <div class="drawer-item" onclick="openModal('uploadHomeworkModal')">📚 Upload Homework</div>
@@ -885,7 +917,9 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="exportFullDatabaseJson()">📥 Export Full JSON Backup</div>
       <div class="drawer-item" onclick="openModal('bulkStudentModal')">📋 Add Bulk Students</div>
       <div class="drawer-item" onclick="window.openTeacherManagementTab(event)">👩‍🏫 Teacher List & Management</div>
+      <div class="drawer-item" onclick="window.openMusterTab(event)">📖 Teachers' Muster</div>
       <div class="drawer-item" onclick="openModal('removeAttendModal')">📅 Remove Attendance Data</div>
+
       <div class="drawer-item" onclick="openModal('removeStudentModal')">👤 Remove Student</div>
       <div class="drawer-item" onclick="openModal('removeExpenseModal')">📊 Remove Expense</div>
       <div class="drawer-item" onclick="window.openLogsTab(event)">📜 Logs & Entries</div>
@@ -2631,24 +2665,100 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
-  <!-- STUDENT LIVE TEST PORTAL MODAL -->
-  <div id="studentLiveTestModal" class="modal-overlay">
-    <div class="modal-content" style="max-width:520px;">
-      <div class="modal-header">
-        <span id="liveTestTitleDisplay">📝 Online Test</span>
-        <span class="close-modal" onclick="if(confirm('Are you sure? Test will be submitted!')) window.submitStudentLiveTest();">✕</span>
+   <!-- STUDENT LIVE TEST PORTAL MODAL -->
+  <div id="studentLiveTestModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; height: 96vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0;">
+      
+      <div class="live-test-header">
+        <button class="btn-sm-del" style="margin: 0; padding: 6px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);" onclick="window.forceCloseLiveTest();">⬅ Exit</button>
+        <span id="liveTestTitleDisplay" style="font-weight: 900; font-size: 15px; text-align: center; flex: 1; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📝 Online Test</span>
+        <div id="liveTestTimerBox" style="font-weight: 800; font-size: 13px; background: #dc2626; padding: 4px 10px; border-radius: 12px; color: white;">--:--</div>
       </div>
-      <div class="modal-body">
-        <div style="text-align:center;">
-          <div id="liveTestTimerBox" class="timer-badge">⏱️ Time Remaining: --:--</div>
+
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--app-bg);">
+        <div id="liveTestQuestionsBox"></div>
+        
+        <div id="testResultSummaryBox" style="display:none; text-align:center; padding: 16px; background: rgba(2, 136, 209, 0.1); border: 2px solid #0288d1; border-radius: 16px; margin-bottom: 16px; margin-top:10px;">
+           <h2 id="resultMarksText" style="color:#0288d1; font-weight:900; margin-bottom:4px; font-size: 24px;">Marks: 0/0</h2>
+           <p id="resultFeedbackText" style="font-weight:800; font-size:12px; color:var(--text-muted);">Please review your answers above.</p>
         </div>
 
-        <div id="liveTestQuestionsBox" style="max-height: 55vh; overflow-y: auto;"></div>
-
-        <button id="submitStudentTestBtn" onclick="window.submitStudentLiveTest()" class="btn-primary btn-green" style="margin-top:16px;">🚀 Submit Test</button>
+        <button id="submitStudentTestBtn" onclick="window.submitStudentLiveTest()" class="btn-primary btn-green" style="margin-top:16px; padding: 16px; font-size: 16px; border-radius: 16px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);">🚀 Submit Test</button>
       </div>
     </div>
   </div>
+
+
+    <!-- TEACHER MUSTER MODAL -->
+  <div id="teacherMusterModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 360px; text-align: center;">
+      <div class="modal-header">
+        <span>⏱️ Muster</span>
+        <span class="close-modal" onclick="closeModal('teacherMusterModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 26px; font-weight: 900; color: #0288d1; margin-bottom: 4px; font-family: monospace;" id="musterLiveTime">--:--:--</div>
+        <div style="font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 24px;" id="musterLiveDate">--/--/----</div>
+
+        <button id="musterCheckInBtn" class="btn-primary btn-green" style="padding: 14px; font-size: 15px; margin-bottom: 12px; border-radius: 16px;" onclick="window.handleMusterAction('in', this)">🟢 Check In</button>
+        
+        <button id="musterCheckOutBtn" class="btn-primary btn-orange" style="padding: 14px; font-size: 15px; border-radius: 16px;" onclick="window.handleMusterAction('out', this)">🔴 Check Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MUSTER SECTION (Hidden in main content, opens via Drawer) -->
+  <section id="adminTabMuster" class="tab-section admin-tab">
+    <div class="card">
+      <div class="card-title">📖 Teachers' Muster Record</div>
+      <label>Select Month:</label>
+      <select id="adminMusterMonthSelect">
+        <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+        <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+        <option value="July">July</option><option value="August">August</option><option value="September" selected>September</option>
+        <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+      </select>
+      <button id="loadMusterDataBtn" class="btn-primary btn-blue" style="margin-top:14px;" onclick="window.loadAdminMusterTable()">Load Muster</button>
+    </div>
+
+    <div class="card" id="adminMusterTableCard" style="display:none; padding: 12px 6px;">
+      <div class="table-container" id="adminMusterTableContainer">
+        <table class="muster-table" style="min-width: 100%;">
+          <thead id="adminMusterHead"></thead>
+          <tbody id="adminMusterBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 14px; background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.3);">
+      <div class="card-title" style="color: #dc2626; border-bottom-color: rgba(239,68,68,0.2);">🗑️ Delete Muster Data</div>
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; font-weight:700;">Remove a specific teacher's muster record for a selected month.</p>
+      <button class="btn-primary btn-red" onclick="openModal('deleteMusterModal')">Delete Teacher Muster Data</button>
+    </div>
+  </section>
+
+  <!-- DELETE MUSTER MODAL -->
+  <div id="deleteMusterModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>🗑️ Delete Muster Record</span>
+        <span class="close-modal" onclick="closeModal('deleteMusterModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Teacher:</label>
+        <select id="delMusterTeacherSelect"><option value="">-- Select Teacher --</option></select>
+        <label>Select Month:</label>
+        <select id="delMusterMonthSelect">
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September" selected>September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+        <button class="btn-primary btn-red" style="margin-top: 16px;" onclick="window.deleteTeacherMuster()">Delete Record</button>
+      </div>
+    </div>
+  </div>
+
 
   <nav id="bottomNav" class="bottom-nav" style="display: none;"></nav>
   <!-- ====================================================================
@@ -3623,11 +3733,19 @@ body.dark-mode .btn-status-claimed {
         document.getElementById("sDailyClaimedBadge").style.display = "block";
         await updateHeaderStarBadge();
 
-        await set(ref(db, `daily_claims/${student.admn}/${todayKey}`), true);
-        await update(ref(db, `students/${student.admn}`), { points: newPts });
+              await update(ref(db), {
+          [`daily_claims/${student.admn}/${todayKey}`]: true,
+          [`students/${student.admn}/points`]: newPts
+        });
+
+        // Force memory update strictly before refresh
+        if (fullDbCache && fullDbCache.students && fullDbCache.students[student.admn]) {
+           fullDbCache.students[student.admn].points = newPts;
+        }
 
         alert(`Congratulations! You have claimed +${pointsToAward} points for today.`);
-        refreshStudentDashboard();
+        await refreshStudentDashboard();
+
       });
     });
 
@@ -4817,14 +4935,19 @@ body.dark-mode .btn-status-claimed {
       }
     }
 
-    window.deleteTeacher = async function(username) {
-      if(confirm(`Are you sure you want to remove teacher account: ${username}?`)) {
-        await remove(ref(db, `teachers/${username}`));
-        await remove(ref(db, `users/${username}`));
-        alert("Teacher account removed successfully.");
-        loadTeachersForRemoval();
+        window.deleteTeacherAccount = async function(username) {
+      if(confirm(`Are you sure you want to completely delete teacher account: ${username}?`)) {
+        const updates = {};
+        updates[`teachers/${username}`] = null;
+        updates[`users/${username}`] = null;
+        updates[`teacher_daily_claims/${username}`] = null;
+        
+        await update(ref(db), updates);
+        alert("Teacher account and related data deleted successfully."); 
+        window.loadManageTeacherList();
       }
     };
+
 
     addSafeListener("rmStdClassSelect", "change", (e) => {
       const cls = e.target.value;
@@ -4837,15 +4960,27 @@ body.dark-mode .btn-status-claimed {
       document.getElementById("rmStudentArea").style.display = "block";
     });
 
-    window.deleteStudent = async function(admn) {
-      if(confirm(`Are you sure you want to remove student record: ${admn}?`)) {
-        await remove(ref(db, `students/${admn}`)); await remove(ref(db, `users/${admn}`));
-        await remove(ref(db, `fees_entries/${admn}`)); await remove(ref(db, `fees_matrix/${admn}`));
-        alert("Student record removed successfully.");
+     window.deleteStudent = async function(admn) {
+      if(confirm(`Are you sure you want to completely remove ALL data for student ID: ${admn}?`)) {
+        const updates = {};
+        updates[`students/${admn}`] = null;
+        updates[`users/${admn}`] = null;
+        updates[`fees_entries/${admn}`] = null;
+        updates[`fees_matrix/${admn}`] = null;
+        updates[`attendance/${admn}`] = null;
+        updates[`daily_claims/${admn}`] = null;
+        updates[`tests/${admn}`] = null;
+        updates[`student_test_attempts/${admn}`] = null;
+        
+        await update(ref(db), updates);
+        
+        alert("Student record and all related data removed successfully.");
         window.closeModal("removeStudentModal");
+        window.closeModal("studentProfileModal");
         if(currentRole === "admin") renderAdminStudentsDirectory();
       }
     };
+
 
     window.exportFullDatabaseJson = function() {
       try {
@@ -5208,32 +5343,61 @@ body.dark-mode .btn-status-claimed {
       } else { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No active due online tests right now.</p>`; }
     }
 
+        window.isUrdu = function(text) {
+      const urduPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+      return urduPattern.test(text);
+    };
+
     window.startStudentLiveTest = async function(testId) {
       const classKey = cleanClassStr(assignedClass);
       const test = await safeDataFetch(`online_tests/${classKey}/${testId}`);
       if(!test) { alert("Test details not found or test has expired."); return; }
 
       currentLiveTestObj = test;
-      if(document.getElementById("liveTestTitleDisplay")) document.getElementById("liveTestTitleDisplay").innerText = `📝 ${test.title} (${test.subject})`;
+      if(document.getElementById("liveTestTitleDisplay")) document.getElementById("liveTestTitleDisplay").innerText = test.title;
       
       const questionsBox = document.getElementById("liveTestQuestionsBox");
       questionsBox.innerHTML = "";
+      
       test.questions.forEach((qObj, idx) => {
+        const isQUrdu = window.isUrdu(qObj.q);
         let optionsHtml = "";
+        
         qObj.options.forEach((optText, optIdx) => {
-          optionsHtml += `<div class="opt-row" style="display:flex; align-items:center; gap:8px; margin-top:6px;"><input type="radio" name="live_q_opt_${idx}" value="${optIdx}"><span style="font-size:12px; font-weight:700;">${optText}</span></div>`;
+          const isOptUrdu = window.isUrdu(optText);
+          optionsHtml += `
+            <label class="opt-patch" id="live_opt_lbl_${idx}_${optIdx}" style="display:flex; align-items:center; gap:12px; cursor:pointer; ${isOptUrdu ? 'flex-direction:row-reverse; text-align:right;' : ''}">
+              <input type="radio" name="live_q_opt_${idx}" value="${optIdx}" style="width: 20px; height: 20px; accent-color: #0288d1; flex-shrink:0;">
+              <span dir="auto" style="flex:1; color:var(--text-color); ${isOptUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:18px; line-height:2;" : "font-size:14px; font-weight:700;"}">${optText}</span>
+            </label>`;
         });
-        questionsBox.innerHTML += `<div class="q-box" style="border:1px solid var(--border-color); padding:12px; border-radius:12px; margin-bottom:12px; background:rgba(0,0,0,0.02);"><div style="font-size:13px; font-weight:800; color:#0288d1; margin-bottom:6px;">Q${idx + 1}: ${qObj.q}</div>${optionsHtml}</div>`;
+
+        questionsBox.innerHTML += `
+          <div class="test-q-patch" id="q_box_${idx}">
+            <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+              Q${idx + 1}: ${qObj.q}
+            </div>
+            ${optionsHtml}
+          </div>`;
       });
+
+      document.getElementById("submitStudentTestBtn").style.display = "block";
+      document.getElementById("testResultSummaryBox").style.display = "none";
 
       let totalSeconds = (test.timeMinutes || 15) * 60;
       if(activeLiveTestTimer) clearInterval(activeLiveTestTimer);
+      
       activeLiveTestTimer = setInterval(() => {
         totalSeconds--;
         const mins = Math.floor(totalSeconds / 60); const secs = totalSeconds % 60;
-        if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = `⏱️ Time Remaining: ${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-        if(totalSeconds <= 0) { clearInterval(activeLiveTestTimer); alert("⏰ Time is up! Submitting your test automatically..."); window.submitStudentLiveTest(); }
+        if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        if(totalSeconds <= 0) { 
+          clearInterval(activeLiveTestTimer); 
+          alert("⏰ Time is up! Submitting your test automatically..."); 
+          window.submitStudentLiveTest(); 
+        }
       }, 1000);
+      
       window.openModal("studentLiveTestModal");
     };
 
@@ -5242,14 +5406,33 @@ body.dark-mode .btn-status-claimed {
       if(activeLiveTestTimer) clearInterval(activeLiveTestTimer);
 
       const btn = document.getElementById("submitStudentTestBtn");
-      runWithBtnSpinner(btn, "🚀 Submit Test", async () => {
+      runWithBtnSpinner(btn, "🚀 Checking Answers...", async () => {
         let obtainedMarks = 0;
         const totalMarks = currentLiveTestObj.totalMarks;
         const marksPerQ = currentLiveTestObj.marksPerQ;
 
+        // Visual Validation Loop
         currentLiveTestObj.questions.forEach((qObj, idx) => {
           const selectedOpt = document.querySelector(`input[name="live_q_opt_${idx}"]:checked`);
-          if(selectedOpt && parseInt(selectedOpt.value) === qObj.correct) { obtainedMarks += marksPerQ; }
+          const correctOpt = qObj.correct;
+          
+          // Disable all options
+          document.querySelectorAll(`input[name="live_q_opt_${idx}"]`).forEach(inp => inp.disabled = true);
+          
+          // Highlight correct answer in GREEN
+          const correctLabel = document.getElementById(`live_opt_lbl_${idx}_${correctOpt}`);
+          if(correctLabel) correctLabel.classList.add("correct");
+
+          if(selectedOpt) {
+            const selectedVal = parseInt(selectedOpt.value);
+            if(selectedVal === correctOpt) {
+              obtainedMarks += marksPerQ;
+            } else {
+              // Highlight selected wrong answer in RED
+              const wrongLabel = document.getElementById(`live_opt_lbl_${idx}_${selectedVal}`);
+              if(wrongLabel) wrongLabel.classList.add("wrong");
+            }
+          }
         });
 
         const percentage = ((obtainedMarks / totalMarks) * 100).toFixed(1);
@@ -5267,11 +5450,32 @@ body.dark-mode .btn-status-claimed {
         updates[`students/${currentStudentAdmn}/points`] = (student ? (student.points || 0) : 0) + awardedPoints;
 
         await update(ref(db), updates);
-        alert(`✔ Test Submitted Successfully!\nObtained Marks: ${obtainedMarks} / ${totalMarks} (${percentage}%)\nAwarded Points: ${awardedPoints >= 0 ? '+' : ''}${awardedPoints}`);
-        window.closeModal("studentLiveTestModal");
+        
+        // Show Results on screen instead of closing
+        document.getElementById("submitStudentTestBtn").style.display = "none";
+        document.getElementById("liveTestTimerBox").innerText = "Finished";
+        
+        const summaryBox = document.getElementById("testResultSummaryBox");
+        summaryBox.style.display = "block";
+        document.getElementById("resultMarksText").innerText = `Score: ${obtainedMarks} / ${totalMarks}`;
+        document.getElementById("resultFeedbackText").innerText = `You earned ${awardedPoints >= 0 ? '+' : ''}${awardedPoints} Points. Review your answers above.`;
+        
         refreshStudentDashboard();
       });
     };
+
+    window.forceCloseLiveTest = function() {
+       const btn = document.getElementById("submitStudentTestBtn");
+       if (btn && btn.style.display !== "none") {
+           if(confirm('Are you sure you want to EXIT? Your test will be submitted as it is.')) {
+              window.submitStudentLiveTest();
+              setTimeout(() => { window.closeModal("studentLiveTestModal"); }, 2000);
+           }
+       } else {
+           window.closeModal("studentLiveTestModal");
+       }
+    };
+
 
     window.removeOnlineTest = async function(testId) {
       if (confirm("Confirm..?")) {
@@ -5528,15 +5732,25 @@ body.dark-mode .btn-status-claimed {
 
         setTimeout(() => { flyEl.style.left = `${targetX}px`; flyEl.style.top = `${targetY}px`; flyEl.style.opacity = "0"; flyEl.style.transform = "scale(1.4)"; }, 100);
 
-        setTimeout(async () => {
+               setTimeout(async () => {
           flyEl.remove();
           const teacherData = await safeDataFetch(`teachers/${loggedUser}`) || {};
           const newPts = (teacherData.points || 0) + 50;
+          
           await update(ref(db), { [`teachers/${loggedUser}/points`]: newPts, [`teacher_daily_claims/${loggedUser}/${todayKey}`]: true });
+          
           btn.style.display = "none";
           if (document.getElementById("tDailyClaimedBadge")) document.getElementById("tDailyClaimedBadge").style.display = "block";
+          
+          // Force immediate DOM update for Teacherboard card
+          const myTbCard = document.getElementById(`tbCard_${loggedUser}`);
+          if (myTbCard) {
+             const pointsDiv = myTbCard.querySelector("div:nth-child(2)");
+             if(pointsDiv) pointsDiv.innerText = `${newPts} PTS`;
+          }
           window.refreshTeacherDashboardData();
         }, 1200);
+
 
       } catch (err) { btn.disabled = false; btn.innerText = "🎁 Claim Today's Points"; }
     };
@@ -5688,6 +5902,172 @@ body.dark-mode .btn-status-claimed {
         if(isMe) window.updateMyRankAnimation(idx + 1);
       });
     };
+
+        // ==========================================
+    // MUSTER ENGINE (PHASE 2)
+    // ==========================================
+    let musterClockInterval;
+
+    window.openMusterTab = function(e) {
+      if(e) e.stopPropagation();
+      window.closeDrawer();
+      window.switchTab('adminTabMuster', null, e);
+      
+      // Load teachers in delete dropdown
+      safeDataFetch("teachers").then(teachers => {
+        const select = document.getElementById("delMusterTeacherSelect");
+        if(select && teachers) {
+          select.innerHTML = '<option value="">-- Select Teacher --</option>';
+          Object.values(teachers).forEach(t => { 
+            if(t && t.username) select.innerHTML += `<option value="${t.username}">${t.name}</option>`; 
+          });
+        }
+      });
+    };
+
+    window.startMusterClock = function() {
+      if(musterClockInterval) clearInterval(musterClockInterval);
+      const timeEl = document.getElementById("musterLiveTime");
+      const dateEl = document.getElementById("musterLiveDate");
+      
+      musterClockInterval = setInterval(() => {
+        const now = new Date();
+        timeEl.innerText = now.toLocaleTimeString('en-IN', { hour12: true });
+        dateEl.innerText = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      }, 1000);
+    };
+
+    // Original openModal function ko override kiya taake Muster Modal par extra checks chal sakein
+    const originalOpenModal = window.openModal;
+    window.openModal = async function(id) {
+      originalOpenModal(id);
+      if(id === 'teacherMusterModal') {
+        window.startMusterClock();
+        await window.checkMusterButtonStates();
+      }
+    };
+
+    window.checkMusterButtonStates = async function() {
+      const loggedUser = localStorage.getItem("loggedUser");
+      if(!loggedUser) return;
+      
+      const inBtn = document.getElementById("musterCheckInBtn");
+      const outBtn = document.getElementById("musterCheckOutBtn");
+      
+      inBtn.className = "btn-primary btn-green"; inBtn.innerText = "🟢 Check In";
+      outBtn.className = "btn-primary btn-orange"; outBtn.innerText = "🔴 Check Out";
+
+      const currentMonth = getAutoMonthName();
+      const todayNum = new Date().getDate();
+      
+      const musterData = await safeDataFetch(`muster/${currentMonth}/day_${todayNum}/${loggedUser}`);
+      if(musterData) {
+        if(musterData.in) {
+          inBtn.className = "btn-primary btn-grayed";
+          inBtn.innerText = `✔ Checked In (${musterData.in})`;
+        }
+        if(musterData.out) {
+          outBtn.className = "btn-primary btn-grayed";
+          outBtn.innerText = `✔ Checked Out (${musterData.out})`;
+        }
+      }
+    };
+
+    window.handleMusterAction = async function(type, btn) {
+      if(btn.classList.contains("btn-grayed")) {
+        window.shakeButton(btn);
+        return;
+      }
+      
+      const loggedUser = localStorage.getItem("loggedUser");
+      if(!loggedUser) return;
+
+      const actionText = type === 'in' ? "Check-in" : "Check-out";
+      if(confirm(`Submit ${actionText} time?`)) {
+        runWithBtnSpinner(btn, "Saving...", async () => {
+          const currentMonth = getAutoMonthName();
+          const todayNum = new Date().getDate();
+          const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+          
+          await update(ref(db), {
+            [`muster/${currentMonth}/day_${todayNum}/${loggedUser}/${type}`]: nowTime
+          });
+          
+          alert(`✔ ${actionText} time saved successfully!`);
+          window.checkMusterButtonStates();
+        });
+      }
+    };
+
+    window.loadAdminMusterTable = async function() {
+      const month = document.getElementById("adminMusterMonthSelect").value;
+      const card = document.getElementById("adminMusterTableCard");
+      const container = document.getElementById("adminMusterTableContainer");
+      const thead = document.getElementById("adminMusterHead");
+      const tbody = document.getElementById("adminMusterBody");
+      
+      card.style.display = "block";
+      // Shimmer & Blur animation start
+      container.classList.add("shimmer-wrapper");
+      thead.innerHTML = ""; tbody.innerHTML = "";
+      
+      const teachers = await safeDataFetch("teachers") || {};
+      const musterData = await safeDataFetch(`muster/${month}`) || {};
+      const daysCount = getDaysInMonth(month);
+      const teacherList = Object.values(teachers).filter(t => t && t.username);
+      
+      setTimeout(() => {
+        let headHtml = `<tr><th style="min-width:30px;">#</th><th style="min-width:140px; text-align:left; padding-left:10px;">Teacher Name</th>`;
+        for(let d=1; d<=daysCount; d++) { headHtml += `<th style="min-width:55px;">${d}</th>`; }
+        headHtml += `</tr>`;
+        thead.innerHTML = headHtml;
+
+        if(teacherList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="${daysCount+2}" style="text-align:center;">No teachers registered yet.</td></tr>`;
+        } else {
+          teacherList.forEach((t, idx) => {
+            let rowHtml = `<tr><td><b>${idx+1}</b></td><td style="text-align:left; padding-left:10px; font-weight:800;">${t.name}</td>`;
+            for(let d=1; d<=daysCount; d++) {
+              const dayData = musterData[`day_${d}`] ? musterData[`day_${d}`][t.username] : null;
+              if(dayData) {
+                const inTime = dayData.in || "-";
+                const outTime = dayData.out || "-";
+                rowHtml += `<td><span class="muster-time">${inTime}</span><span class="muster-time out">${outTime}</span></td>`;
+              } else {
+                rowHtml += `<td><span style="color:var(--text-muted); font-weight:800;">-</span></td>`;
+              }
+            }
+            rowHtml += `</tr>`;
+            tbody.innerHTML += rowHtml;
+          });
+        }
+        
+        // Pixel Unblur & Shimmer end after 0.8x effect
+        container.classList.remove("shimmer-wrapper");
+      }, 800); 
+    };
+
+    window.deleteTeacherMuster = async function() {
+      const username = document.getElementById("delMusterTeacherSelect").value;
+      const month = document.getElementById("delMusterMonthSelect").value;
+      
+      if(!username) { alert("Please select a teacher first."); return; }
+      
+      if(confirm(`Are you sure you want to completely delete muster data for this teacher in ${month}?`)) {
+        const updates = {};
+        const daysCount = getDaysInMonth(month);
+        for(let d=1; d<=daysCount; d++) {
+          updates[`muster/${month}/day_${d}/${username}`] = null;
+        }
+        await update(ref(db), updates);
+        alert("✔ Muster data deleted successfully!");
+        window.closeModal('deleteMusterModal');
+        if(document.getElementById("adminMusterTableCard").style.display === "block") {
+          window.loadAdminMusterTable();
+        }
+      }
+    };
+
 
     document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
