@@ -2742,9 +2742,10 @@ body.dark-mode .btn-status-claimed {
         <span class="close-modal" onclick="closeModal('teacherMusterDetailsModal')">✕</span>
       </div>
       <div class="modal-body">
-        <div style="text-align:center; margin-bottom:14px;">
-          <h3 id="musterDetailsTeacherName" style="color:#0288d1; font-weight:900;">Teacher Name</h3>
+              <div style="text-align:center; margin-bottom:14px;">
+          <h3 id="musterDetailsTeacherName" style="color:#0288d1; font-weight:900;">Loading...</h3>
         </div>
+
         <label>Select Month:</label>
         <select id="myMusterMonthSelect">
           <option value="January">January</option><option value="February">February</option><option value="March">March</option>
@@ -5862,14 +5863,16 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
-    window.refreshTeacherDashboardData = async function() {
+      window.refreshTeacherDashboardData = async function() {
       const loggedUser = localStorage.getItem("loggedUser");
       if(loggedUser) {
         const tData = await safeDataFetch(`teachers/${loggedUser}`);
-        if(document.getElementById("tWelcomeTeacherName") && tData && tData.name) document.getElementById("tWelcomeTeacherName").innerText = tData.name;
+        if(document.getElementById("tWelcomeTeacherName") && tData && tData.name) {
+            document.getElementById("tWelcomeTeacherName").innerText = tData.name + " Teacher";
+        }
       }
       await window.checkTeacherDailyClaimStatus();
-      await window.renderTeacherboardCardsTable();
+ await window.renderTeacherboardCardsTable();
       if (typeof window.loadTeacherBoardNotifications === 'function') window.loadTeacherBoardNotifications();
       window.triggerNotificationCardEntrance();
     };
@@ -6012,7 +6015,8 @@ body.dark-mode .btn-status-claimed {
       }, 1000);
     };
 
-    // Original openModal function ko override kiya taake Muster Modal par extra checks chal sakein
+
+        // Original openModal function ko override kiya taake Muster Modal par extra checks chal sakein
     const originalOpenModal = window.openModal;
     window.openModal = async function(id) {
       originalOpenModal(id);
@@ -6020,7 +6024,12 @@ body.dark-mode .btn-status-claimed {
         window.startMusterClock();
         await window.checkMusterButtonStates();
       }
+      if(id === 'teacherMusterDetailsModal') {
+        document.getElementById("myMusterMonthSelect").value = getAutoMonthName();
+        window.loadMyMusterDetails();
+      }
     };
+
 
     window.checkMusterButtonStates = async function() {
       const loggedUser = localStorage.getItem("loggedUser");
