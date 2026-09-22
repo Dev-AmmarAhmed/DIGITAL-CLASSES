@@ -6416,13 +6416,16 @@ body.dark-mode .btn-status-claimed {
       if(id === 'adminSendNotifModal') window.toggleNotifTargetUI();
     };
 
-    // UI Render Engine for 15 Notifications
+        // UI Render Engine for 15 Notifications & NATIVE PUSH TRIGGERS
     window.listenToNotifications = function() {
       const loggedUser = localStorage.getItem("loggedUser");
       if(!loggedUser) return;
       const role = localStorage.getItem("loggedRole");
       const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
       if(!targetId) return;
+
+      let isInitialNotifLoad = true;
+      let lastNotifCount = 0;
 
       onValue(ref(db, `notifications/${targetId}`), (snap) => {
         const badge = document.getElementById("notifBadgeCount");
@@ -6432,13 +6435,34 @@ body.dark-mode .btn-status-claimed {
         if(!snap.exists()) {
           panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">No new notifications.</div>`;
           if(badge) badge.style.display = "none";
+          isInitialNotifLoad = false;
           return;
         }
 
         const notifs = Object.values(snap.val());
+        
+        // --- NATIVE PUSH NOTIFICATION TRIGGER ---
+        if (!isInitialNotifLoad && notifs.length > lastNotifCount && Notification.permission === "granted") {
+           const newestNotif = notifs.reduce((max, obj) => Number(obj.id) > Number(max.id) ? obj : max, notifs[0]);
+           navigator.serviceWorker.ready.then(reg => {
+               reg.showNotification(newestNotif.title, {
+                   body: newestNotif.detail,
+                   icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+                   badge: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+                   vibrate: [200, 100, 200]
+               });
+           });
+        }
+        lastNotifCount = notifs.length;
+        isInitialNotifLoad = false;
+        // ----------------------------------------
+
         notifs.sort((a,b) => Number(b.id) - Number(a.id)); // Newest first
         
         let unreadCount = 0;
+
+
+        
         let html = "";
         
         // Show only last 15 in Drawer
@@ -6563,9 +6587,22 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+       // Ask for Permission & Register Service Worker
+    window.initNativePushAndSW = async function() {
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        try {
+          await navigator.serviceWorker.register('sw.js');
+          if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            await Notification.requestPermission();
+          }
+        } catch (e) { console.log("SW Registration failed:", e); }
+      }
+    };
 
-          setTimeout(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      window.initNativePushAndSW(); // 🚀 Ask Notification Permission!
+      
+      setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
         if(loggedUser && loggedRole) {
           window.listenToNotifications(); // Enable Live Notifications Array
@@ -6580,3 +6617,5 @@ body.dark-mode .btn-status-claimed {
   </script>
 </body>
 </html>
+
+
