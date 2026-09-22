@@ -3624,10 +3624,15 @@ body.dark-mode .btn-status-claimed {
       assignedClass = role === "teacher" ? tClasses[0] : (aClass || "1"); 
       currentStudentAdmn = sAdmn || localStorage.getItem("studentAdmn");
 
-      document.getElementById("mainContainer").classList.remove("login-mode");
+         document.getElementById("mainContainer").classList.remove("login-mode");
       document.getElementById("loginScreen").classList.remove("active");
       document.getElementById("topBar").style.display = "flex";
       document.getElementById("bottomNav").style.display = "flex";
+
+      // 🚀 ZAROORI FIX: Naye user ke aate hi uski notifications load hongi
+      if (typeof window.listenToNotifications === "function") {
+        window.listenToNotifications();
+      }
 
       updateAppRoleIcon(role);
       const bottomNav = document.getElementById("bottomNav");
@@ -6587,17 +6592,29 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
-       // Ask for Permission & Register Service Worker
-    window.initNativePushAndSW = async function() {
-      if ('serviceWorker' in navigator && 'Notification' in window) {
-        try {
-          await navigator.serviceWorker.register('sw.js');
-          if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            await Notification.requestPermission();
-          }
-        } catch (e) { console.log("SW Registration failed:", e); }
-      }
-    };
+                     // --- NATIVE PUSH NOTIFICATION TRIGGER ---
+        if (!isInitialNotifLoad && notifs.length > lastNotifCount && Notification.permission === "granted") {
+           const newestNotif = notifs.reduce((max, obj) => Number(obj.id) > Number(max.id) ? obj : max, notifs[0]);
+           
+           try {
+             // Agar Service Worker active hai toh us se bhejein
+             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+               navigator.serviceWorker.ready.then(reg => {
+                 reg.showNotification(newestNotif.title, { body: newestNotif.detail, icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png" });
+               });
+             } else {
+               // Fallback: Normal Browser Push Notification
+               new Notification(newestNotif.title, { body: newestNotif.detail, icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png" });
+             }
+           } catch(err) {
+             new Notification(newestNotif.title, { body: newestNotif.detail });
+           }
+        }
+        lastNotifCount = notifs.length;
+        isInitialNotifLoad = false;
+        // ----------------------------------------
+
+    
 
     document.addEventListener("DOMContentLoaded", () => {
       window.initNativePushAndSW(); // 🚀 Ask Notification Permission!
