@@ -6446,22 +6446,31 @@ body.dark-mode .btn-status-claimed {
 
         const notifs = Object.values(snap.val());
         
-        // --- NATIVE PUSH NOTIFICATION TRIGGER ---
+               // --- NATIVE PUSH NOTIFICATION TRIGGER (ANDROID FORCED) ---
         if (!isInitialNotifLoad && notifs.length > lastNotifCount && Notification.permission === "granted") {
            const newestNotif = notifs.reduce((max, obj) => Number(obj.id) > Number(max.id) ? obj : max, notifs[0]);
-           navigator.serviceWorker.ready.then(reg => {
-               reg.showNotification(newestNotif.title, {
-                   body: newestNotif.detail,
-                   icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
-                   badge: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
-                   vibrate: [200, 100, 200]
+           
+           if ('serviceWorker' in navigator) {
+               navigator.serviceWorker.ready.then(reg => {
+                   reg.showNotification(newestNotif.title, { 
+                       body: newestNotif.detail, 
+                       icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+                       badge: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+                       vibrate: [200, 100, 200, 100, 200],
+                       requireInteraction: true
+                   });
+               }).catch(err => {
+                   new Notification(newestNotif.title, { body: newestNotif.detail });
                });
-           });
+           } else {
+               new Notification(newestNotif.title, { body: newestNotif.detail });
+           }
         }
         lastNotifCount = notifs.length;
         isInitialNotifLoad = false;
         // ----------------------------------------
 
+        
         notifs.sort((a,b) => Number(b.id) - Number(a.id)); // Newest first
         
         let unreadCount = 0;
@@ -6592,28 +6601,7 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
-                     // --- NATIVE PUSH NOTIFICATION TRIGGER ---
-        if (!isInitialNotifLoad && notifs.length > lastNotifCount && Notification.permission === "granted") {
-           const newestNotif = notifs.reduce((max, obj) => Number(obj.id) > Number(max.id) ? obj : max, notifs[0]);
-           
-           try {
-             // Agar Service Worker active hai toh us se bhejein
-             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-               navigator.serviceWorker.ready.then(reg => {
-                 reg.showNotification(newestNotif.title, { body: newestNotif.detail, icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png" });
-               });
-             } else {
-               // Fallback: Normal Browser Push Notification
-               new Notification(newestNotif.title, { body: newestNotif.detail, icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png" });
-             }
-           } catch(err) {
-             new Notification(newestNotif.title, { body: newestNotif.detail });
-           }
-        }
-        lastNotifCount = notifs.length;
-        isInitialNotifLoad = false;
-        // ----------------------------------------
-
+    
     
 
     document.addEventListener("DOMContentLoaded", () => {
