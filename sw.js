@@ -1,10 +1,10 @@
-// sw.js - Service Worker for Native Notifications
 self.addEventListener('push', function(event) {
     console.log('[Service Worker] Push Received.');
 });
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
 });
+
 
 
 const CACHE_NAME = 'digital-classes-v1';
