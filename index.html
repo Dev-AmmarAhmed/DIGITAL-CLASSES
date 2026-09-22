@@ -400,13 +400,36 @@ body.dark-mode input, body.dark-mode select {
   border-radius: 12px;
 }
 
-.left-drawer-overlay {
+/* Dynamic Color Fix for Hardcoded Blue Text */
+body.dark-mode h2[style*="#0288d1"], body.dark-mode h3[style*="#0288d1"], 
+body.dark-mode div[style*="#0288d1"], body.dark-mode span[style*="#0288d1"] {
+  color: #38bdf8 !important;
+}
+
+.left-drawer-overlay, .right-drawer-overlay {
   display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 400;
 }
-.left-drawer-overlay.active { display: block; }
+.left-drawer-overlay.active, .right-drawer-overlay.active { display: block; }
+
+.right-drawer {
+  position: fixed; top: 0; right: -85%; width: 85%; max-width: 320px; height: 100%;
+  background: var(--card-bg); z-index: 500;
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 30px rgba(0,0,0,0.35); display: flex; flex-direction: column;
+  border-top-left-radius: 22px; border-bottom-left-radius: 22px; overflow: hidden;
+}
+.right-drawer.active { right: 0; }
+
+.notif-card {
+  padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer;
+  transition: background 0.2s;
+}
+.notif-card:active { background: rgba(0,0,0,0.05); }
+.notif-time { font-size: 9px; color: var(--text-muted); margin-top: 4px; display: block; }
 
 .left-drawer {
+
   position: fixed; top: 0; left: -80%; width: 80%; max-width: 300px; height: 100%;
   background: var(--card-bg); z-index: 500;
   transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -852,8 +875,15 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
-  <button id="threeDotBtn" class="icon-btn">⋮</button>
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <button id="notifBellBtn" class="icon-btn student-only teacher-only" style="display:none; position: relative; padding: 6px 8px;">
+      🔔
+      <span id="notifBadgeCount" style="position: absolute; top: -4px; right: -4px; background: #dc2626; color: white; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 50%; display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">0</span>
+    </button>
+    <button id="threeDotBtn" class="icon-btn">⋮</button>
+  </div>
 
+  
   <div id="menuDropdown" class="menu-dropdown">
     <div class="menu-item teacher-only" style="display:none;" onclick="openModal('addSubjectModal')">➕ Add Subject</div>
     <div class="menu-item admin-only" onclick="openModal('addStudyMaterialModal')">📁 Add Study Material</div>
@@ -866,8 +896,25 @@ body.dark-mode .btn-status-claimed {
 </div>
 </header>
 
+
+  <!-- RIGHT DRAWER (NOTIFICATIONS) -->
+<div id="rightDrawerOverlay" class="right-drawer-overlay"></div>
+<div id="rightDrawer" class="right-drawer">
+  <div class="drawer-header" style="background: linear-gradient(135deg, #0288d1 0%, #01579b 100%);">
+    <span>🔔 Notifications</span>
+    <span class="close-modal" id="closeRightDrawerBtn">✕</span>
+  </div>
+  <div class="drawer-body" id="notificationPanelBody" style="padding: 0;">
+    <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
+      No new notifications.
+    </div>
+  </div>
+</div>
+
 <div id="drawerOverlay" class="left-drawer-overlay"></div>
 <div id="leftDrawer" class="left-drawer">
+
+  
   <div class="drawer-header">
     <span>⚙️ Control & Settings</span>
     <span class="close-modal" id="closeDrawerBtn">✕</span>
@@ -919,12 +966,12 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="window.openTeacherManagementTab(event)">👩‍🏫 Teacher List & Management</div>
       <div class="drawer-item" onclick="window.openMusterTab(event)">📖 Teachers' Muster</div>
       <div class="drawer-item" onclick="openModal('removeAttendModal')">📅 Remove Attendance Data</div>
-
       <div class="drawer-item" onclick="openModal('removeStudentModal')">👤 Remove Student</div>
       <div class="drawer-item" onclick="openModal('removeExpenseModal')">📊 Remove Expense</div>
       <div class="drawer-item" onclick="window.openLogsTab(event)">📜 Logs & Entries</div>
+      <div class="drawer-item" onclick="openModal('adminSendNotifModal')">📢 Send Notification</div>
       <div class="drawer-item" onclick="openModal('registerStudentModal')">👤 Register Student</div>
-    </div>
+ </div>
 
     <div class="drawer-update-bottom">
       <div style="font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:6px;">SYSTEM MAINTENANCE</div>
@@ -2836,8 +2883,65 @@ body.dark-mode .btn-status-claimed {
   </div>
 
 
+   <!-- ADMIN SEND NOTIFICATION MODAL -->
+  <div id="adminSendNotifModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📢 Send Notification</span>
+        <span class="close-modal" onclick="closeModal('adminSendNotifModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Send To:</label>
+        <select id="notifTargetType" onchange="window.toggleNotifTargetUI()">
+          <option value="student">🎓 Students (By Class)</option>
+          <option value="teacher">👩‍🏫 Teachers (Specific)</option>
+        </select>
+
+        <div id="notifStudentTargetBox">
+          <label>Select Class:</label>
+          <select id="notifTargetClass">
+            <option value="ALL">All Classes</option>
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+
+        <div id="notifTeacherTargetBox" style="display:none;">
+          <label>Select Teachers:</label>
+          <div class="checkbox-grid" id="notifTeacherCheckboxes" style="max-height: 150px; overflow-y: auto;">
+            <!-- Teacher checkboxes dynamically loaded here -->
+          </div>
+        </div>
+
+        <label>Notification Message:</label>
+        <textarea id="notifMessageInput" rows="4" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-color); resize: none;"></textarea>
+
+       
+        
+        
+                <button id="sendAdminNotifBtn" class="btn-primary btn-blue" style="margin-top: 16px;" onclick="window.sendAdminNotification()">🚀 Push Notification</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION DETAILS MODAL -->
+  <div id="notifDetailsModal" class="modal-overlay" style="z-index: 100001;">
+    <div class="modal-content" style="max-width: 360px; text-align: center; padding: 24px;">
+      <div id="notifDetailsIcon" style="font-size: 44px; margin-bottom: 12px;">🔔</div>
+      <h3 id="notifDetailsTitle" style="color: #0288d1; font-weight: 900; margin-bottom: 8px; font-size: 16px;">Title</h3>
+      <div id="notifDetailsBody" style="font-size: 13px; color: var(--text-color); font-weight: 700; margin-bottom: 20px; line-height: 1.5;">Details...</div>
+      
+      <div id="notifDetailsActionBox" style="margin-bottom: 12px;"></div>
+      
+      <button class="btn-primary" style="background: #64748b; margin-top: 12px; padding: 10px;" onclick="closeModal('notifDetailsModal')">Close</button>
+    </div>
+  </div>
+
   <nav id="bottomNav" class="bottom-nav" style="display: none;"></nav>
-  <!-- ====================================================================
+
+    <!-- ====================================================================
        SECTION 5: CORE ENGINE LOGIC & FIREBASE REALTIME SYNC (FIXED)
        ==================================================================== -->
   <script type="module">
@@ -3436,6 +3540,7 @@ body.dark-mode .btn-status-claimed {
       return null;
     }
 
+       // Left Drawer Logic
     addSafeListener("hamburgerBtn", "click", () => {
       document.getElementById("leftDrawer").classList.add("active");
       document.getElementById("drawerOverlay").classList.add("active");
@@ -3447,6 +3552,21 @@ body.dark-mode .btn-status-claimed {
     addSafeListener("closeDrawerBtn", "click", window.closeDrawer);
     addSafeListener("drawerOverlay", "click", window.closeDrawer);
 
+    // Right Drawer (Notification) Logic
+    addSafeListener("notifBellBtn", "click", () => {
+      document.getElementById("rightDrawer").classList.add("active");
+      document.getElementById("rightDrawerOverlay").classList.add("active");
+      document.getElementById("notifBadgeCount").style.display = "none"; // Hide badge when opened
+    });
+    window.closeRightDrawer = function() {
+      document.getElementById("rightDrawer").classList.remove("active");
+      document.getElementById("rightDrawerOverlay").classList.remove("active");
+    };
+    addSafeListener("closeRightDrawerBtn", "click", window.closeRightDrawer);
+    addSafeListener("rightDrawerOverlay", "click", window.closeRightDrawer);
+
+
+    
     addSafeListener("threeDotBtn", "click", (e) => {
       e.stopPropagation();
       document.getElementById("menuDropdown").classList.toggle("active");
@@ -4416,14 +4536,19 @@ body.dark-mode .btn-status-claimed {
         const testObj = { name: testName, total: total, obtained: obtained, percentage: percentage.toFixed(1), awardedPoints: awardedPoints, date: getTodayFormattedDate() };
 
         await set(ref(db, `tests/${admn}/${testId}`), testObj);
-        const st = await getStudentRecord(admn);
+               const st = await getStudentRecord(admn);
         if(st) {
-          const newPts = (st.points || 0) + awardedPoints;
+          const newPts = (st.points || 0) + pts;
           await update(ref(db, `students/${admn}`), { points: newPts });
+          
+          // Push Points Notification to Student
+          const reasonTxt = document.getElementById("performReasonInput").value.trim() || 'Performance';
+          await window.pushAppNotification(admn, "Points Updated ⭐", `You received ${pts > 0 ? '+'+pts : pts} points. Reason: ${reasonTxt}`, "points_update", { points: pts });
+          
+          await refreshAllTeacherData();
+          alert(`Updated Points for ${st.name}: ${pts >= 0 ? '+' : ''}${pts} Points.`);
         }
-        await refreshAllTeacherData();
-        alert(`Test Marks Saved! Awarded Points: ${awardedPoints >= 0 ? '+' : ''}${awardedPoints}`);
-      });
+ });
     });
 
     addSafeListener("trackTestRecordBtn", "click", () => {
@@ -4603,9 +4728,14 @@ body.dark-mode .btn-status-claimed {
         await update(ref(db), updates);
 
         const student = await getStudentRecord(admn);
-        lastGeneratedReceipt = { studentName: student ? student.name : "Student", phone: student ? student.phone : "", amount: total, types: selectedChks.join(", "), date: dateStr };
+               lastGeneratedReceipt = { studentName: student ? student.name : "Student", phone: student ? student.phone : "", amount: total, types: selectedChks.join(", "), date: dateStr };
+
+        // Push Fee Notification to Student
+        const feeMonthsStr = selectedChks.join(", ");
+        await window.pushAppNotification(admn, "Fees Submitted ✔️", `Fees submitted for ${feeMonthsStr}. Amount: ₹${total}`, "fee_paid", { amount: total, months: feeMonthsStr });
 
         document.getElementById("feeSubmittedStatusBox").style.display = "block";
+
         alert("Fee entry saved successfully.");
       });
     });
@@ -5385,11 +5515,18 @@ body.dark-mode .btn-status-claimed {
 
         if(!isValid) { alert("Please fill all questions and their options properly."); return; }
 
-        const testId = Date.now().toString();
+              const testId = Date.now().toString();
         const cleanClass = cleanClassStr(assignedClass);
         await set(ref(db, `online_tests/${cleanClass}/${testId}`), { id: testId, title: name, subject: subject, numQuestions: numQ, marksPerQ: marksPerQ, totalMarks: numQ * marksPerQ, timeMinutes: timeMins, expiry: expiry, questions: questionsList, class: cleanClass, createdDate: getTodayFormattedDate() });
+        
+        // Push Test Added Notification to all students in this class
+        const targetStudents = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClass);
+        for(let s of targetStudents) {
+           await window.pushAppNotification(s.admn, "New Online Test 📝", `${name} (${subject}) has been added. Check your tests tab.`, "test_added", { testId: testId });
+        }
+
         alert(`✔ Online Test "${name}" published successfully for Class ${assignedClass}!`);
-        autoFilledJsonQuestions = null; document.getElementById("jsonCodeInput").value = "";
+  autoFilledJsonQuestions = null; document.getElementById("jsonCodeInput").value = "";
         window.closeModal("createOnlineTestModal");
       });
     });
@@ -5522,10 +5659,15 @@ body.dark-mode .btn-status-claimed {
         const updates = {};
         updates[`student_test_attempts/${currentStudentAdmn}/${currentLiveTestObj.id}`] = attemptObj;
         updates[`test_attempts/${currentLiveTestObj.id}/${currentStudentAdmn}`] = attemptObj;
-        updates[`tests/${currentStudentAdmn}/${Date.now()}`] = testRecordObj;
+
+                updates[`tests/${currentStudentAdmn}/${Date.now()}`] = testRecordObj;
         updates[`students/${currentStudentAdmn}/points`] = (student ? (student.points || 0) : 0) + awardedPoints;
 
         await update(ref(db), updates);
+        
+        // Notification for Test Submission
+        await window.pushAppNotification(currentStudentAdmn, "Test Submitted ✅", `You scored ${obtainedMarks}/${totalMarks} in ${currentLiveTestObj.title}.`, "test_submitted");
+
         
         // Show Results on screen instead of closing
         document.getElementById("submitStudentTestBtn").style.display = "none";
@@ -6108,13 +6250,20 @@ body.dark-mode .btn-status-claimed {
           const todayNum = new Date().getDate();
           const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
           
-          await update(ref(db), {
+               await update(ref(db), {
             [`muster/${currentMonth}/day_${todayNum}/${loggedUser}/${type}`]: nowTime
           });
           
           alert(`✔ ${actionText} time saved successfully!`);
           window.checkMusterButtonStates();
-        });
+
+          // Teacher Attendance Reminder (10 mins after Check-in)
+          if(type === 'in') {
+            setTimeout(() => {
+              window.pushAppNotification(loggedUser, "📅 Take Attendance", "Please don't forget to mark today's class attendance.", "reminder");
+            }, 10 * 60 * 1000); 
+          }
+   });
       }
     };
 
@@ -6188,12 +6337,242 @@ body.dark-mode .btn-status-claimed {
     };
 
 
+     // ==========================================
+    // NOTIFICATION ENGINE (PHASE 2)
+    // ==========================================
+    window.pushAppNotification = async function(targetUserId, title, detail, type, extraData = {}) {
+      const notifId = Date.now().toString();
+      const notifObj = {
+        id: notifId, title: title, detail: detail, type: type,
+        date: getTodayFormattedDate(),
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        extra: extraData, read: false
+      };
+      
+      const targetRefPath = `notifications/${targetUserId}`;
+      const existingNotifs = await safeDataFetch(targetRefPath) || {};
+      const keys = Object.keys(existingNotifs).sort();
+      
+      const updates = {};
+      // Max 500 Notifications Limit
+      if(keys.length >= 500) {
+        const excess = keys.length - 499;
+        for(let i = 0; i < excess; i++) { updates[`${targetRefPath}/${keys[i]}`] = null; }
+      }
+      
+      updates[`${targetRefPath}/${notifId}`] = notifObj;
+      await update(ref(db), updates);
+    };
+
+    window.toggleNotifTargetUI = function() {
+      const type = document.getElementById("notifTargetType").value;
+      document.getElementById("notifStudentTargetBox").style.display = type === 'student' ? 'block' : 'none';
+      document.getElementById("notifTeacherTargetBox").style.display = type === 'teacher' ? 'block' : 'none';
+      if(type === 'teacher') window.loadNotifTeacherCheckboxes();
+    };
+
+    window.loadNotifTeacherCheckboxes = async function() {
+      const container = document.getElementById("notifTeacherCheckboxes");
+      container.innerHTML = "Loading...";
+      const teachers = await safeDataFetch("teachers") || {};
+      container.innerHTML = "";
+      Object.values(teachers).forEach(t => {
+        if(t && t.username) {
+          container.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="notif-t-chk" value="${t.username}"> ${t.name}</div>`;
+        }
+      });
+      if(container.innerHTML === "") container.innerHTML = "No teachers found.";
+    };
+
+    window.sendAdminNotification = async function() {
+      const btn = document.getElementById("sendAdminNotifBtn");
+      const msg = document.getElementById("notifMessageInput").value.trim();
+      const type = document.getElementById("notifTargetType").value;
+      if(!msg) { alert("Please enter a message."); return; }
+      
+      runWithBtnSpinner(btn, "🚀 Push Notification", async () => {
+        const title = "From Admin";
+        if(type === 'student') {
+          const cls = document.getElementById("notifTargetClass").value;
+          let targetStudents = getLiveStudents();
+          if(cls !== "ALL") targetStudents = targetStudents.filter(s => cleanClassStr(s.class) === cleanClassStr(cls));
+          if(targetStudents.length === 0) { alert("No students found in this class."); return; }
+          for(let s of targetStudents) { await window.pushAppNotification(s.admn, title, msg, 'admin_msg'); }
+        } else {
+          const selectedT = Array.from(document.querySelectorAll(".notif-t-chk:checked")).map(c => c.value);
+          if(selectedT.length === 0) { alert("Please select at least one teacher."); return; }
+          for(let tUser of selectedT) { await window.pushAppNotification(tUser, title, msg, 'admin_msg'); }
+        }
+        alert("✔ Notifications sent successfully!");
+        document.getElementById("notifMessageInput").value = "";
+        window.closeModal("adminSendNotifModal");
+      });
+    };
+
+       // Override openModal for Admin Notif
+    const originalOpenModalNotif = window.openModal;
+    window.openModal = async function(id) {
+      originalOpenModalNotif(id);
+      if(id === 'adminSendNotifModal') window.toggleNotifTargetUI();
+    };
+
+    // UI Render Engine for 15 Notifications
+    window.listenToNotifications = function() {
+      const loggedUser = localStorage.getItem("loggedUser");
+      if(!loggedUser) return;
+      const role = localStorage.getItem("loggedRole");
+      const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
+      if(!targetId) return;
+
+      onValue(ref(db, `notifications/${targetId}`), (snap) => {
+        const badge = document.getElementById("notifBadgeCount");
+        const panel = document.getElementById("notificationPanelBody");
+        if(!panel) return;
+
+        if(!snap.exists()) {
+          panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">No new notifications.</div>`;
+          if(badge) badge.style.display = "none";
+          return;
+        }
+
+        const notifs = Object.values(snap.val());
+        notifs.sort((a,b) => Number(b.id) - Number(a.id)); // Newest first
+        
+        let unreadCount = 0;
+        let html = "";
+        
+        // Show only last 15 in Drawer
+        const displayNotifs = notifs.slice(0, 15);
+
+        displayNotifs.forEach(n => {
+          if(!n.read) unreadCount++;
+          const bg = n.read ? "transparent" : "rgba(2, 136, 209, 0.08)";
+          const weight = n.read ? "700" : "900";
+          const safeTitle = (n.title || "").replace(/'/g, "\\'");
+          const safeDetail = (n.detail || "").replace(/'/g, "\\'");
+          const safeExtra = n.extra ? encodeURIComponent(JSON.stringify(n.extra)) : "%7B%7D";
+          
+          html += `
+          <div class="notif-card" style="background: ${bg}; padding: 14px 16px; border-bottom: 1px solid var(--border-color);" 
+               onclick="window.openNotifDetails('${n.id}', '${safeTitle}', '${safeDetail}', '${n.type}', '${safeExtra}')">
+              <div style="font-size: 13px; font-weight: ${weight}; color: var(--text-color);">${n.title}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.detail}</div>
+              <div class="notif-time">${n.date} at ${n.time}</div>
+          </div>`;
+        });
+
+        panel.innerHTML = html;
+        if(badge) {
+          if(unreadCount > 0) {
+            badge.innerText = unreadCount > 9 ? "9+" : unreadCount;
+            badge.style.display = "block";
+          } else {
+            badge.style.display = "none";
+          }
+        }
+      });
+    };
+
+    // Click Logic & Formatting
+    window.openNotifDetails = async function(id, title, detail, type, extraStr) {
+      const loggedUser = localStorage.getItem("loggedUser");
+      const role = localStorage.getItem("loggedRole");
+      const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
+      
+      // Mark as read in DB
+      update(ref(db), { [`notifications/${targetId}/${id}/read`]: true });
+
+      let extra = {};
+      try { extra = JSON.parse(decodeURIComponent(extraStr)); } catch(e){}
+
+      document.getElementById("notifDetailsTitle").innerText = title;
+      document.getElementById("notifDetailsBody").innerHTML = detail; // innerHTML for line breaks
+      const actionBox = document.getElementById("notifDetailsActionBox");
+      actionBox.innerHTML = "";
+
+      // Dynamic Icons & UI based on Type
+      if(type === 'pay_fees' || type === 'fees_due') {
+        document.getElementById("notifDetailsIcon").innerText = "⚠️";
+        if(extra.amount) {
+           actionBox.innerHTML = `
+           <div style="background: rgba(220,38,38,0.1); padding: 12px; border-radius: 12px; margin-bottom: 12px; color: #dc2626; font-weight: 800;">
+               Due Amount: ₹${extra.amount}<br><span style="font-size:10px;">For: ${extra.months || 'Dues'}</span>
+           </div>
+           <button class="btn-primary btn-green" onclick="window.payFromNotif('${extra.amount}')">💳 Pay Now (UPI)</button>`;
+        }
+      } else if (type === 'test_added') { document.getElementById("notifDetailsIcon").innerText = "📝";
+      } else if (type === 'admin_msg') { 
+        document.getElementById("notifDetailsIcon").innerText = "📢";
+        document.getElementById("notifDetailsBody").innerHTML += `<br><br><span style="background:rgba(2, 136, 209, 0.15); color:#0288d1; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Message From Admin</span>`;
+      } else if (type === 'points_update') { document.getElementById("notifDetailsIcon").innerText = "⭐";
+      } else if (type === 'test_submitted') { document.getElementById("notifDetailsIcon").innerText = "✅";
+      } else if (type === 'absent_alert') { document.getElementById("notifDetailsIcon").innerText = "❌";
+      } else { document.getElementById("notifDetailsIcon").innerText = "🔔"; }
+
+      openModal('notifDetailsModal');
+    };
+
+    window.payFromNotif = async function(amount) {
+      const student = await getStudentRecord(currentStudentAdmn);
+      const studentName = student ? student.name : "Student";
+      const upiId = "7302132270@ybl";
+      window.location.href = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=DIGITAL CLASSES&am=${amount}&cu=INR&tn=Fee ID ${currentStudentAdmn} (${studentName})`;
+    };
+
+    // Smart Automated Tasks Engine
+    window.runSmartScheduledTasks = async function() {
+      const role = localStorage.getItem("loggedRole");
+      const studentAdmn = currentStudentAdmn;
+      if(role !== 'student' || !studentAdmn) return;
+
+      const now = new Date();
+      const hour = now.getHours();
+      const dateNum = now.getDate();
+      const todayKey = getTodayKey();
+      const currentMonthName = getAutoMonthName();
+
+      const sysSnap = await safeDataFetch(`sys_flags/${studentAdmn}`) || {};
+
+      // 1. Collect Points Reminder (8 PM)
+      if(hour >= 20) {
+        const claims = await safeDataFetch(`daily_claims/${studentAdmn}`) || {};
+        if(!claims[todayKey] && !sysSnap[`pts_notif_${todayKey}`]) {
+          await window.pushAppNotification(studentAdmn, "⭐ Points Pending!", "You haven't collected your daily reward points today. Claim them now before they expire!", "reminder");
+          await update(ref(db, `sys_flags/${studentAdmn}`), { [`pts_notif_${todayKey}`]: true });
+        }
+      }
+
+      // 2. Absent Alert (10 PM)
+      if(hour >= 22) {
+        const attSnap = await safeDataFetch(`attendance/${studentAdmn}/${currentMonthName}`) || {};
+        if(attSnap[`day_${dateNum}`] === false && !sysSnap[`absent_notif_${todayKey}`]) {
+          const st = await getStudentRecord(studentAdmn);
+          await window.pushAppNotification(studentAdmn, "📅 Absent Alert", `${st.name} was marked absent today in class.`, "absent_alert");
+          await update(ref(db, `sys_flags/${studentAdmn}`), { [`absent_notif_${todayKey}`]: true });
+        }
+      }
+
+      // 3. Pay Fees Alert (6th Day of Month)
+      if(dateNum >= 6 && !sysSnap[`fee_notif_${currentMonthName}_${now.getFullYear()}`]) {
+        setTimeout(async () => {
+          if(currentStudentTotalDueAmount > 0) {
+            await window.pushAppNotification(studentAdmn, "⚠️ Pending Fees Due", `Please pay your pending fees of ₹${currentStudentTotalDueAmount}. Ignoring this may restrict portal access.`, "fees_due", { amount: currentStudentTotalDueAmount });
+          }
+          await update(ref(db, `sys_flags/${studentAdmn}`), { [`fee_notif_${currentMonthName}_${now.getFullYear()}`]: true });
+        }, 3500); // Give time for fees to calculate
+      }
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(() => {
+
+          setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
         if(loggedUser && loggedRole) {
+          window.listenToNotifications(); // Enable Live Notifications Array
+          
           if(loggedRole === "teacher") { window.loadTeacherBoardNotifications(); window.checkTeacherDailyClaimStatus(); }
           if(loggedRole === "admin") { window.calculateAdminEntryTabAnalytics(); window.renderAdminHomeTeacherboardCards(); }
+          if(loggedRole === "student") { window.runSmartScheduledTasks(); }
         }
       }, 500);
     });
