@@ -6617,10 +6617,7 @@ body.dark-mode .btn-status-claimed {
     
     
 
-    document.addEventListener("DOMContentLoaded", () => {
-     
-      
-          // Ask for Permission, Register Service Worker & Generate FCM Token
+       // Ask for Permission, Register Service Worker & Generate FCM Token
     window.initNativePushAndSW = async function() {
       if ('serviceWorker' in navigator && 'Notification' in window) {
         try {
@@ -6628,7 +6625,6 @@ body.dark-mode .btn-status-claimed {
           const permission = await Notification.requestPermission();
           
           if (permission === 'granted') {
-            // Aapki VAPID Key use karke Token le rahe hain
             const currentToken = await getToken(messaging, { 
                 vapidKey: "BMy6YCNZIFapXi6K2-V2pELcMXcQiL0MMnsjQmMcM7phuvRr3ScNmU48LAHms5jOnowLFa_YcdDian86x02kIzg", 
                 serviceWorkerRegistration: registration 
@@ -6639,7 +6635,6 @@ body.dark-mode .btn-status-claimed {
                 const role = localStorage.getItem("loggedRole");
                 const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
                 
-                // User ke database record mein token save karein
                 if (targetId) {
                     await update(ref(db), { [`users/${targetId}/fcmToken`]: currentToken });
                 }
@@ -6649,7 +6644,11 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
+    document.addEventListener("DOMContentLoaded", () => {
+      // 🚀 YAHAN FUNCTION CALL KARNA ZAROORI THA!
+      window.initNativePushAndSW();
       
+    
       setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
         if(loggedUser && loggedRole) {
