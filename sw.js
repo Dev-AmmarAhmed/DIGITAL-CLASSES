@@ -1,48 +1,23 @@
-// sw.js - Realtime Service Worker for Native Notifications & PWA
-const CACHE_NAME = 'digital-classes-realtime-v1';
+// sw.js - Service Worker for Firebase Cloud Messaging
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// 1. Push Notification Logic
-self.addEventListener('push', function(event) {
-    console.log('[Service Worker] Push Received.');
+firebase.initializeApp({
+  apiKey: "AIzaSyDSdTvqbCn-UMi2cUiyNPQN3UbKfqsfNoI",
+  authDomain: "digital-classes-app-14235.firebaseapp.com",
+  databaseURL: "https://digital-classes-app-14235-default-rtdb.firebaseio.com",
+  projectId: "digital-classes-app-14235",
+  storageBucket: "digital-classes-app-14235.firebasestorage.app",
+  messagingSenderId: "889883419588",
+  appId: "1:889883419588:web:0ae24d6da84740f127ba91"
 });
+
+const messaging = firebase.messaging();
 
 self.addEventListener('notificationclick', function(event) {
     event.notification.close();
+    event.waitUntil(clients.openWindow('/')); // Notification click par app open karega
 });
 
-// 2. Install Event - Turant naya service worker activate karein
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
-
-// 3. Activate Event - Purana saara kachra (cache) force delete karein!
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((name) => {
-          console.log('[Service Worker] Clearing old cache:', name);
-          return caches.delete(name);
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// 4. Fetch Event - 100% NETWORK FIRST (Realtime Bypass)
-self.addEventListener('fetch', (event) => {
-  // Firebase aur Google API calls ko directly bypass karein
-  if (event.request.url.includes('firebaseio.com') || event.request.url.includes('googleapis.com')) {
-    return; 
-  }
-
-  // Pura page aur assets seedha Network (Internet) se load honge
-  event.respondWith(
-    fetch(event.request).catch((err) => {
-      // Agar internet totally band ho (Offline) tabhi purana cache check karega
-      console.log('[Service Worker] Network failed, looking in cache...');
-      return caches.match(event.request);
-    })
-  );
-});
+self.addEventListener('install', (event) => self.skipWaiting());
+self.addEventListener('activate', (event) => self.clients.claim());
