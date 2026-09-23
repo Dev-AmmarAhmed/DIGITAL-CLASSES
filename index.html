@@ -3127,9 +3127,12 @@ body.dark-mode .btn-status-claimed {
     };
     window.alert = function(msg) { window.showCustomAlert(msg); };
 
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
+    
     // UPDATED FIREBASE CREDENTIALS
     const firebaseConfig = {
       apiKey: "AIzaSyDSdTvqbCn-UMi2cUiyNPQN3UbKfqsfNoI",
@@ -3141,8 +3144,9 @@ body.dark-mode .btn-status-claimed {
       appId: "1:889883419588:web:0ae24d6da84740f127ba91"
     };
 
-    const app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const messaging = getMessaging(app);
 
     let currentRole = "admin";
     let assignedClass = "1";
@@ -6365,9 +6369,18 @@ body.dark-mode .btn-status-claimed {
         for(let i = 0; i < excess; i++) { updates[`${targetRefPath}/${keys[i]}`] = null; }
       }
       
-      updates[`${targetRefPath}/${notifId}`] = notifObj;
+           updates[`${targetRefPath}/${notifId}`] = notifObj;
+      
+      // Node.js Backend ko batane ke liye push_queue mein bhi data dalein!
+      updates[`push_queue/${notifId}`] = { 
+          targetId: targetUserId, 
+          title: title, 
+          detail: detail 
+      };
+
       await update(ref(db), updates);
     };
+
 
     window.toggleNotifTargetUI = function() {
       const type = document.getElementById("notifTargetType").value;
@@ -6605,7 +6618,37 @@ body.dark-mode .btn-status-claimed {
     
 
     document.addEventListener("DOMContentLoaded", () => {
-      window.initNativePushAndSW(); // 🚀 Ask Notification Permission!
+     
+      
+          // Ask for Permission, Register Service Worker & Generate FCM Token
+    window.initNativePushAndSW = async function() {
+      if ('serviceWorker' in navigator && 'Notification' in window) {
+        try {
+          const registration = await navigator.serviceWorker.register('sw.js');
+          const permission = await Notification.requestPermission();
+          
+          if (permission === 'granted') {
+            // Aapki VAPID Key use karke Token le rahe hain
+            const currentToken = await getToken(messaging, { 
+                vapidKey: "BMy6YCNZIFapXi6K2-V2pELcMXcQiL0MMnsjQmMcM7phuvRr3ScNmU48LAHms5jOnowLFa_YcdDian86x02kIzg", 
+                serviceWorkerRegistration: registration 
+            });
+            
+            if (currentToken) {
+                const loggedUser = localStorage.getItem("loggedUser");
+                const role = localStorage.getItem("loggedRole");
+                const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
+                
+                // User ke database record mein token save karein
+                if (targetId) {
+                    await update(ref(db), { [`users/${targetId}/fcmToken`]: currentToken });
+                }
+            }
+          }
+        } catch(e) { console.log("FCM Token Error: ", e); }
+      }
+    };
+
       
       setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
