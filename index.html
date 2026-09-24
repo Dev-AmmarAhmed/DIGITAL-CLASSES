@@ -3592,14 +3592,21 @@ body.dark-mode .btn-status-claimed {
         const usersData = await safeDataFetch("users");
         const uData = usersData ? usersData[u] : null;
 
-        if(uData && uData.password === p) {
+                if(uData && uData.password === p) {
           localStorage.setItem("loggedUser", u);
           localStorage.setItem("loggedPass", p);
           localStorage.setItem("loggedRole", uData.role);
           if(uData.assignedClass) localStorage.setItem("assignedClass", uData.assignedClass);
           if(uData.admn) localStorage.setItem("studentAdmn", uData.admn);
+          
+          // 🚀 FIX: Login hote hi background mein Token generate aur save karein!
+          if (typeof window.initNativePushAndSW === "function") {
+             window.initNativePushAndSW();
+          }
+
           renderDashboardForRole(uData.role, uData.assignedClass, uData.admn);
         } else {
+
           document.getElementById("loginError").style.display = "block";
           document.getElementById("loginError").innerText = "Invalid credentials. Please try again.";
         }
@@ -6617,13 +6624,28 @@ body.dark-mode .btn-status-claimed {
     
     
 
-       // Ask for Permission, Register Service Worker & Generate FCM Token
-    window.initNativePushAndSW = async function() {
+          // Ask for Permission, Register SW, Handle Multiple Devices & Unblock Scenarios
+    let isNagging = false;
+    window.initNativePushAndSW = async function(isFromClick = false) {
       if ('serviceWorker' in navigator && 'Notification' in window) {
         try {
           const registration = await navigator.serviceWorker.register('sw.js');
-          const permission = await Notification.requestPermission();
+          let permission = Notification.permission;
           
+          // Agar user ne permanently block kiya hai aur touch kar raha hai
+          if (permission === 'denied' && isFromClick && !isNagging) {
+             isNagging = true;
+             alert("🔔 Aapne Notifications block ki hui hain!\n\nPlease Chrome ki 'Site Settings' mein ja kar Allow karein taake important updates mil sakein.");
+             setTimeout(() => { isNagging = false; }, 5000); // 5 sec cooldown taake alert spam na ho
+             return;
+          }
+
+          // Agar un-answered (default) hai toh popup maange
+          if (permission !== 'granted' && permission !== 'denied') {
+             permission = await Notification.requestPermission();
+          }
+          
+          // Agar allow kar diya gaya hai (ya settings se theek kar diya gaya hai)
           if (permission === 'granted') {
             const currentToken = await getToken(messaging, { 
                 vapidKey: "BMy6YCNZIFapXi6K2-V2pELcMXcQiL0MMnsjQmMcM7phuvRr3ScNmU48LAHms5jOnowLFa_YcdDian86x02kIzg", 
@@ -6636,7 +6658,15 @@ body.dark-mode .btn-status-claimed {
                 const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
                 
                 if (targetId) {
-                    await update(ref(db), { [`users/${targetId}/fcmToken`]: currentToken });
+                    // MULTI-DEVICE SUPPORT: Purane token delete kiye bina list mein naya token dalein
+                    const tokenSnap = await get(ref(db, `users/${targetId}/fcmTokens`));
+                    let tokensObj = tokenSnap.exists() ? tokenSnap.val() : {};
+                    let tokenExists = Object.values(tokensObj).includes(currentToken);
+                    
+                    if(!tokenExists) {
+                        const newKey = Date.now().toString();
+                        await update(ref(db), { [`users/${targetId}/fcmTokens/${newKey}`]: currentToken });
+                    }
                 }
             }
           }
@@ -6644,6 +6674,19 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
+    // Har Touch/Click par permission check karega (Jaise aapne manga!)
+    document.addEventListener("click", () => {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            window.initNativePushAndSW(true);
+        } else if ('Notification' in window && Notification.permission === 'granted') {
+            // Agar pehle block tha aur ab user ne setting se open kar diya hai, toh token fetch kar lo!
+            window.initNativePushAndSW(false);
+        }
+    });
+
+
+
+    
     document.addEventListener("DOMContentLoaded", () => {
       // 🚀 YAHAN FUNCTION CALL KARNA ZAROORI THA!
       window.initNativePushAndSW();
