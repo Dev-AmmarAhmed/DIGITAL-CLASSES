@@ -6577,51 +6577,11 @@ body.dark-mode .btn-status-claimed {
       window.location.href = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=DIGITAL CLASSES&am=${amount}&cu=INR&tn=Fee ID ${currentStudentAdmn} (${studentName})`;
     };
 
-    // Smart Automated Tasks Engine
-    window.runSmartScheduledTasks = async function() {
-      const role = localStorage.getItem("loggedRole");
-      const studentAdmn = currentStudentAdmn;
-      if(role !== 'student' || !studentAdmn) return;
-
-      const now = new Date();
-      const hour = now.getHours();
-      const dateNum = now.getDate();
-      const todayKey = getTodayKey();
-      const currentMonthName = getAutoMonthName();
-
-      const sysSnap = await safeDataFetch(`sys_flags/${studentAdmn}`) || {};
-
-      // 1. Collect Points Reminder (8 PM)
-      if(hour >= 20) {
-        const claims = await safeDataFetch(`daily_claims/${studentAdmn}`) || {};
-        if(!claims[todayKey] && !sysSnap[`pts_notif_${todayKey}`]) {
-          await window.pushAppNotification(studentAdmn, "⭐ Points Pending!", "You haven't collected your daily reward points today. Claim them now before they expire!", "reminder");
-          await update(ref(db, `sys_flags/${studentAdmn}`), { [`pts_notif_${todayKey}`]: true });
-        }
-      }
-
-      // 2. Absent Alert (10 PM)
-      if(hour >= 22) {
-        const attSnap = await safeDataFetch(`attendance/${studentAdmn}/${currentMonthName}`) || {};
-        if(attSnap[`day_${dateNum}`] === false && !sysSnap[`absent_notif_${todayKey}`]) {
-          const st = await getStudentRecord(studentAdmn);
-          await window.pushAppNotification(studentAdmn, "📅 Absent Alert", `${st.name} was marked absent today in class.`, "absent_alert");
-          await update(ref(db, `sys_flags/${studentAdmn}`), { [`absent_notif_${todayKey}`]: true });
-        }
-      }
-
-      // 3. Pay Fees Alert (6th Day of Month)
-      if(dateNum >= 6 && !sysSnap[`fee_notif_${currentMonthName}_${now.getFullYear()}`]) {
-        setTimeout(async () => {
-          if(currentStudentTotalDueAmount > 0) {
-            await window.pushAppNotification(studentAdmn, "⚠️ Pending Fees Due", `Please pay your pending fees of ₹${currentStudentTotalDueAmount}. Ignoring this may restrict portal access.`, "fees_due", { amount: currentStudentTotalDueAmount });
-          }
-          await update(ref(db, `sys_flags/${studentAdmn}`), { [`fee_notif_${currentMonthName}_${now.getFullYear()}`]: true });
-        }, 3500); // Give time for fees to calculate
-      }
+       window.runSmartScheduledTasks = async function() {
+      // Disabled in Frontend. 
+      // Now handled securely by Node.js Backend Server via Cron Jobs.
     };
 
-    
     
 
           // Ask for Permission, Register SW, Handle Multiple Devices & Unblock Scenarios
