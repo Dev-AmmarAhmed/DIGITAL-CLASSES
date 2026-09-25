@@ -1,17 +1,74 @@
 {
-  "name": "DIGITAL CLASSES",
+  "id": "com.digitalclasses.app",
+  "name": "DIGITAL CLASSES PRO",
   "short_name": "DigitalClasses",
+  "description": "Premium educational portal for students, teachers, and admins. Manage online tests, attendance, fee tracking, and daily rewards seamlessly.",
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./index.html",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#0b132b",
-  "theme_color": "#0f172a",
-  "orientation": "portrait",
+  "theme_color": "#0288d1",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
-      "sizes": "500x500",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Check Attendance",
+      "short_name": "Attendance",
+      "description": "View daily attendance record",
+      "url": "./index.html?action=attendance",
+      "icons": [{ "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Pay Fees",
+      "short_name": "Fees",
+      "description": "Pay your pending dues via UPI",
+      "url": "./index.html?action=fees",
+      "icons": [{ "src": "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [
+        {
+          "name": "homework_file",
+          "accept": ["image/*", ".pdf", "video/*"]
+        }
+      ]
+    }
+  }
 }
