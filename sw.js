@@ -1,4 +1,4 @@
-// sw.js - Service Worker for Firebase Cloud Messaging
+// sw.js - Service Worker for Firebase Cloud Messaging (Background Support)
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
@@ -14,10 +14,28 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-self.addEventListener('notificationclick', function(event) {
-    event.notification.close();
-    event.waitUntil(clients.openWindow('/')); // Notification click par app open karega
+// 🚀 BACKGROUND MESSAGE HANDLER (Jab App Close ho)
+messaging.onBackgroundMessage(function(payload) {
+  console.log('[sw.js] Received background message: ', payload);
+  
+  const notificationTitle = payload.notification.title || "DIGITAL CLASSES";
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: payload.notification.icon || "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+    badge: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
+    vibrate: [200, 100, 200, 100, 200],
+    requireInteraction: true
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// Jab user notification par click karega tou app open hogi
+self.addEventListener('notificationclick', function(event) {
+    event.notification.close();
+    event.waitUntil(clients.openWindow('/')); 
+});
+
+// Force Service Worker Update
 self.addEventListener('install', (event) => self.skipWaiting());
 self.addEventListener('activate', (event) => self.clients.claim());
