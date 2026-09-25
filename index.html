@@ -3200,9 +3200,10 @@ body.dark-mode .btn-status-claimed {
       window.updateFeeCheckboxes(e.target.value, "feeModalCheckboxes", "fee-chk");
     });
 
-    onValue(ref(db), (snap) => {
+      onValue(ref(db), (snap) => {
       if (snap.exists()) {
         fullDbCache = snap.val();
+        localStorage.setItem("offlineDbCache", JSON.stringify(fullDbCache)); // 🚀 Backup for Offline Use
         if (fullDbCache.students) {
           inMemoryStudentsData = fullDbCache.students;
           if(currentRole === "admin") renderAdminStudentsDirectory();
@@ -3212,6 +3213,20 @@ body.dark-mode .btn-status-claimed {
         fullDbCache = {}; inMemoryStudentsData = {};
       }
     });
+
+    // 🚀 Load Offline Data if No Internet on Startup
+    window.addEventListener('load', () => {
+      if (!navigator.onLine) {
+        const cachedDb = localStorage.getItem("offlineDbCache");
+        if (cachedDb) {
+          fullDbCache = JSON.parse(cachedDb);
+          if (fullDbCache.students) inMemoryStudentsData = fullDbCache.students;
+          window.showCustomAlert("⚡ You are currently offline. Working from local backup. Attendance will auto-sync when online.");
+        }
+      }
+    });
+
+    
 
     async function safeDataFetch(refPath) {
       try {
@@ -3454,14 +3469,27 @@ body.dark-mode .btn-status-claimed {
       if(el) { el.addEventListener(eventType, callback); }
     }
 
-    async function runWithBtnSpinner(btnElement, originalText, callbackFn) {
+        async function runWithBtnSpinner(btnElement, originalText, callbackFn) {
       if(!btnElement || btnElement.disabled) return;
       btnElement.disabled = true;
+
+      // 🚀 FIX 2: Offline mode hang prevention & Auto-Sync
+      if (!navigator.onLine) {
+        btnElement.innerHTML = `Saved Offline ⚡`;
+        callbackFn().catch(e => console.log("Queued for sync")); // Run without awaiting so UI doesn't hang
+        setTimeout(() => {
+          btnElement.disabled = false;
+          btnElement.innerHTML = originalText;
+        }, 1500);
+        return;
+      }
+
       btnElement.innerHTML = `<span class="spinner"></span> Processing...`;
       try { await callbackFn(); } catch(err) { console.error("Execution Error:", err); } 
       finally { btnElement.disabled = false; btnElement.innerHTML = originalText; }
     }
 
+    
     function getTodayFormattedDate() {
       const today = new Date();
       return `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
@@ -3628,11 +3656,25 @@ body.dark-mode .btn-status-claimed {
       refreshAllTeacherData();
     };
 
-    function renderDashboardForRole(role, aClass, sAdmn) {
+      function renderDashboardForRole(role, aClass, sAdmn) {
       currentRole = role; 
+      
+      // 🚀 FIX 1: Ghost Login & Auto-Logout Security
+      const loggedUser = localStorage.getItem("loggedUser");
+      if(loggedUser) {
+        onValue(ref(db, `users/${loggedUser}`), (snap) => {
+          if(!snap.exists()) {
+            alert("⚠️ You have been logged out. Your account was deleted or disabled by the Admin.");
+            localStorage.clear();
+            window.location.reload();
+          }
+        });
+      }
+
       // Split assigned classes by comma and pick the first one as default
       const tClasses = (aClass || "1").split(",");
-      assignedClass = role === "teacher" ? tClasses[0] : (aClass || "1"); 
+
+        assignedClass = role === "teacher" ? tClasses[0] : (aClass || "1"); 
       currentStudentAdmn = sAdmn || localStorage.getItem("studentAdmn");
 
          document.getElementById("mainContainer").classList.remove("login-mode");
