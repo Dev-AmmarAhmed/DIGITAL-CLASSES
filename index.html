@@ -569,7 +569,7 @@ input:disabled, select:disabled { background-color: rgba(0,0,0,0.06) !important;
   box-shadow: 0 -6px 25px rgba(0,0,0,0.15); z-index: 100; height: 64px; align-items: center; border-top-left-radius: 24px; border-top-right-radius: 24px; border-top: 1px solid var(--border-color);
 }
 .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 800; cursor: pointer; flex: 1; text-align: center; }
-.nav-item.active { color: #0288d1 !important; transform: translateY(-2px); }
+.nav-item.active {    color: #0288d1 !important;    transform: translateY(-8px);    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);  }
 body.teacher-mode .nav-item.active { color: #7c3aed !important; }
 body.student-mode .nav-item.active { color: #0288d1 !important; }
 .nav-icon { font-size: 18px; margin-bottom: 2px; }
@@ -2758,6 +2758,26 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
+
+    <!-- STUDENT TEST RESULT VIEW MODAL -->
+  <div id="studentTestResultModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; height: 90vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0;">
+      <div class="live-test-header" style="background: #0288d1;">
+        <button class="btn-sm-del" style="margin: 0; padding: 6px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);" onclick="closeModal('studentTestResultModal')">⬅ Close</button>
+        <span id="resultModalTitle" style="font-weight: 900; font-size: 15px; text-align: center; flex: 1; padding: 0 10px;">📝 Test Result</span>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--app-bg);">
+        <div style="text-align:center; padding: 16px; background: rgba(34, 197, 94, 0.1); border: 2px solid #16a34a; border-radius: 16px; margin-bottom: 16px;">
+           <h2 id="resultModalScore" style="color:#16a34a; font-weight:900; margin-bottom:4px; font-size: 24px;">Score: 0/0</h2>
+           <p style="font-weight:800; font-size:12px; color:var(--text-muted);">This cache automatically deletes after 24 hours.</p>
+        </div>
+        <div id="resultModalQuestionsBox"></div>
+      </div>
+    </div>
+  </div>
+
+
+  
    <!-- STUDENT LIVE TEST PORTAL MODAL -->
   <div id="studentLiveTestModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
     <div class="modal-content" style="max-width: 600px; width: 100%; height: 96vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0;">
@@ -3063,8 +3083,8 @@ body.dark-mode .btn-status-claimed {
     }, { passive: false, capture: true });
 
     document.addEventListener("click", function (e) {
-      const target = e.target.closest(".btn-primary, .btn-sm-del, .icon-btn, .class-chip, .nav-item, .drawer-item");
-      if (!target) return;
+  const target = e.target.closest(".btn-primary, .btn-sm-del, .icon-btn, .class-chip, .drawer-item");
+  if (!target) return;
       const oldRipple = target.querySelector(".ripple-wave");
       if (oldRipple) oldRipple.remove();
 
@@ -3620,20 +3640,26 @@ body.dark-mode .btn-status-claimed {
         const usersData = await safeDataFetch("users");
         const uData = usersData ? usersData[u] : null;
 
-                if(uData && uData.password === p) {
+                       if(uData && uData.password === p) {
+          // Clear old user cache if a different user logs in
+          const previousUser = localStorage.getItem("loggedUser");
+          if (previousUser && previousUser !== u) {
+              localStorage.clear();
+          }
+
           localStorage.setItem("loggedUser", u);
           localStorage.setItem("loggedPass", p);
           localStorage.setItem("loggedRole", uData.role);
           if(uData.assignedClass) localStorage.setItem("assignedClass", uData.assignedClass);
           if(uData.admn) localStorage.setItem("studentAdmn", uData.admn);
           
-          // 🚀 FIX: Login hote hi background mein Token generate aur save karein!
           if (typeof window.initNativePushAndSW === "function") {
              window.initNativePushAndSW();
           }
 
           renderDashboardForRole(uData.role, uData.assignedClass, uData.admn);
         } else {
+
 
           document.getElementById("loginError").style.display = "block";
           document.getElementById("loginError").innerText = "Invalid credentials. Please try again.";
@@ -4120,26 +4146,32 @@ body.dark-mode .btn-status-claimed {
       document.getElementById("sHomeworkSubSection").style.display = type === 'hw' ? 'block' : 'none';
     };
 
-    async function loadStudentStudyMaterials() {
+       async function loadStudentStudyMaterials() {
       const container = document.getElementById("sStudyMatContainer");
       if(!container) return;
       const classKey = cleanClassStr(assignedClass);
       const materials = await safeDataFetch(`study_material/${classKey}`);
 
       container.innerHTML = "";
+      let count = 0;
       if(materials && Object.keys(materials).length > 0) {
         Object.values(materials).forEach(mat => {
+          // Hide check - Agar material hidden hai toh list me add mat kro
+          if (mat.isHidden) return; 
+          
+          count++;
           container.innerHTML += `
             <div style="padding:12px; border:1px solid var(--border-color); border-radius:14px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
               <div>
                 <div style="font-size:13px; font-weight:800;">${mat.title}</div>
                 <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${mat.date} | ${mat.type ? mat.type.toUpperCase() : 'PDF'}</div>
               </div>
-              ${mat.file ? `<a href="${mat.file}" download="${mat.title}" class="btn-primary btn-blue" style="width:auto; padding:6px 14px; font-size:11px; margin-top:0; text-decoration:none;">View/Download</a>` : `<span style="font-size:11px; font-weight:800; color:#d97706;">ACTIVE TEST</span>`}
+              ${mat.file ? `<a href="${mat.file}" target="_blank" class="btn-primary btn-blue" style="width:auto; padding:6px 14px; font-size:11px; margin-top:0; text-decoration:none;">View / Download</a>` : `<span style="font-size:11px; font-weight:800; color:#d97706;">ACTIVE TEST</span>`}
             </div>
           `;
         });
-      } else { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No study materials available.</p>`; }
+      } 
+      if(count === 0) { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No study materials available.</p>`; }
     }
 
     async function loadStudentHomework() {
@@ -4156,27 +4188,68 @@ body.dark-mode .btn-status-claimed {
       } else { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No homework assigned yet.</p>`; }
     }
 
-    addSafeListener("uploadHomeworkBtn", "click", () => {
+        addSafeListener("uploadHomeworkBtn", "click", () => {
       const btn = document.getElementById("uploadHomeworkBtn");
-      runWithBtnSpinner(btn, "🚀 Upload Homework", async () => {
+      runWithBtnSpinner(btn, "🚀 Uploading to Drive...", async () => {
         const title = document.getElementById("hwTitleInput").value.trim();
         const fileInput = document.getElementById("hwFileInput");
 
         if(!title || !fileInput.files.length) { alert("Please enter title and select homework image."); return; }
 
-        const fileDataUrl = await readFileAsDataURL(fileInput.files[0]);
-        const hwId = Date.now().toString();
-        const classKey = cleanClassStr(assignedClass);
+        const file = fileInput.files[0];
+        
+        // Base64 conversion for Google Drive
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Data = e.target.result.split(',')[1];
+            
+            try {
+                // YAHAN APNI GOOGLE APPS SCRIPT KI LINK PASTE KRNA (Same as Phase 4)
+                const appsScriptUrl = "<paste here>";
+                
+                const response = await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        base64: base64Data,
+                        filename: file.name,
+                        mimeType: file.type,
+                        type: "homework" 
+                    })
+                });
+                
+                const result = await response.json();
+                if(result.status !== "success") throw new Error("Upload failed");
 
-        const hwObj = { id: hwId, title: `[Homework] ${title}`, file: fileDataUrl, date: getTodayFormattedDate(), class: classKey, type: 'homework' };
-        await set(ref(db, `homework/${classKey}/${hwId}`), hwObj);
-        await set(ref(db, `study_material/${classKey}/${hwId}`), hwObj);
+                const hwId = Date.now().toString();
+                const classKey = cleanClassStr(assignedClass);
+                
+                const hwObj = { 
+                    id: hwId, 
+                    title: `[Homework] ${title}`, 
+                    file: result.url, // Firebase me ab sirf Drive ka URL save hoga
+                    date: getTodayFormattedDate(), 
+                    class: classKey, 
+                    type: 'homework' 
+                };
 
-        alert("Homework uploaded and synced successfully.");
-        document.getElementById("hwTitleInput").value = ""; document.getElementById("hwFileInput").value = "";
-        window.closeModal("uploadHomeworkModal");
+                await set(ref(db, `homework/${classKey}/${hwId}`), hwObj);
+                
+                // Cross-post to study material if needed (as per original logic)
+                await set(ref(db, `study_material/${classKey}/${hwId}`), hwObj);
+
+                alert("Homework uploaded to Google Drive successfully.");
+                document.getElementById("hwTitleInput").value = ""; 
+                document.getElementById("hwFileInput").value = "";
+                window.closeModal("uploadHomeworkModal");
+
+            } catch (err) {
+                alert("Upload failed. Make sure your Apps Script link is correct.");
+            }
+        };
+        reader.readAsDataURL(file);
       });
     });
+
 
     function loadStudentLeaderboard(students) {
       const container = document.getElementById("sLeaderboardContainer");
@@ -4262,9 +4335,9 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-    addSafeListener("uploadMaterialBtn", "click", () => {
+       addSafeListener("uploadMaterialBtn", "click", () => {
       const btn = document.getElementById("uploadMaterialBtn");
-      runWithBtnSpinner(btn, "🚀 Upload & Compress", async () => {
+      runWithBtnSpinner(btn, "🚀 Uploading to Drive...", async () => {
         const title = document.getElementById("matTitleInput").value.trim();
         const type = document.getElementById("matTypeSelect").value;
         const fileInput = document.getElementById("matFileInput");
@@ -4273,21 +4346,55 @@ body.dark-mode .btn-status-claimed {
         if(!title || !fileInput.files.length) { alert("Please enter title and select file."); return; }
 
         const file = fileInput.files[0];
-        let fileDataUrl = type === "video" ? await compressVideoFile(file) : await readFileAsDataURL(file);
+        
+        // Base64 conversion Google Drive ke liye
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Data = e.target.result.split(',')[1];
+            
+            try {
+                // YAHAN APNI GOOGLE APPS SCRIPT KI LINK PASTE KRNA
+                const appsScriptUrl = "<paste here>";
+                
+                const response = await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        base64: base64Data,
+                        filename: file.name,
+                        mimeType: file.type,
+                        type: type 
+                    })
+                });
+                
+                const result = await response.json();
+                if(result.status !== "success") throw new Error("Upload failed");
 
-        if(!fileDataUrl) { alert("File processing failed. Please try again."); return; }
+                const matId = Date.now().toString();
+                const cleanClass = cleanClassStr(targetClass);
+                
+                // Google Drive ki direct link Firebase me save hogi
+                const matObj = { 
+                    id: matId, title: title, type: type, 
+                    file: result.url, 
+                    class: cleanClass, date: getTodayFormattedDate(),
+                    isHidden: false 
+                };
 
-        const matId = Date.now().toString();
-        const cleanClass = cleanClassStr(targetClass);
-        const matObj = { id: matId, title: title, type: type, file: fileDataUrl, class: cleanClass, date: getTodayFormattedDate() };
+                await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
 
-        await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
+                alert("Study Material uploaded to Google Drive successfully.");
+                document.getElementById("matTitleInput").value = ""; 
+                document.getElementById("matFileInput").value = "";
+                window.closeModal("addStudyMaterialModal");
 
-        alert("Study Material uploaded and processed successfully.");
-        document.getElementById("matTitleInput").value = ""; document.getElementById("matFileInput").value = "";
-        window.closeModal("addStudyMaterialModal");
+            } catch (err) {
+                alert("Upload failed. Make sure your Apps Script link is correct.");
+            }
+        };
+        reader.readAsDataURL(file);
       });
     });
+
 
     addSafeListener("matAdminManageClassSelect", "change", (e) => {
       const selectedCls = e.target.value;
@@ -4295,7 +4402,8 @@ body.dark-mode .btn-status-claimed {
       loadTeacherStudyMaterials(selectedCls);
     });
 
-    async function loadTeacherStudyMaterials(targetCls) {
+
+        async function loadTeacherStudyMaterials(targetCls) {
       const tbody = document.getElementById("manageMaterialTableBody");
       const classKey = cleanClassStr(targetCls || assignedClass);
       const materials = await safeDataFetch(`study_material/${classKey}`);
@@ -4303,20 +4411,33 @@ body.dark-mode .btn-status-claimed {
       tbody.innerHTML = "";
       if(materials && Object.keys(materials).length > 0) {
         Object.entries(materials).forEach(([key, mat]) => {
-          tbody.innerHTML += `<tr><td style="text-align:left; padding-left:8px; font-weight:700;">${mat.title}</td><td>${mat.type ? mat.type.toUpperCase() : 'FILE'}</td><td><button class="btn-sm-del" onclick="window.deleteStudyMaterial('${classKey}', '${key}')">Remove</button></td></tr>`;
+          const isHidden = mat.isHidden === true;
+          const hideBtnText = isHidden ? "👁️ Unhide" : "🚫 Hide";
+          const hideBtnColor = isHidden ? "#16a34a" : "#ea580c";
+          
+          tbody.innerHTML += `<tr>
+            <td style="text-align:left; padding-left:8px; font-weight:700;">
+              ${mat.title} ${isHidden ? '<span style="color:#dc2626; font-size:9px; display:block;">(Hidden)</span>' : ''}
+            </td>
+            <td>${mat.type ? mat.type.toUpperCase() : 'FILE'}</td>
+            <td>
+              <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+                <button class="btn-primary" style="background:${hideBtnColor}; padding:4px 8px; font-size:10px; margin-top:0; width:auto;" onclick="window.toggleStudyMaterialVisibility('${classKey}', '${key}', ${isHidden})">${hideBtnText}</button>
+                <button class="btn-sm-del" style="padding:4px 8px; font-size:10px; margin-top:0;" onclick="window.deleteStudyMaterial('${classKey}', '${key}')">🗑️ Delete</button>
+              </div>
+            </td>
+          </tr>`;
         });
       } else { tbody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted);">No materials for Class ${classKey}</td></tr>`; }
     }
 
-    window.deleteStudyMaterial = async function(classKey, matKey) {
-      if(confirm("Are you sure you want to delete this material?")) {
-        await remove(ref(db, `study_material/${classKey}/${matKey}`));
-        await remove(ref(db, `homework/${classKey}/${matKey}`));
-        await remove(ref(db, `online_tests/${classKey}/${matKey}`));
-        alert("Material removed successfully.");
-        loadTeacherStudyMaterials(currentRole === "admin" ? document.getElementById("matAdminManageClassSelect").value : assignedClass);
-      }
+    // Naya function Toggle krne ke liye
+    window.toggleStudyMaterialVisibility = async function(classKey, matKey, currentlyHidden) {
+      const newState = !currentlyHidden;
+      await update(ref(db), { [`study_material/${classKey}/${matKey}/isHidden`]: newState });
+      loadTeacherStudyMaterials(currentRole === "admin" ? document.getElementById("matAdminManageClassSelect").value : assignedClass);
     };
+
 
     function populateDelTestStudentDropdown() {
       const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
@@ -5589,7 +5710,9 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-    async function loadStudentDueTests() {
+
+
+        async function loadStudentDueTests() {
       const container = document.getElementById("sDueOnlineTestsContainer");
       if(!container) return;
       const classKey = cleanClassStr(assignedClass);
@@ -5606,13 +5729,32 @@ body.dark-mode .btn-status-claimed {
             const expiryTime = new Date(test.expiry).getTime();
             if(!(!isNaN(expiryTime) && now > expiryTime)) {
               count++;
-              container.innerHTML += `<div class="card ${isCompleted ? 'test-card-completed' : 'test-card-pending'}" style="padding:14px; margin-bottom:10px; border-radius:14px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:800; color:${isCompleted ? '#16a34a' : '#d97706'};">${test.title}</div><div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Subject: ${test.subject} | Questions: ${test.numQuestions} | Marks: ${test.totalMarks} | Time: ${test.timeMinutes} Mins</div></div><div>${isCompleted ? `<span style="font-size:11px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); padding:4px 8px; border-radius:8px;">✔ Completed (${myAttempted[test.id].obtained}/${test.totalMarks})</span>` : `<button class="btn-primary btn-green" style="margin-top:0; width:auto; padding:6px 14px; font-size:11px;" onclick="window.startStudentLiveTest('${test.id}')">▶ Start Test</button>`}</div></div></div>`;
+              
+              // PHASE 2: View Result Logic with 24h Cache check
+              let viewResultHtml = "";
+              if (isCompleted) {
+                  const cacheKey = `test_cache_${test.id}_${currentStudentAdmn}`;
+                  const cacheItem = localStorage.getItem(cacheKey);
+                  if (cacheItem) {
+                      const parsedCache = JSON.parse(cacheItem);
+                      if (now - parsedCache.timestamp < 24 * 60 * 60 * 1000) {
+                          viewResultHtml = `<button class="btn-primary btn-blue" style="margin-top:6px; width:100%; padding:4px 8px; font-size:10px;" onclick="window.viewStudentTestResult('${test.id}')">🔍 View Result</button>`;
+                      } else {
+                          localStorage.removeItem(cacheKey);
+                      }
+                  }
+              }
+
+              container.innerHTML += `<div class="card ${isCompleted ? 'test-card-completed' : 'test-card-pending'}" style="padding:14px; margin-bottom:10px; border-radius:14px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:800; color:${isCompleted ? '#16a34a' : '#d97706'};">${test.title}</div><div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Subject: ${test.subject} | Questions: ${test.numQuestions} | Marks: ${test.totalMarks} | Time: ${test.timeMinutes} Mins</div></div><div>${isCompleted ? `<div style="text-align:right;"><span style="font-size:11px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); padding:4px 8px; border-radius:8px; display:inline-block;">✔ Completed (${myAttempted[test.id].obtained}/${test.totalMarks})</span>${viewResultHtml}</div>` : `<button class="btn-primary btn-green" style="margin-top:0; width:auto; padding:6px 14px; font-size:11px;" onclick="window.startStudentLiveTest('${test.id}')">▶ Start Test</button>`}</div></div></div>`;
             }
           }
         });
         if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No active due online tests right now.</p>`;
       } else { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No active due online tests right now.</p>`; }
     }
+
+
+    
 
         window.isUrdu = function(text) {
       const urduPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
@@ -5672,7 +5814,7 @@ body.dark-mode .btn-status-claimed {
       window.openModal("studentLiveTestModal");
     };
 
-    window.submitStudentLiveTest = async function() {
+        window.submitStudentLiveTest = async function() {
       if(!currentLiveTestObj) return;
       if(activeLiveTestTimer) clearInterval(activeLiveTestTimer);
 
@@ -5681,11 +5823,16 @@ body.dark-mode .btn-status-claimed {
         let obtainedMarks = 0;
         const totalMarks = currentLiveTestObj.totalMarks;
         const marksPerQ = currentLiveTestObj.marksPerQ;
+        
+        // PHASE 2: Cache student selections
+        const studentSelections = {};
 
         // Visual Validation Loop
         currentLiveTestObj.questions.forEach((qObj, idx) => {
           const selectedOpt = document.querySelector(`input[name="live_q_opt_${idx}"]:checked`);
           const correctOpt = qObj.correct;
+          
+          studentSelections[idx] = selectedOpt ? parseInt(selectedOpt.value) : null;
           
           // Disable all options
           document.querySelectorAll(`input[name="live_q_opt_${idx}"]`).forEach(inp => inp.disabled = true);
@@ -5705,10 +5852,25 @@ body.dark-mode .btn-status-claimed {
             }
           }
         });
+        
+        // Save to LocalStorage Cache for 24 Hours
+        const cacheData = { answers: studentSelections, testData: currentLiveTestObj, timestamp: Date.now() };
+        localStorage.setItem(`test_cache_${currentLiveTestObj.id}_${currentStudentAdmn}`, JSON.stringify(cacheData));
+
 
         const percentage = ((obtainedMarks / totalMarks) * 100).toFixed(1);
         let awardedPoints = 0;
         if(percentage >= 95) awardedPoints = 100; else if(percentage >= 90) awardedPoints = 80; else if(percentage >= 70) awardedPoints = 50; else if(percentage >= 50) awardedPoints = 30; else if(percentage >= 30) awardedPoints = 10; else awardedPoints = -50;
+
+        // 24-HOUR CACHE LOGIC
+        const cacheObj = {
+            test: currentLiveTestObj,
+            answers: studentAnswers,
+            obtained: obtainedMarks,
+            total: totalMarks,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(`test_cache_${currentStudentAdmn}_${currentLiveTestObj.id}`, JSON.stringify(cacheObj));
 
         const attemptObj = { testId: currentLiveTestObj.id, title: currentLiveTestObj.title, obtained: obtainedMarks, total: totalMarks, percentage: percentage, date: getTodayFormattedDate() };
         const testRecordObj = { name: `[Online] ${currentLiveTestObj.title}`, total: totalMarks, obtained: obtainedMarks, percentage: percentage, awardedPoints: awardedPoints, date: getTodayFormattedDate() };
@@ -5717,30 +5879,26 @@ body.dark-mode .btn-status-claimed {
         const updates = {};
         updates[`student_test_attempts/${currentStudentAdmn}/${currentLiveTestObj.id}`] = attemptObj;
         updates[`test_attempts/${currentLiveTestObj.id}/${currentStudentAdmn}`] = attemptObj;
-
-                updates[`tests/${currentStudentAdmn}/${Date.now()}`] = testRecordObj;
+        updates[`tests/${currentStudentAdmn}/${Date.now()}`] = testRecordObj;
         updates[`students/${currentStudentAdmn}/points`] = (student ? (student.points || 0) : 0) + awardedPoints;
 
         await update(ref(db), updates);
+        await window.pushAppNotification(currentStudentAdmn, "Test Submitted", `You scored ${obtainedMarks}/${totalMarks} in ${currentLiveTestObj.title}.`, "test_submitted");
         
-        // Notification for Test Submission
-        await window.pushAppNotification(currentStudentAdmn, "Test Submitted ✅", `You scored ${obtainedMarks}/${totalMarks} in ${currentLiveTestObj.title}.`, "test_submitted");
-
-        
-        // Show Results on screen instead of closing
         document.getElementById("submitStudentTestBtn").style.display = "none";
         document.getElementById("liveTestTimerBox").innerText = "Finished";
         
         const summaryBox = document.getElementById("testResultSummaryBox");
         summaryBox.style.display = "block";
         document.getElementById("resultMarksText").innerText = `Score: ${obtainedMarks} / ${totalMarks}`;
-        document.getElementById("resultFeedbackText").innerText = `You earned ${awardedPoints >= 0 ? '+' : ''}${awardedPoints} Points. Review your answers above.`;
+        document.getElementById("resultFeedbackText").innerHTML = `You earned ${awardedPoints >= 0 ? '+' : ''}${awardedPoints} Points.<br><br><button class="btn-primary btn-blue" onclick="window.viewStudentTestResult('${currentLiveTestObj.id}')" style="margin-top:10px; padding:10px; font-size:12px;">👁 View Result</button>`;
         
         refreshStudentDashboard();
       });
     };
 
-    window.forceCloseLiveTest = function() {
+
+      window.forceCloseLiveTest = function() {
        const btn = document.getElementById("submitStudentTestBtn");
        if (btn && btn.style.display !== "none") {
            if(confirm('Are you sure you want to EXIT? Your test will be submitted as it is.')) {
@@ -5750,6 +5908,74 @@ body.dark-mode .btn-status-claimed {
        } else {
            window.closeModal("studentLiveTestModal");
        }
+    };
+
+    // PHASE 2: New function to view results from Cache
+    window.viewStudentTestResult = function(testId) {
+       const cacheKey = `test_cache_${testId}_${currentStudentAdmn}`;
+       const cacheItem = localStorage.getItem(cacheKey);
+       
+       if (!cacheItem) {
+           alert("Result details have expired or are unavailable. Results are only kept for 24 hours.");
+           return;
+       }
+       
+       const parsedCache = JSON.parse(cacheItem);
+       if (Date.now() - parsedCache.timestamp >= 24 * 60 * 60 * 1000) {
+           localStorage.removeItem(cacheKey);
+           alert("Result details have expired. Results are only kept for 24 hours.");
+           return;
+       }
+       
+       const test = parsedCache.testData;
+       const answers = parsedCache.answers;
+       currentLiveTestObj = test; 
+       
+       if(document.getElementById("liveTestTitleDisplay")) document.getElementById("liveTestTitleDisplay").innerText = test.title + " (Result)";
+       if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = "Finished";
+       
+       const questionsBox = document.getElementById("liveTestQuestionsBox");
+       questionsBox.innerHTML = "";
+       
+       let obtainedMarks = 0;
+       
+       test.questions.forEach((qObj, idx) => {
+         const isQUrdu = window.isUrdu(qObj.q);
+         let optionsHtml = "";
+         const studentAnswer = answers[idx];
+         const correctOpt = qObj.correct;
+         
+         if (studentAnswer === correctOpt) obtainedMarks += test.marksPerQ;
+         
+         qObj.options.forEach((optText, optIdx) => {
+           const isOptUrdu = window.isUrdu(optText);
+           let extraClass = "";
+           if (optIdx === correctOpt) extraClass = "correct";
+           else if (optIdx === studentAnswer) extraClass = "wrong";
+           
+           optionsHtml += `
+             <label class="opt-patch ${extraClass}" style="display:flex; align-items:center; gap:12px; cursor:default; ${isOptUrdu ? 'flex-direction:row-reverse; text-align:right;' : ''}">
+               <input type="radio" disabled ${optIdx === studentAnswer ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: #0288d1; flex-shrink:0;">
+               <span dir="auto" style="flex:1; color:var(--text-color); ${isOptUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:18px; line-height:2;" : "font-size:14px; font-weight:700;"}">${optText}</span>
+             </label>`;
+         });
+
+         questionsBox.innerHTML += `
+           <div class="test-q-patch">
+             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+               Q${idx + 1}: ${qObj.q}
+             </div>
+             ${optionsHtml}
+           </div>`;
+       });
+
+       document.getElementById("submitStudentTestBtn").style.display = "none";
+       const summaryBox = document.getElementById("testResultSummaryBox");
+       summaryBox.style.display = "block";
+       document.getElementById("resultMarksText").innerText = `Score: ${obtainedMarks} / ${test.totalMarks}`;
+       document.getElementById("resultFeedbackText").innerText = "Review your answers above. This detail will expire 24 hours after the test.";
+       
+       window.openModal("studentLiveTestModal");
     };
 
 
@@ -6292,38 +6518,64 @@ body.dark-mode .btn-status-claimed {
       }
     };
 
-    window.handleMusterAction = async function(type, btn) {
-      if(btn.classList.contains("btn-grayed")) {
-        window.shakeButton(btn);
-        return;
+   window.handleMusterAction = async function(type, btn) {
+  if(btn.classList.contains("btn-grayed")) {
+    window.shakeButton(btn);
+    return;
+  }
+  
+  const loggedUser = localStorage.getItem("loggedUser");
+  if(!loggedUser) return;
+
+  const actionText = type === 'in' ? "Check-in" : "Check-out";
+  if(confirm(`Submit ${actionText} time?`)) {
+    runWithBtnSpinner(btn, "Verifying Location...", async () => {
+      
+      // PHASE 1: Native App (Kotlin/Flutter) Bridge Integration
+      let isVerified = true; 
+      
+      // Check if running inside the App wrapper
+      if (window.NativeAppBridge) {
+         try {
+            // Verify exact Lat, Lng, 50m radius, and Router IP
+            const response = await window.NativeAppBridge.verifyMusterEligibility(
+                "19.0620114", "72.9215085", 50, "192.168.0.1"
+            );
+            
+            if (response !== "SUCCESS") {
+               alert("Verification Failed: You are not within the 50m radius of the institute or not connected to the authorized WiFi network.");
+               isVerified = false;
+            }
+         } catch(e) {
+            alert("Could not detect location or WiFi. Please ensure app permissions are granted.");
+            isVerified = false;
+         }
       }
       
-      const loggedUser = localStorage.getItem("loggedUser");
-      if(!loggedUser) return;
+      // Halt execution if verification fails (prevents Firebase save)
+      if (!isVerified) return;
 
-      const actionText = type === 'in' ? "Check-in" : "Check-out";
-      if(confirm(`Submit ${actionText} time?`)) {
-        runWithBtnSpinner(btn, "Saving...", async () => {
-          const currentMonth = getAutoMonthName();
-          const todayNum = new Date().getDate();
-          const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-          
-               await update(ref(db), {
-            [`muster/${currentMonth}/day_${todayNum}/${loggedUser}/${type}`]: nowTime
-          });
-          
-          alert(`✔ ${actionText} time saved successfully!`);
-          window.checkMusterButtonStates();
+      const currentMonth = getAutoMonthName();
+      const todayNum = new Date().getDate();
+      const nowTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      
+      await update(ref(db), {
+        [`muster/${currentMonth}/day_${todayNum}/${loggedUser}/${type}`]: nowTime
+      });
+      
+      alert(`${actionText} time saved successfully!`);
+      window.checkMusterButtonStates();
 
-          // Teacher Attendance Reminder (10 mins after Check-in)
-          if(type === 'in') {
-            setTimeout(() => {
-              window.pushAppNotification(loggedUser, "📅 Take Attendance", "Please don't forget to mark today's class attendance.", "reminder");
-            }, 10 * 60 * 1000); 
-          }
-   });
+      if(type === 'in') {
+        setTimeout(() => {
+          window.pushAppNotification(loggedUser, "📅 Take Attendance", "Please don't forget to mark today's class attendance.", "reminder");
+        }, 10 * 60 * 1000); 
       }
-    };
+    });
+  }
+};
+
+
 
     window.loadAdminMusterTable = async function() {
       const month = document.getElementById("adminMusterMonthSelect").value;
