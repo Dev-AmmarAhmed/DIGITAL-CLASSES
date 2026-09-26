@@ -2358,16 +2358,26 @@ body.dark-mode .btn-status-claimed {
         <label>Material Title *:</label>
         <input type="text" id="matTitleInput" placeholder="e.g. Chapter 1 Notes / Math Video">
 
-        <label>Material Type *:</label>
+               <label>Material Type *:</label>
         <select id="matTypeSelect">
           <option value="pdf">📄 PDF Document</option>
           <option value="video">🎥 Video File</option>
+          <option value="video_link">🔗 Video Link (YouTube, etc.)</option>
+          <option value="notes_link">🔗 Notes/Doc Link (Drive, etc.)</option>
         </select>
 
-        <label>Select File (Video/PDF) *:</label>
-        <input type="file" id="matFileInput" accept=".pdf,video/*">
+        <div id="matFileBox">
+          <label>Select File (Video/PDF) *:</label>
+          <input type="file" id="matFileInput" accept=".pdf,video/*">
+          <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload & Compress</button>
+        </div>
 
-        <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload & Compress</button>
+        <div id="matLinkBox" style="display:none;">
+          <label>Paste External Link Here *:</label>
+          <input type="text" id="matLinkInput" placeholder="e.g. https://youtube.com/...">
+          <button id="saveLinkMaterialBtn" class="btn-primary btn-orange" style="margin-top:16px;">🔗 Save External Link</button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -3598,10 +3608,25 @@ body.dark-mode .btn-status-claimed {
         }
       }
       if(id === "bulkStudentModal") { generateBulkStudentTable(); }
-      if(id === "addStudyMaterialModal") {
+     
+      
+      
+            if(id === "addStudyMaterialModal") {
         if(currentRole === "admin") { document.getElementById("adminMatClassBox").style.display = "block"; document.getElementById("teacherMatClassBox").style.display = "none"; } 
         else { document.getElementById("adminMatClassBox").style.display = "none"; document.getElementById("teacherMatClassBox").style.display = "block"; document.getElementById("matAssignedClassDisplay").value = `Class ${assignedClass}`; }
+        
+        // Reset inputs and visibility
+        if(document.getElementById("matTypeSelect")) {
+            document.getElementById("matTypeSelect").value = "pdf";
+            document.getElementById("matFileBox").style.display = "block";
+            document.getElementById("matLinkBox").style.display = "none";
+            document.getElementById("matLinkInput").value = "";
+            document.getElementById("matTitleInput").value = "";
+            if(document.getElementById("matFileInput")) document.getElementById("matFileInput").value = "";
+        }
       }
+
+      
       if(id === "manageStudyMaterialModal") {
         if(currentRole === "admin") {
           document.getElementById("adminManageClassBox").style.display = "block";
@@ -4510,71 +4535,61 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-       addSafeListener("uploadMaterialBtn", "click", () => {
-      const btn = document.getElementById("uploadMaterialBtn");
-      runWithBtnSpinner(btn, "🚀 Uploading to Drive...", async () => {
-        const title = document.getElementById("matTitleInput").value.trim();
-        const type = document.getElementById("matTypeSelect").value;
-        const fileInput = document.getElementById("matFileInput");
-        let targetClass = currentRole === "admin" ? document.getElementById("matAdminClassSelect").value : assignedClass;
 
-        if(!title || !fileInput.files.length) { alert("Please enter title and select file."); return; }
-
-        const file = fileInput.files[0];
-        
-        // Base64 conversion Google Drive ke liye
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            
-            try {
-                // YAHAN APNI GOOGLE APPS SCRIPT KI LINK PASTE KRNA
-                const appsScriptUrl = "<paste here>";
-                
-                const response = await fetch(appsScriptUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        base64: base64Data,
-                        filename: file.name,
-                        mimeType: file.type,
-                        type: type 
-                    })
-                });
-                
-                const result = await response.json();
-                if(result.status !== "success") throw new Error("Upload failed");
-
-                const matId = Date.now().toString();
-                const cleanClass = cleanClassStr(targetClass);
-                
-                // Google Drive ki direct link Firebase me save hogi
-                const matObj = { 
-                    id: matId, title: title, type: type, 
-                    file: result.url, 
-                    class: cleanClass, date: getTodayFormattedDate(),
-                    isHidden: false 
-                };
-
-                await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
-
-                alert("Study Material uploaded to Google Drive successfully.");
-                document.getElementById("matTitleInput").value = ""; 
-                document.getElementById("matFileInput").value = "";
-                window.closeModal("addStudyMaterialModal");
-
-            } catch (err) {
-                alert("Upload failed. Make sure your Apps Script link is correct.");
-            }
-        };
-        reader.readAsDataURL(file);
-      });
-    });
 
 
     addSafeListener("matAdminManageClassSelect", "change", (e) => {
       const selectedCls = e.target.value;
       document.getElementById("manageClassText").innerText = `Materials for Class ${selectedCls}`;
       loadTeacherStudyMaterials(selectedCls);
+    });
+
+        addSafeListener("matTypeSelect", "change", (e) => {
+      const type = e.target.value;
+      const isLink = type === "video_link" || type === "notes_link";
+      
+      document.getElementById("matFileBox").style.display = isLink ? "none" : "block";
+      document.getElementById("matLinkBox").style.display = isLink ? "block" : "none";
+    });
+    addSafeListener("saveLinkMaterialBtn", "click", () => {
+      const btn = document.getElementById("saveLinkMaterialBtn");
+      runWithBtnSpinner(btn, "🔗 Save External Link", async () => {
+        const title = document.getElementById("matTitleInput").value.trim();
+        const type = document.getElementById("matTypeSelect").value;
+        const linkInput = document.getElementById("matLinkInput").value.trim();
+        let targetClass = currentRole === "admin" ? document.getElementById("matAdminClassSelect").value : assignedClass;
+
+        if(!title || !linkInput) { alert("Please enter a title and paste the valid link."); return; }
+
+        // Basic URL validation
+        if(!linkInput.startsWith("http://") && !linkInput.startsWith("https://")) {
+            alert("Please enter a valid URL starting with http:// or https://");
+            return;
+        }
+
+        const matId = Date.now().toString();
+        const cleanClass = cleanClassStr(targetClass);
+        
+        // Ensure standard type labels for UI consistency
+        const displayType = type === "video_link" ? "VIDEO LINK" : "NOTES LINK";
+
+        const matObj = { 
+            id: matId, 
+            title: title, 
+            type: displayType, 
+            file: linkInput, 
+            class: cleanClass, 
+            date: getTodayFormattedDate(),
+            isHidden: false 
+        };
+
+        await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
+
+        alert("External Link material saved successfully.");
+        document.getElementById("matTitleInput").value = ""; 
+        document.getElementById("matLinkInput").value = "";
+        window.closeModal("addStudyMaterialModal");
+      });
     });
 
 
