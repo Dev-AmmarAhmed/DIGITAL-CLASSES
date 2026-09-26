@@ -1950,21 +1950,23 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
-  <!-- CUSTOM SYSTEM ALERT MODAL -->
-  <div id="customAlertModal" class="modal-overlay" style="z-index: 99999;">
+  <!-- CUSTOM SYSTEM CONFIRM MODAL -->
+  <div id="customConfirmModal" class="modal-overlay" style="z-index: 99999;">
     <div class="modal-content" style="max-width: 320px; text-align: center; padding: 22px; border-radius: 20px;">
-      <h3 style="color: #0288d1; font-size: 15px; font-weight: 800; margin-bottom: 3px; letter-spacing: 0.3px;">DIGITAL CLASSES</h3>
-      <p style="color: var(--text-muted); font-size: 11px; font-weight: 700; margin-bottom: 14px;">System says</p>
+      <h3 style="color: #ea580c; font-size: 15px; font-weight: 900; margin-bottom: 3px; letter-spacing: 0.3px;">⚠️ PLEASE CONFIRM</h3>
+      <p style="color: var(--text-muted); font-size: 11px; font-weight: 700; margin-bottom: 14px;">Action Required</p>
       
-      <div id="customAlertMessage" style="font-size: 13px; font-weight: 700; color: var(--text-color); margin-bottom: 22px; line-height: 1.4;">
-        Message text here...
+      <div id="customConfirmMessage" style="font-size: 13px; font-weight: 700; color: var(--text-color); margin-bottom: 22px; line-height: 1.4;">
+        Are you sure?
       </div>
       
-      <button class="btn-primary btn-blue" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px;" onclick="window.closeCustomAlert()">
-        OK
-      </button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px; background: #64748b;" onclick="window.closeCustomConfirm()">Cancel</button>
+        <button id="customConfirmOkBtn" class="btn-primary btn-red" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px;">Yes, Do it</button>
+      </div>
     </div>
   </div>
+
 
   <!-- TEACHER ONLINE TEST HISTORY & STUDENT RESULT MODAL -->
   <div id="onlineTestHistoryModal" class="modal-overlay">
@@ -3453,11 +3455,34 @@ body.dark-mode .btn-status-claimed {
         modal.classList.add("active");
       } else { console.log("System message:", msg); }
     };
-    window.closeCustomAlert = function() {
+ 
+      
+          window.closeCustomAlert = function() {
       const modal = document.getElementById("customAlertModal");
       if (modal) { modal.classList.remove("active"); }
     };
     window.alert = function(msg) { window.showCustomAlert(msg); };
+
+    // NEW ENGINE FOR PREMIUM APP CONFIRM POPUPS
+    window.showCustomConfirm = function(msg, onConfirmCallback) {
+      const modal = document.getElementById("customConfirmModal");
+      if (!modal) {
+          if(confirm(msg)) onConfirmCallback();
+          return;
+      }
+      document.getElementById("customConfirmMessage").innerText = msg;
+      const okBtn = document.getElementById("customConfirmOkBtn");
+      okBtn.onclick = function() {
+          window.closeCustomConfirm();
+          onConfirmCallback();
+      };
+      modal.classList.add("active");
+    };
+    
+    window.closeCustomConfirm = function() {
+      const modal = document.getElementById("customConfirmModal");
+      if (modal) { modal.classList.remove("active"); }
+    };
 
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -4383,13 +4408,18 @@ body.dark-mode .btn-status-claimed {
       if(tabId === "studentTabTest") loadStudentDueTests();
     };
 
-    async function refreshAllTeacherData() {
+        async function refreshAllTeacherData() {
       await safeDataFetch("students");
       loadTeacherTodayAttendance();
       loadTeacherStudentsDirectory();
       loadTeacherLeaderboard();
       populateTeacherStudentDropdowns();
+      // FIX: Added function call to load active tests
+      if (typeof window.loadTeacherActiveOnlineTests === 'function') {
+         window.loadTeacherActiveOnlineTests();
+      }
     }
+
 
     addSafeListener("refreshTeacherDashboardBtn", "click", () => {
       const btn = document.getElementById("refreshTeacherDashboardBtn");
@@ -6305,18 +6335,18 @@ body.dark-mode .btn-status-claimed {
     };
 
 
-
-      window.forceCloseLiveTest = function() {
+    window.forceCloseLiveTest = function() {
        const btn = document.getElementById("submitStudentTestBtn");
        if (btn && btn.style.display !== "none") {
-           if(confirm('Are you sure you want to EXIT? Your test will be submitted as it is.')) {
+           window.showCustomConfirm('Are you sure you want to EXIT? Your test will be submitted as it is.', () => {
               window.submitStudentLiveTest();
               setTimeout(() => { window.closeModal("studentLiveTestModal"); }, 2000);
-           }
+           });
        } else {
            window.closeModal("studentLiveTestModal");
        }
     };
+
 
          window.viewStudentTestResult = function(testId) {
        const cacheKey = `test_cache_${testId}_${currentStudentAdmn}`;
@@ -6389,16 +6419,18 @@ body.dark-mode .btn-status-claimed {
 
 
 
-
     window.removeOnlineTest = async function(testId) {
-      if (confirm("Confirm..?")) {
+      window.showCustomConfirm("Are you sure you want to completely remove this active test?", async () => {
         try {
           await remove(ref(db, `online_tests/${cleanClassStr(assignedClass)}/${testId}`));
-          alert("✔ Online Test has been Removed successfully!");
+          window.showCustomAlert("✔ Online Test has been Removed successfully!");
           window.loadTeacherActiveOnlineTests();
-        } catch (err) { alert("Problem Test remove. Please wait and try again."); }
-      }
+        } catch (err) { 
+          window.showCustomAlert("Problem Test remove. Please wait and try again."); 
+        }
+      });
     };
+
 
     window.openTeacherManagementTab = function(e) {
       if (e) e.stopPropagation();
