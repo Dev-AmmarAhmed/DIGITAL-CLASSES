@@ -1891,7 +1891,528 @@ body.dark-mode .btn-status-claimed {
     </section>
   </main>
 
+  <!-- ====================================================================
+       SECTION 4: MODALS (POPUPS) SYSTEM INCLUDING STUDY MATERIAL MODALS
+  ==================================================================== -->
 
+  <!-- UNIVERSAL NATIVE CUSTOM SELECT SHEET MODAL -->
+  <div id="customSelectModal" class="modal-overlay" style="z-index: 100000;">
+    <div class="modal-content" style="max-width: 380px; border-radius: 24px; padding: 0; overflow: hidden; animation: slideUp 0.25s cubic-bezier(0.25, 1, 0.5, 1);">
+      <div class="modal-header" style="background: var(--header-bg); padding: 16px 20px;">
+        <span id="customSelectTitle" style="font-size: 15px; font-weight: 800; color: #ffffff;">Select Option</span>
+        <span class="close-modal" onclick="window.closeCustomSelectSheet()">✕</span>
+      </div>
+      <div id="customSelectOptionsContainer" style="max-height: 50vh; overflow-y: auto; padding: 10px 14px;">
+        <!-- Options dynamically populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAILED FEES DUE BREAKDOWN MODAL (TRIPLE TAP TRIGGERED) -->
+  <div id="feesDueDetailModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header">
+        <span id="feesModalHeaderTitle">⚠️ Detailed Fees Breakdown</span>
+        <span class="close-modal" onclick="closeModal('feesDueDetailModal')">✕</span>
+      </div>
+
+      <div class="modal-body">
+        <label>Filter by Standard / Class:</label>
+        <select id="dueModalStdSelect" onchange="window.renderFeesDueDetailTable(this.value)">
+          <option value="ALL">All Classes (Standard-wise Order)</option>
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-top:10px; margin-bottom:8px;" id="dueModalTotalSummaryText">
+          Loading Due Records...
+        </div>
+
+        <div class="table-container" style="max-height: 55vh; overflow-y: auto;">
+          <table style="min-width: 100%;">
+            <thead>
+              <tr>
+                <th style="width:36px;">Sr.</th>
+                <th style="text-align:left; padding-left:8px;">Name</th>
+                <th>Std</th>
+                <th style="text-align:left; padding-left:8px;">Due Months/Instalment</th>
+                <th style="width:110px;">Total Due (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="dueModalTableBody">
+              <tr><td colspan="5" style="padding:14px;">Loading due records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM SYSTEM ALERT MODAL -->
+  <div id="customAlertModal" class="modal-overlay" style="z-index: 99999;">
+    <div class="modal-content" style="max-width: 320px; text-align: center; padding: 22px; border-radius: 20px;">
+      <h3 style="color: #0288d1; font-size: 15px; font-weight: 800; margin-bottom: 3px; letter-spacing: 0.3px;">DIGITAL CLASSES</h3>
+      <p style="color: var(--text-muted); font-size: 11px; font-weight: 700; margin-bottom: 14px;">System says</p>
+      
+      <div id="customAlertMessage" style="font-size: 13px; font-weight: 700; color: var(--text-color); margin-bottom: 22px; line-height: 1.4;">
+        Message text here...
+      </div>
+      
+      <button class="btn-primary btn-blue" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px;" onclick="window.closeCustomAlert()">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <!-- TEACHER ONLINE TEST HISTORY & STUDENT RESULT MODAL -->
+  <div id="onlineTestHistoryModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <span>📜 Online Test History</span>
+        <span class="close-modal" onclick="closeModal('onlineTestHistoryModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div class="table-container" style="max-height: 30vh; overflow-y: auto;">
+          <table style="min-width: 100%;">
+            <thead>
+              <tr>
+                <th>Test Name (Click to View)</th>
+                <th>Subject</th>
+                <th>Time Given</th>
+                <th>Expiry Date</th>
+              </tr>
+            </thead>
+            <tbody id="tTestHistoryTableBody">
+              <tr><td colspan="4" style="padding:10px;">Loading history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="tTestAttemptDetailsBox" style="display:none; margin-top: 18px; border-top: 2px solid var(--border-color); padding-top: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-size:13px; font-weight:800; color:#0288d1;" id="tAttemptDetailsTitle">Test Results: -</div>
+          </div>
+          <div class="table-container" style="max-height: 35vh; overflow-y: auto;">
+            <table style="min-width: 100%;">
+              <thead>
+                <tr>
+                  <th style="min-width:140px; text-align:left; padding-left:10px;">Student Name</th>
+                  <th>Status</th>
+                  <th>Marks</th>
+                  <th>Time Taken</th>
+                </tr>
+              </thead>
+              <tbody id="tTestAttemptsTableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN TEACHER LEADERBOARD & POINTS MODAL -->
+  <div id="adminTeacherLeaderboardModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <span style="font-size: 17px; font-weight: 900; color: #fbbf24;">👩‍🏫 Teacher Leaderboard & Points</span>
+        <span class="close-modal" onclick="closeModal('adminTeacherLeaderboardModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:800;">Teachers Standings</div>
+          <button onclick="openModal('addTeacherPointsModal')" class="btn-primary btn-green" style="width:auto; padding:6px 14px; font-size:11px; margin-top:0;">➕ Add / Deduct Points</button>
+        </div>
+
+        <div class="table-container" style="max-height: 50vh; overflow-y: auto;">
+          <table style="min-width: 100%;">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="text-align:left; padding-left:10px;">Teacher Name</th>
+                <th>Class</th>
+                <th style="width:110px;">Total Points</th>
+              </tr>
+            </thead>
+            <tbody id="adminTeacherLbTableBody">
+              <tr><td colspan="4">Loading Leaderboard...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ADD TEACHER POINTS MODAL -->
+  <div id="addTeacherPointsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>⭐ Award / Deduct Teacher Points</span>
+        <span class="close-modal" onclick="closeModal('addTeacherPointsModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Teacher *:</label>
+        <select id="adminTeacherSelect"><option value="">-- Select Teacher --</option></select>
+
+        <label>Points (+ / -) *:</label>
+        <input type="number" id="adminTeacherPointsInput" placeholder="e.g. 50 or -20">
+
+        <label>Reason / Note *:</label>
+        <input type="text" id="adminTeacherReasonInput" placeholder="e.g. Excellent Monthly Attendance / Late Submission">
+
+        <button id="submitTeacherPointsBtn" onclick="window.saveTeacherPointsFromAdmin()" class="btn-primary btn-orange" style="margin-top:16px;">⭐ Submit Points</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY REWARD DETAILS MODAL -->
+  <div id="weeklyRewardDetailsModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px; overflow-x: hidden;">
+      <div class="modal-header">
+        <span>📅 Daily & Weekly Reward Schedule</span>
+        <span class="close-modal" onclick="closeModal('weeklyRewardDetailsModal')">✕</span>
+      </div>
+      <div class="modal-body" style="padding: 16px 12px;">
+        <div style="font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:8px; text-align:center;">WEEKDAYS REWARDS (+50 PTS)</div>
+        <div class="weekdays-grid-5" id="weekdaysGridTop" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%;"></div>
+        
+        <div style="font-size:11px; font-weight:800; color:#d97706; margin-top:14px; margin-bottom:8px; text-align:center;">WEEKEND BONUS REWARDS (+80 PTS)</div>
+        <div class="weekends-grid-2" id="weekendsGridBottom" style="display: flex; justify-content: space-between; gap: 8px; width: 100%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MULTI-CLASS LEADERBOARD & POINTS EDIT MODAL -->
+  <div id="adminLeaderboardModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <span>🏆 Class Leaderboard & Points Editor</span>
+        <span class="close-modal" onclick="closeModal('adminLeaderboardModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Class / Standard:</label>
+        <select id="adminLbClassSelect" onchange="window.renderAdminClassLeaderboard(this.value)">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; margin-bottom:8px;">
+          <div style="font-size:12px; font-weight:800; color:var(--text-muted);" id="adminLbHeaderClassText">Class Standings</div>
+          <button id="toggleAdminLbEditBtn" onclick="window.toggleAdminLeaderboardEditMode()" class="btn-primary btn-purple" style="width:auto; padding:5px 12px; font-size:11px; margin-top:0;">✏️ Edit / Update Points</button>
+        </div>
+
+        <div class="table-container" style="max-height: 55vh; overflow-y: auto;">
+          <table style="min-width: 100%;">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th style="text-align:left; padding-left:10px;">Student Name</th>
+                <th style="width:110px;">Points</th>
+              </tr>
+            </thead>
+            <tbody id="adminLbTableBody"><tr><td colspan="3">Loading Leaderboard...</td></tr></tbody>
+          </table>
+        </div>
+
+        <button id="saveAdminLbPointsBtn" onclick="window.saveAdminLeaderboardPoints()" class="btn-primary btn-green" style="margin-top:14px; display:none;">💾 Save Updated Points</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK STUDENTS REGISTER MODAL -->
+  <div id="bulkStudentModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <span>📋 Bulk Students Register (50 Rows)</span>
+        <span class="close-modal" onclick="closeModal('bulkStudentModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Standard for Bulk Add:</label>
+        <select id="bulkClassSelect" onchange="window.updateBulkClassColumn(this.value)">
+          <option value="1">Class 1</option>
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <div class="bulk-table-wrapper">
+          <table class="bulk-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student Name *</th>
+                <th>Standard</th>
+                <th>WhatsApp Number *</th>
+              </tr>
+            </thead>
+            <tbody id="bulkTableBody"></tbody>
+          </table>
+        </div>
+
+        <button id="saveBulkStudentsBtn" class="btn-primary btn-green" style="margin-top:14px;">🚀 Save All Registered Students</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT PROFILE MODAL FOR HAMBURGER MENU ACCESS -->
+  <div id="studentProfileDrawerModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>👤 My Profile & Fees Card</span>
+        <span class="close-modal" onclick="closeModal('studentProfileDrawerModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Full Name:</label>
+        <input type="text" id="sProfFullName" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <label>Date of Birth:</label>
+        <input type="text" id="sProfDob" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <label>WhatsApp Number:</label>
+        <input type="text" id="sProfPhone" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <div style="margin-top:20px; border-top:2px dashed var(--border-color); padding-top:16px;">
+          <div class="card-title" style="border:none; margin-bottom:8px;">Fees Record</div>
+          <button id="sGenerateFeesCardBtn" class="btn-primary btn-orange">Generate Fees Card</button>
+        </div>
+
+        <div style="margin-top:16px; border-top:2px dashed var(--border-color); padding-top:16px;">
+          <button id="sMyPointHistoryBtn" class="btn-primary btn-purple">My Point History</button>
+        </div>
+
+        <div class="card" id="sFeesCardViewArea" style="display:none; margin-top:16px;">
+          <div class="table-container">
+            <table style="min-width: 100%;">
+              <thead id="sFeesCardHead"></thead>
+              <tbody id="sFeesCardBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD HOMEWORK MODAL FOR TEACHER -->
+  <div id="uploadHomeworkModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📚 Upload Homework Photo</span>
+        <span class="close-modal" onclick="closeModal('uploadHomeworkModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Assigned Class:</label>
+        <input type="text" id="hwAssignedClassDisplay" disabled style="font-weight:800; color:#7c3aed;">
+
+        <label>Homework Title / Subject *:</label>
+        <input type="text" id="hwTitleInput" placeholder="e.g. Math Worksheet / English Chap 2">
+
+        <label>Select Photo (Homework Image) *:</label>
+        <input type="file" id="hwFileInput" accept="image/*">
+
+        <button id="uploadHomeworkBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload Homework</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT POINT HISTORY MODAL -->
+  <div id="studentPointHistoryModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>⭐ Point History & Rank</span>
+        <span class="close-modal" onclick="closeModal('studentPointHistoryModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center; margin-bottom:14px; background:rgba(2, 136, 209, 0.08); padding:12px; border-radius:14px; border:1px solid #0288d1;">
+          <h3 id="historyTotalPoints" style="color:#0288d1; font-size:22px; font-weight:900;">0 PTS</h3>
+          <p id="historyStarText" style="font-size:12px; font-weight:800; color:#fbbf24;">Equivalent to 0 Stars ⭐</p>
+        </div>
+        <div class="table-container">
+          <table style="min-width: 100%;">
+            <thead><tr><th>Date</th><th>Activity / Test</th><th>Points</th></tr></thead>
+            <tbody id="sPointHistoryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT UPDATE PROFILE GRAYED MODAL -->
+  <div id="studentUpdateModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>✏️ Update Profile</span>
+        <span class="close-modal" onclick="closeModal('studentUpdateModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Full Name:</label>
+        <input type="text" id="sGrayedName" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <label>Date of Birth:</label>
+        <input type="text" id="sGrayedDob" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <label>WhatsApp Phone:</label>
+        <input type="text" id="sGrayedPhone" disabled style="background-color:rgba(0,0,0,0.06) !important;">
+
+        <div style="margin-top:16px; padding:12px; border-radius:12px; background:rgba(239, 68, 68, 0.12); border:1px solid #ef4444; text-align:center; color:#ef4444; font-weight:800; font-size:12px;">
+          🔒 Contact Teacher to Update Your Profile
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK ADD TEST MARKS MODAL -->
+  <div id="bulkAddTestModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <span>📝 Bulk Add Test Marks</span>
+        <span class="close-modal" onclick="closeModal('bulkAddTestModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div id="bulkStep1">
+          <label>Test Name / Title *:</label>
+          <input type="text" id="bulkTestNameInput" placeholder="e.g. Unit Test 1">
+
+          <label>Total Marks (For All Students) *:</label>
+          <input type="number" id="bulkTotalMarksInput" placeholder="e.g. 100">
+
+          <button id="bulkContinueBtn" class="btn-primary btn-purple" style="margin-top:16px;">Continue ➔</button>
+        </div>
+
+        <div id="bulkStep2" style="display:none;">
+          <div style="font-size:12px; font-weight:800; color:#7c3aed; margin-bottom:10px;" id="bulkHeaderDetails">
+            Test: - | Total Marks: -
+          </div>
+          <div class="table-container">
+            <table style="min-width:100%;">
+              <thead>
+                <tr>
+                  <th style="min-width:140px; text-align:left; padding-left:8px;">Student Name</th>
+                  <th style="width:90px;">Total Marks</th>
+                  <th style="width:110px;">Obtained Marks</th>
+                </tr>
+              </thead>
+              <tbody id="bulkStudentsTableBody"></tbody>
+            </table>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:16px;">
+            <button class="btn-primary" onclick="document.getElementById('bulkStep2').style.display='none'; document.getElementById('bulkStep1').style.display='block';" style="background:#64748b;">⬅ Back</button>
+            <button id="saveBulkTestMarksBtn" class="btn-primary btn-green">💾 Save All Marks & Points</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE TEST DATA MODAL -->
+  <div id="deleteTestDataModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>🗑️ Delete Test Data</span>
+        <span class="close-modal" onclick="closeModal('deleteTestDataModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Student:</label>
+        <select id="delTestStudentSelect"><option value="">-- Select Student --</option></select>
+        <button id="loadStudentTestRecordsBtn" class="btn-primary btn-purple" style="margin-top:10px;">Load Test Records</button>
+
+        <div id="delTestDisplayArea" class="table-container" style="display:none; margin-top:14px;">
+          <table style="min-width:100%;">
+            <thead><tr><th>Date</th><th>Test</th><th>Obtained / Total</th><th>Action</th></tr></thead>
+            <tbody id="delTestTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD STUDY MATERIAL MODAL -->
+  <div id="addStudyMaterialModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📁 Add Study Material</span>
+        <span class="close-modal" onclick="closeModal('addStudyMaterialModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div id="adminMatClassBox" style="display:none;">
+          <label>Select Target Class *:</label>
+          <select id="matAdminClassSelect">
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+
+        <div id="teacherMatClassBox" style="display:none;">
+          <label>Assigned Class:</label>
+          <input type="text" id="matAssignedClassDisplay" disabled style="font-weight:800; color:#7c3aed;">
+        </div>
+
+        <label>Material Title *:</label>
+        <input type="text" id="matTitleInput" placeholder="e.g. Chapter 1 Notes / Math Video">
+
+        <label>Material Type *:</label>
+        <select id="matTypeSelect">
+          <option value="pdf">📄 PDF Document</option>
+          <option value="video">🎥 Video File</option>
+          <option value="video_link">🔗 Video Link (YouTube, etc.)</option>
+          <option value="notes_link">🔗 Notes/Doc Link (Drive, etc.)</option>
+        </select>
+
+        <div id="matFileBox">
+          <label>Select File (Video/PDF) *:</label>
+          <input type="file" id="matFileInput" accept=".pdf,video/*">
+          <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload & Compress</button>
+        </div>
+
+        <div id="matLinkBox" style="display:none;">
+          <label>Paste External Link Here *:</label>
+          <input type="text" id="matLinkInput" placeholder="e.g. https://youtube.com/...">
+          <button id="saveLinkMaterialBtn" class="btn-primary btn-orange" style="margin-top:16px;">🔗 Save External Link</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGE STUDY MATERIAL MODAL -->
+  <div id="manageStudyMaterialModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📚 Manage Study Material</span>
+        <span class="close-modal" onclick="closeModal('manageStudyMaterialModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div id="adminManageClassBox" style="display:none; margin-bottom:10px;">
+          <label>Select Class to Manage Materials:</label>
+          <select id="matAdminManageClassSelect">
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+
+        <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:10px;" id="manageClassText">
+          Materials List
+        </div>
+        <div class="table-container">
+          <table style="min-width: 100%;">
+            <thead><tr><th>Title</th><th>Type</th><th>Action</th></tr></thead>
+            <tbody id="manageMaterialTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  
     <div id="studentProfileModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
