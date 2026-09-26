@@ -3035,9 +3035,269 @@ body.dark-mode .btn-status-claimed {
     <!-- ====================================================================
        SECTION 5: CORE ENGINE LOGIC & FIREBASE REALTIME SYNC (FIXED)
        ==================================================================== -->
+  <!-- ADD SUBJECT MODAL -->
+  <div id="addSubjectModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>➕ Add New Subject</span>
+        <span class="close-modal" onclick="closeModal('addSubjectModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Subject Name *:</label>
+        <input type="text" id="newSubjectNameInput" placeholder="e.g. Science / Mathematics / History">
+        <button id="saveSubjectBtn" class="btn-primary btn-green" style="margin-top:14px;">💾 Save Subject</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- CREATE ONLINE TEST MODAL -->
+  <div id="createOnlineTestModal" class="modal-overlay" style="z-index:100000;">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <span>📝 Create Online Test</span>
+        <span class="close-modal" onclick="closeModal('createOnlineTestModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div id="testFormConfigStep">
+          <label>Test Name *:</label>
+          <input type="text" id="cTestName" placeholder="e.g. Mid-Term Science Quiz">
+
+          <label>Subject *:</label>
+          <select id="cTestSubjectSelect">
+            <option value="">-- Select Subject --</option>
+          </select>
+
+          <label>No. of Questions *:</label>
+          <input type="number" id="cTestNumQuestions" placeholder="e.g. 5" min="1" max="50">
+
+          <label>Marks for Each Question *:</label>
+          <input type="number" id="cTestMarksPerQ" placeholder="e.g. 2">
+
+          <label>Time to Complete (in Minutes) *:</label>
+          <input type="number" id="cTestTimeMinutes" placeholder="e.g. 15">
+
+          <label>Assignment Completion Date & Time (Auto-Delete Expiry) *:</label>
+          <input type="datetime-local" id="cTestExpiryDateTime">
+
+          <div style="display: flex; gap: 10px; margin-top: 16px;">
+            <button type="button" class="btn-primary btn-orange" style="flex: 1; margin-top: 0;" onclick="openModal('contributeJsonModal')">📥 Contribute Test</button>
+            <button type="button" id="continueTestBuilderBtn" class="btn-primary btn-purple" style="flex: 1; margin-top: 0;">Continue ➔</button>
+          </div>
+        </div>
+
+        <div id="testQuestionsBuilderStep" style="display:none; margin-top:10px;">
+          <div class="card-title" style="border:none; color:#0288d1; margin-bottom:10px;">Enter Questions & Options</div>
+          <div id="questionsContainer" style="max-height: 50vh; overflow-y: auto;"></div>
+          
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <button class="btn-primary" onclick="document.getElementById('testQuestionsBuilderStep').style.display='none'; document.getElementById('testFormConfigStep').style.display='block';" style="background:#64748b;">⬅ Back</button>
+            <button id="submitFinalTestBtn" class="btn-primary btn-green">🚀 Submit & Publish Test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRIBUTE TEST JSON MODAL -->
+  <div id="contributeJsonModal" class="modal-overlay" style="z-index:100001;">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <span>📥 Paste Test JSON Code</span>
+        <span class="close-modal" onclick="closeModal('contributeJsonModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Paste JSON Code Here *:</label>
+        <textarea id="jsonCodeInput" rows="10" placeholder='[&#10;  {&#10;    "q": "Question here?",&#10;    "options": ["Opt A", "Opt B", "Opt C", "Opt D"],&#10;    "correct": 0&#10;  }&#10;]' style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-family: monospace; font-size: 12px; background: var(--input-bg); color: var(--text-color); outline: none;"></textarea>
+        
+        <button id="checkJsonBtn" class="btn-primary btn-blue" style="margin-top: 14px;" onclick="window.processAndCheckJsonCode()">🔍 Check & Parse JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT TEST RESULT VIEW MODAL -->
+  <div id="studentTestResultModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; height: 90vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0;">
+      <div class="live-test-header" style="background: #0288d1;">
+        <button class="btn-sm-del" style="margin: 0; padding: 6px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);" onclick="closeModal('studentTestResultModal')">⬅ Close</button>
+        <span id="resultModalTitle" style="font-weight: 900; font-size: 15px; text-align: center; flex: 1; padding: 0 10px;">📝 Test Result</span>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--app-bg);">
+        <div style="text-align:center; padding: 16px; background: rgba(34, 197, 94, 0.1); border: 2px solid #16a34a; border-radius: 16px; margin-bottom: 16px;">
+           <h2 id="resultModalScore" style="color:#16a34a; font-weight:900; margin-bottom:4px; font-size: 24px;">Score: 0/0</h2>
+           <p style="font-weight:800; font-size:12px; color:var(--text-muted);">This cache automatically deletes after test expiry.</p>
+        </div>
+        <div id="resultModalQuestionsBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENT LIVE TEST PORTAL MODAL -->
+  <div id="studentLiveTestModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; height: 96vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0;">
+      <div class="live-test-header">
+        <button class="btn-sm-del" style="margin: 0; padding: 6px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);" onclick="window.forceCloseLiveTest();">⬅ Exit</button>
+        <span id="liveTestTitleDisplay" style="font-weight: 900; font-size: 15px; text-align: center; flex: 1; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📝 Online Test</span>
+        <div id="liveTestTimerBox" style="font-weight: 800; font-size: 13px; background: #dc2626; padding: 4px 10px; border-radius: 12px; color: white;">--:--</div>
+      </div>
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--app-bg);">
+        <div id="liveTestQuestionsBox"></div>
+        <div id="testResultSummaryBox" style="display:none; text-align:center; padding: 16px; background: rgba(2, 136, 209, 0.1); border: 2px solid #0288d1; border-radius: 16px; margin-bottom: 16px; margin-top:10px;">
+           <h2 id="resultMarksText" style="color:#0288d1; font-weight:900; margin-bottom:4px; font-size: 24px;">Marks: 0/0</h2>
+           <p id="resultFeedbackText" style="font-weight:800; font-size:12px; color:var(--text-muted);">Please review your answers above.</p>
+        </div>
+        <button id="submitStudentTestBtn" onclick="window.submitStudentLiveTest()" class="btn-primary btn-green" style="margin-top:16px; padding: 16px; font-size: 16px; border-radius: 16px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);">🚀 Submit Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEACHER MUSTER DETAILS MODAL -->
+  <div id="teacherMusterDetailsModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📖 My Muster Details</span>
+        <span class="close-modal" onclick="closeModal('teacherMusterDetailsModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center; margin-bottom:14px;">
+          <h3 id="musterDetailsTeacherName" style="color:#0288d1; font-weight:900;">Loading...</h3>
+        </div>
+        <label>Select Month:</label>
+        <select id="myMusterMonthSelect">
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September">September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+        <button class="btn-primary btn-purple" style="margin-top:10px;" onclick="window.loadMyMusterDetails()">Load Details</button>
+        <div class="table-container" style="margin-top:14px; display:none;" id="myMusterTableArea">
+          <table style="min-width:100%;">
+            <thead><tr><th>Date</th><th>In Time</th><th>Out Time</th></tr></thead>
+            <tbody id="myMusterTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEACHER MUSTER MODAL -->
+  <div id="teacherMusterModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 360px; text-align: center;">
+      <div class="modal-header">
+        <span>⏱️ Muster</span>
+        <span class="close-modal" onclick="closeModal('teacherMusterModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 26px; font-weight: 900; color: #0288d1; margin-bottom: 4px; font-family: monospace;" id="musterLiveTime">--:--:--</div>
+        <div style="font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 24px;" id="musterLiveDate">--/--/----</div>
+        <button id="musterCheckInBtn" class="btn-primary btn-green" style="padding: 14px; font-size: 15px; margin-bottom: 12px; border-radius: 16px;" onclick="window.handleMusterAction('in', this)">🟢 Check In</button>
+        <button id="musterCheckOutBtn" class="btn-primary btn-orange" style="padding: 14px; font-size: 15px; border-radius: 16px;" onclick="window.handleMusterAction('out', this)">🔴 Check Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MUSTER SECTION (Hidden in main content, opens via Drawer) -->
+  <section id="adminTabMuster" class="tab-section admin-tab">
+    <div class="card">
+      <div class="card-title">📖 Teachers' Muster Record</div>
+      <label>Select Month:</label>
+      <select id="adminMusterMonthSelect">
+        <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+        <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+        <option value="July">July</option><option value="August">August</option><option value="September" selected>September</option>
+        <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+      </select>
+      <button id="loadMusterDataBtn" class="btn-primary btn-blue" style="margin-top:14px;" onclick="window.loadAdminMusterTable()">Load Muster</button>
+    </div>
+    <div class="card" id="adminMusterTableCard" style="display:none; padding: 12px 6px;">
+      <div class="table-container" id="adminMusterTableContainer">
+        <table class="muster-table" style="min-width: 100%;">
+          <thead id="adminMusterHead"></thead>
+          <tbody id="adminMusterBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 14px; background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.3);">
+      <div class="card-title" style="color: #dc2626; border-bottom-color: rgba(239,68,68,0.2);">🗑️ Delete Muster Data</div>
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; font-weight:700;">Remove a specific teacher's muster record for a selected month.</p>
+      <button class="btn-primary btn-red" onclick="openModal('deleteMusterModal')">Delete Teacher Muster Data</button>
+    </div>
+  </section>
+
+  <!-- DELETE MUSTER MODAL -->
+  <div id="deleteMusterModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>🗑️ Delete Muster Record</span>
+        <span class="close-modal" onclick="closeModal('deleteMusterModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Teacher:</label>
+        <select id="delMusterTeacherSelect"><option value="">-- Select Teacher --</option></select>
+        <label>Select Month:</label>
+        <select id="delMusterMonthSelect">
+          <option value="January">January</option><option value="February">February</option><option value="March">March</option>
+          <option value="April">April</option><option value="May">May</option><option value="June">June</option>
+          <option value="July">July</option><option value="August">August</option><option value="September" selected>September</option>
+          <option value="October">October</option><option value="November">November</option><option value="December">December</option>
+        </select>
+        <button class="btn-primary btn-red" style="margin-top: 16px;" onclick="window.deleteTeacherMuster()">Delete Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN SEND NOTIFICATION MODAL -->
+  <div id="adminSendNotifModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📢 Send Notification</span>
+        <span class="close-modal" onclick="closeModal('adminSendNotifModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Send To:</label>
+        <select id="notifTargetType" onchange="window.toggleNotifTargetUI()">
+          <option value="student">🎓 Students (By Class)</option>
+          <option value="teacher">👩‍🏫 Teachers (Specific)</option>
+        </select>
+        <div id="notifStudentTargetBox">
+          <label>Select Class:</label>
+          <select id="notifTargetClass">
+            <option value="ALL">All Classes</option>
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+        <div id="notifTeacherTargetBox" style="display:none;">
+          <label>Select Teachers:</label>
+          <div class="checkbox-grid" id="notifTeacherCheckboxes" style="max-height: 150px; overflow-y: auto;">
+          </div>
+        </div>
+        <label>Notification Message:</label>
+        <textarea id="notifMessageInput" rows="4" placeholder="Type your message here..." style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-color); resize: none;"></textarea>
+        <button id="sendAdminNotifBtn" class="btn-primary btn-blue" style="margin-top: 16px;" onclick="window.sendAdminNotification()">🚀 Push Notification</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION DETAILS MODAL -->
+  <div id="notifDetailsModal" class="modal-overlay" style="z-index: 100001;">
+    <div class="modal-content" style="max-width: 360px; text-align: center; padding: 24px;">
+      <div id="notifDetailsIcon" style="font-size: 44px; margin-bottom: 12px;">🔔</div>
+      <h3 id="notifDetailsTitle" style="color: #0288d1; font-weight: 900; margin-bottom: 8px; font-size: 16px;">Title</h3>
+      <div id="notifDetailsBody" style="font-size: 13px; color: var(--text-color); font-weight: 700; margin-bottom: 20px; line-height: 1.5;">Details...</div>
+      <div id="notifDetailsActionBox" style="margin-bottom: 12px;"></div>
+      <button class="btn-primary" style="background: #64748b; margin-top: 12px; padding: 10px;" onclick="closeModal('notifDetailsModal')">Close</button>
+    </div>
+  </div>
+
+  <nav id="bottomNav" class="bottom-nav" style="display: none;"></nav>
+
+  
 
     <script type="module">
+
+      
 
     let autoFilledJsonQuestions = null;
 
@@ -5964,17 +6224,15 @@ body.dark-mode .btn-status-claimed {
             </label>`;
         });
 
-                const notAttemptedBadge = (studentAnswer === null || studentAnswer === undefined) ? `<div style="color:#dc2626; font-size:11px; font-weight:800; margin-bottom:10px; display:inline-block; background:rgba(220,38,38,0.1); padding:4px 8px; border-radius:6px;">⚠️ Not Attempted</div>` : "";
+                        questionsBox.innerHTML += `
+          <div class="test-q-patch" id="q_box_${idx}">
+            <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+              Q${idx + 1}: ${qObj.q}
+            </div>
+            ${optionsHtml}
+          </div>`;
+      });
 
-         questionsBox.innerHTML += `
-           <div class="test-q-patch">
-             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:8px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
-               Q${idx + 1}: ${qObj.q}
-             </div>
-             ${notAttemptedBadge}
-             ${optionsHtml}
-           </div>`;
-       });
 
 
       document.getElementById("submitStudentTestBtn").style.display = "block";
@@ -6142,17 +6400,15 @@ body.dark-mode .btn-status-claimed {
              </label>`;
          });
 
-                  const notAttemptedBadge = (studentAnswer === null || studentAnswer === undefined) ? `<div style="color:#dc2626; font-size:11px; font-weight:800; margin-bottom:10px; display:inline-block; background:rgba(220,38,38,0.1); padding:4px 8px; border-radius:6px;">⚠️ Not Attempted</div>` : "";
+                         questionsBox.innerHTML += `
+          <div class="test-q-patch" id="q_box_${idx}">
+            <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+              Q${idx + 1}: ${qObj.q}
+            </div>
+            ${optionsHtml}
+          </div>`;
+      });
 
-         questionsBox.innerHTML += `
-           <div class="test-q-patch">
-             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:8px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
-               Q${idx + 1}: ${qObj.q}
-             </div>
-             ${notAttemptedBadge}
-             ${optionsHtml}
-           </div>`;
-       });
 
 
        document.getElementById("submitStudentTestBtn").style.display = "none";
