@@ -6170,21 +6170,8 @@ body.dark-mode .btn-status-claimed {
             if(!(!isNaN(expiryTime) && now > expiryTime)) {
               count++;
               
-              let viewResultHtml = "";
-              if (isCompleted) {
-                  const cacheKey = `test_cache_${test.id}_${currentStudentAdmn}`;
-                  const cacheItem = localStorage.getItem(cacheKey);
-                  if (cacheItem) {
-                      const parsedCache = JSON.parse(cacheItem);
-                      if (now < parsedCache.expiryTime) {
-                          viewResultHtml = `<button class="btn-primary btn-blue" style="margin-top:6px; width:100%; padding:4px 8px; font-size:10px;" onclick="window.viewStudentTestResult('${test.id}')">🔍 View Result</button>`;
-                      } else {
-                          localStorage.removeItem(cacheKey);
-                      }
-                  }
-              }
+                         container.innerHTML += `<div class="card ${isCompleted ? 'test-card-completed' : 'test-card-pending'}" style="padding:14px; margin-bottom:10px; border-radius:14px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:800; color:${isCompleted ? '#16a34a' : '#d97706'};">${test.title}</div><div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Subject: ${test.subject} | Questions: ${test.numQuestions} | Marks: ${test.totalMarks} | Time: ${test.timeMinutes} Mins</div></div><div>${isCompleted ? `<div style="text-align:right;"><span style="font-size:11px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); padding:6px 12px; border-radius:8px; display:inline-block;">✔ Completed (${myAttempted[test.id].obtained}/${test.totalMarks})</span></div>` : `<button class="btn-primary btn-green" style="margin-top:0; width:auto; padding:6px 14px; font-size:11px;" onclick="window.startStudentLiveTest('${test.id}')">▶ Start Test</button>`}</div></div></div>`;
 
-              container.innerHTML += `<div class="card ${isCompleted ? 'test-card-completed' : 'test-card-pending'}" style="padding:14px; margin-bottom:10px; border-radius:14px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div style="font-size:14px; font-weight:800; color:${isCompleted ? '#16a34a' : '#d97706'};">${test.title}</div><div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Subject: ${test.subject} | Questions: ${test.numQuestions} | Marks: ${test.totalMarks} | Time: ${test.timeMinutes} Mins</div></div><div>${isCompleted ? `<div style="text-align:right;"><span style="font-size:11px; font-weight:800; color:#16a34a; background:rgba(34,197,94,0.15); padding:4px 8px; border-radius:8px; display:inline-block;">✔ Completed (${myAttempted[test.id].obtained}/${test.totalMarks})</span>${viewResultHtml}</div>` : `<button class="btn-primary btn-green" style="margin-top:0; width:auto; padding:6px 14px; font-size:11px;" onclick="window.startStudentLiveTest('${test.id}')">▶ Start Test</button>`}</div></div></div>`;
             }
           }
         });
