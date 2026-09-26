@@ -5443,14 +5443,18 @@ body.dark-mode .btn-status-claimed {
             </label>`;
         });
 
-        questionsBox.innerHTML += `
-          <div class="test-q-patch" id="q_box_${idx}">
-            <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
-              Q${idx + 1}: ${qObj.q}
-            </div>
-            ${optionsHtml}
-          </div>`;
-      });
+                const notAttemptedBadge = (studentAnswer === null || studentAnswer === undefined) ? `<div style="color:#dc2626; font-size:11px; font-weight:800; margin-bottom:10px; display:inline-block; background:rgba(220,38,38,0.1); padding:4px 8px; border-radius:6px;">⚠️ Not Attempted</div>` : "";
+
+         questionsBox.innerHTML += `
+           <div class="test-q-patch">
+             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:8px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+               Q${idx + 1}: ${qObj.q}
+             </div>
+             ${notAttemptedBadge}
+             ${optionsHtml}
+           </div>`;
+       });
+
 
       document.getElementById("submitStudentTestBtn").style.display = "block";
       document.getElementById("testResultSummaryBox").style.display = "none";
@@ -5458,16 +5462,18 @@ body.dark-mode .btn-status-claimed {
       let totalSeconds = (test.timeMinutes || 15) * 60;
       if(activeLiveTestTimer) clearInterval(activeLiveTestTimer);
       
-      activeLiveTestTimer = setInterval(() => {
+        activeLiveTestTimer = setInterval(() => {
         totalSeconds--;
         const mins = Math.floor(totalSeconds / 60); const secs = totalSeconds % 60;
         if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
         if(totalSeconds <= 0) { 
           clearInterval(activeLiveTestTimer); 
-          alert("⏰ Time is up! Submitting your test automatically..."); 
+          if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = "Time Up!";
+          window.showCustomAlert("⏰ Time is up! Submitting your test automatically..."); 
           window.submitStudentLiveTest(); 
         }
       }, 1000);
+
       
       window.openModal("studentLiveTestModal");
     };
@@ -5476,9 +5482,10 @@ body.dark-mode .btn-status-claimed {
       if(!currentLiveTestObj) return;
       if(activeLiveTestTimer) clearInterval(activeLiveTestTimer);
 
-      const btn = document.getElementById("submitStudentTestBtn");
-      runWithBtnSpinner(btn, "🚀 Checking Answers...", async () => {
+            const btn = document.getElementById("submitStudentTestBtn");
+      runWithBtnSpinner(btn, "🚀 Submit Test", async () => {
         let obtainedMarks = 0;
+
         const totalMarks = currentLiveTestObj.totalMarks;
         const marksPerQ = currentLiveTestObj.marksPerQ;
         
@@ -5520,8 +5527,10 @@ body.dark-mode .btn-status-claimed {
         };
         localStorage.setItem(`test_cache_${currentLiveTestObj.id}_${currentStudentAdmn}`, JSON.stringify(cacheData));
 
-        const attemptObj = { testId: currentLiveTestObj.id, title: currentLiveTestObj.title, obtained: obtainedMarks, total: totalMarks, percentage: percentage, date: getTodayFormattedDate() };
-        const testRecordObj = { name: `[Online] ${currentLiveTestObj.title}`, total: totalMarks, obtained: obtainedMarks, percentage: percentage, awardedPoints: awardedPoints, date: getTodayFormattedDate() };
+                const testTitle = currentLiveTestObj.title || currentLiveTestObj.testName || "Online Test";
+        const attemptObj = { testId: currentLiveTestObj.id, title: testTitle, obtained: obtainedMarks, total: totalMarks, percentage: percentage, date: getTodayFormattedDate() };
+        const testRecordObj = { name: `[Online] ${testTitle}`, total: totalMarks, obtained: obtainedMarks, percentage: percentage, awardedPoints: awardedPoints, date: getTodayFormattedDate() };
+
         
         const student = await getStudentRecord(currentStudentAdmn);
         const updates = {};
@@ -5612,14 +5621,18 @@ body.dark-mode .btn-status-claimed {
              </label>`;
          });
 
+                  const notAttemptedBadge = (studentAnswer === null || studentAnswer === undefined) ? `<div style="color:#dc2626; font-size:11px; font-weight:800; margin-bottom:10px; display:inline-block; background:rgba(220,38,38,0.1); padding:4px 8px; border-radius:6px;">⚠️ Not Attempted</div>` : "";
+
          questionsBox.innerHTML += `
            <div class="test-q-patch">
-             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:8px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
                Q${idx + 1}: ${qObj.q}
              </div>
+             ${notAttemptedBadge}
              ${optionsHtml}
            </div>`;
        });
+
 
        document.getElementById("submitStudentTestBtn").style.display = "none";
        const summaryBox = document.getElementById("testResultSummaryBox");
