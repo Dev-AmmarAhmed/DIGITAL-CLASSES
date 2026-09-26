@@ -2356,19 +2356,20 @@ body.dark-mode .btn-status-claimed {
         <label>Material Title *:</label>
         <input type="text" id="matTitleInput" placeholder="e.g. Chapter 1 Notes / Math Video">
 
-        <label>Material Type *:</label>
-        <select id="matTypeSelect">
+                <select id="matTypeSelect">
           <option value="pdf">📄 PDF Document</option>
+          <option value="image">🖼️ Image / Photo</option>
           <option value="video">🎥 Video File</option>
           <option value="video_link">🔗 Video Link (YouTube, etc.)</option>
           <option value="notes_link">🔗 Notes/Doc Link (Drive, etc.)</option>
         </select>
 
-        <div id="matFileBox">
-          <label>Select File (Video/PDF) *:</label>
-          <input type="file" id="matFileInput" accept=".pdf,video/*">
+                <div id="matFileBox">
+          <label>Select File (Video/PDF/Image) *:</label>
+          <input type="file" id="matFileInput" accept=".pdf,video/*,image/*">
           <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload</button>
         </div>
+
 
         <div id="matLinkBox" style="display:none;">
           <label>Paste External Link Here *:</label>
@@ -4826,7 +4827,9 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
-    // ==========================================
+
+
+            // ==========================================
     // STUDY MATERIAL GOOGLE DRIVE UPLOAD LOGIC
     // ==========================================
     addSafeListener("uploadMaterialBtn", "click", () => {
@@ -4842,6 +4845,12 @@ body.dark-mode .btn-status-claimed {
       }
 
       const file = fileInput.files[0];
+      
+      // ⚠️ Size Limit Check (Base64 uploads struggle over 25-30MB on mobile)
+      if (file.size > 25 * 1024 * 1024) {
+         alert("File is too large! Please upload files under 25MB, or use the 'Video Link' option to paste a YouTube/Drive link directly.");
+         return;
+      }
 
       // Custom Spinner with Warning Text
       btn.disabled = true;
@@ -4852,41 +4861,51 @@ body.dark-mode .btn-status-claimed {
           const base64Data = e.target.result.split(',')[1];
           
           try {
+              // Aapki valid Apps Script Link
               const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwbgxe7xuj6yJzTHdhueLsvueLewzBfQfES_e55x8c097hgn59ZHQuXt8RPnkCN0IDu-A/exec"; 
               
               const payload = {
                   base64: base64Data,
                   filename: file.name,
                   mimeType: file.type || "application/octet-stream",
-                  type: "study_material" 
+                  type: type // Apps script isko detect karke sahi folder decide karega
               };
 
+              // No headers sent to avoid CORS Preflight block from Google
               const response = await fetch(appsScriptUrl, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                  body: JSON.stringify(payload)
+                  body: JSON.stringify(payload) 
               });
               
-              const result = await response.json();
-              if(!result || result.status !== "success" || !result.url) {
-                  throw new Error(result ? result.message : "Upload failed");
+              const resultText = await response.text(); 
+              let result;
+              try {
+                  result = JSON.parse(resultText);
+              } catch(parseErr) {
+                  throw new Error("Server returned HTML or invalid response. Did you deploy Apps Script as 'Anyone'?");
               }
+
+              if(result.status !== "success") throw new Error(result.message || "Upload failed");
 
               const matId = Date.now().toString();
               const cleanClass = cleanClassStr(targetClass);
-              const displayType = type === "video" ? "VIDEO" : "PDF DOCUMENT";
+              
+              // NAYA LOGIC: Image type show karne ke liye
+              let displayType = "PDF DOCUMENT";
+              if(type === "video") displayType = "VIDEO";
+              if(type === "image") displayType = "IMAGE / PHOTO";
               
               const matObj = { 
                   id: matId, 
                   title: title, 
                   type: displayType, 
-                  file: result.url,
+                  file: result.url, // Drive URL stored in Firebase
                   class: cleanClass, 
                   date: getTodayFormattedDate(),
                   isHidden: false 
               };
 
-              // Save to Firebase
+              // Save to Firebase Realtime Database
               await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
 
               // Clear inputs & Close Upload Modal
@@ -4899,8 +4918,9 @@ body.dark-mode .btn-status-claimed {
 
           } catch (err) {
               console.error("Upload Error:", err);
-              alert("Upload failed. Make sure your Apps Script Web App is deployed as 'Anyone' access and internet is working.");
+              alert("Upload failed! Server Error: " + err.message);
           } finally {
+              // Restore button state
               btn.innerHTML = "🚀 Upload";
               btn.disabled = false;
           }
@@ -4914,6 +4934,7 @@ body.dark-mode .btn-status-claimed {
       
       reader.readAsDataURL(file);
     });
+
 
 
       
