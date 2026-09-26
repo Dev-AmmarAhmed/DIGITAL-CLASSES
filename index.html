@@ -2356,30 +2356,21 @@ body.dark-mode .btn-status-claimed {
         <label>Material Title *:</label>
         <input type="text" id="matTitleInput" placeholder="e.g. Chapter 1 Notes / Math Video">
 
-                <select id="matTypeSelect">
-          <option value="pdf">📄 PDF Document</option>
-          <option value="image">🖼️ Image / Photo</option>
-          <option value="video">🎥 Video File</option>
-          <option value="video_link">🔗 Video Link (YouTube, etc.)</option>
-          <option value="notes_link">🔗 Notes/Doc Link (Drive, etc.)</option>
+        <label>Material Type *:</label>
+        <select id="matTypeSelect">
+          <option value="PDF LINK">📄 PDF Drive Link</option>
+          <option value="IMAGE LINK">🖼️ Image Drive Link</option>
+          <option value="VIDEO LINK">🎥 Video Drive / YouTube Link</option>
         </select>
 
-                <div id="matFileBox">
-          <label>Select File (Video/PDF/Image) *:</label>
-          <input type="file" id="matFileInput" accept=".pdf,video/*,image/*">
-          <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload</button>
-        </div>
-
-
-        <div id="matLinkBox" style="display:none;">
-          <label>Paste External Link Here *:</label>
-          <input type="text" id="matLinkInput" placeholder="e.g. https://youtube.com/...">
-          <button id="saveLinkMaterialBtn" class="btn-primary btn-orange" style="margin-top:16px;">🔗 Save External Link</button>
-        </div>
-
+        <label>Paste Google Drive / YouTube Link Here *:</label>
+        <input type="text" id="matLinkInput" placeholder="e.g. https://drive.google.com/...">
+        
+        <button id="saveStudyMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Save Material</button>
       </div>
     </div>
   </div>
+
 
   <!-- MANAGE STUDY MATERIAL MODAL -->
   <div id="manageStudyMaterialModal" class="modal-overlay">
@@ -3860,21 +3851,22 @@ body.dark-mode .btn-status-claimed {
       if(id === "bulkStudentModal") { generateBulkStudentTable(); }
      
       
-      
             if(id === "addStudyMaterialModal") {
-        if(currentRole === "admin") { document.getElementById("adminMatClassBox").style.display = "block"; document.getElementById("teacherMatClassBox").style.display = "none"; } 
-        else { document.getElementById("adminMatClassBox").style.display = "none"; document.getElementById("teacherMatClassBox").style.display = "block"; document.getElementById("matAssignedClassDisplay").value = `Class ${assignedClass}`; }
-        
-        // Reset inputs and visibility
-        if(document.getElementById("matTypeSelect")) {
-            document.getElementById("matTypeSelect").value = "pdf";
-            document.getElementById("matFileBox").style.display = "block";
-            document.getElementById("matLinkBox").style.display = "none";
-            document.getElementById("matLinkInput").value = "";
-            document.getElementById("matTitleInput").value = "";
-            if(document.getElementById("matFileInput")) document.getElementById("matFileInput").value = "";
+        if(currentRole === "admin") { 
+            document.getElementById("adminMatClassBox").style.display = "block"; 
+            document.getElementById("teacherMatClassBox").style.display = "none"; 
+        } else { 
+            document.getElementById("adminMatClassBox").style.display = "none"; 
+            document.getElementById("teacherMatClassBox").style.display = "block"; 
+            document.getElementById("matAssignedClassDisplay").value = `Class ${assignedClass}`; 
         }
+        
+        // Reset inputs
+        if(document.getElementById("matTypeSelect")) document.getElementById("matTypeSelect").value = "PDF LINK";
+        if(document.getElementById("matTitleInput")) document.getElementById("matTitleInput").value = "";
+        if(document.getElementById("matLinkInput")) document.getElementById("matLinkInput").value = "";
       }
+
 
       
       if(id === "manageStudyMaterialModal") {
@@ -4779,24 +4771,25 @@ body.dark-mode .btn-status-claimed {
       loadTeacherStudyMaterials(selectedCls);
     });
 
-        addSafeListener("matTypeSelect", "change", (e) => {
-      const type = e.target.value;
-      const isLink = type === "video_link" || type === "notes_link";
-      
-      document.getElementById("matFileBox").style.display = isLink ? "none" : "block";
-      document.getElementById("matLinkBox").style.display = isLink ? "block" : "none";
-    });
-    addSafeListener("saveLinkMaterialBtn", "click", () => {
-      const btn = document.getElementById("saveLinkMaterialBtn");
-      runWithBtnSpinner(btn, "🔗 Save External Link", async () => {
+        
+
+
+       // ==========================================
+    // STUDY MATERIAL DIRECT LINK SAVE LOGIC
+    // ==========================================
+    addSafeListener("saveStudyMaterialBtn", "click", () => {
+      const btn = document.getElementById("saveStudyMaterialBtn");
+      runWithBtnSpinner(btn, "🚀 Save Material", async () => {
         const title = document.getElementById("matTitleInput").value.trim();
         const type = document.getElementById("matTypeSelect").value;
         const linkInput = document.getElementById("matLinkInput").value.trim();
         let targetClass = currentRole === "admin" ? document.getElementById("matAdminClassSelect").value : assignedClass;
 
-        if(!title || !linkInput) { alert("Please enter a title and paste the valid link."); return; }
+        if(!title || !linkInput) { 
+            alert("Please enter a title and paste the valid link."); 
+            return; 
+        }
 
-        // Basic URL validation
         if(!linkInput.startsWith("http://") && !linkInput.startsWith("https://")) {
             alert("Please enter a valid URL starting with http:// or https://");
             return;
@@ -4804,135 +4797,25 @@ body.dark-mode .btn-status-claimed {
 
         const matId = Date.now().toString();
         const cleanClass = cleanClassStr(targetClass);
-        
-        // Ensure standard type labels for UI consistency
-        const displayType = type === "video_link" ? "VIDEO LINK" : "NOTES LINK";
 
         const matObj = { 
             id: matId, 
             title: title, 
-            type: displayType, 
+            type: type, // 'PDF LINK', 'IMAGE LINK', ya 'VIDEO LINK'
             file: linkInput, 
             class: cleanClass, 
             date: getTodayFormattedDate(),
             isHidden: false 
         };
 
+        // Direct save to Firebase (Fastest method)
         await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
 
-        alert("External Link material saved successfully.");
+        alert("✔ Study material saved successfully.");
         document.getElementById("matTitleInput").value = ""; 
         document.getElementById("matLinkInput").value = "";
         window.closeModal("addStudyMaterialModal");
       });
-    });
-
-
-
-            // ==========================================
-    // STUDY MATERIAL GOOGLE DRIVE UPLOAD LOGIC
-    // ==========================================
-    addSafeListener("uploadMaterialBtn", "click", () => {
-      const btn = document.getElementById("uploadMaterialBtn");
-      const title = document.getElementById("matTitleInput").value.trim();
-      const type = document.getElementById("matTypeSelect").value;
-      const fileInput = document.getElementById("matFileInput");
-      let targetClass = currentRole === "admin" ? document.getElementById("matAdminClassSelect").value : assignedClass;
-
-      if(!title || !fileInput.files.length) { 
-        alert("Please enter material title and select a file to upload."); 
-        return; 
-      }
-
-      const file = fileInput.files[0];
-      
-      // ⚠️ Size Limit Check (Base64 uploads struggle over 25-30MB on mobile)
-      if (file.size > 25 * 1024 * 1024) {
-         alert("File is too large! Please upload files under 25MB, or use the 'Video Link' option to paste a YouTube/Drive link directly.");
-         return;
-      }
-
-      // Custom Spinner with Warning Text
-      btn.disabled = true;
-      btn.innerHTML = `<span class="spinner"></span> Uploading... Don't close app`;
-
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-          const base64Data = e.target.result.split(',')[1];
-          
-          try {
-              // Aapki valid Apps Script Link
-              const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwbgxe7xuj6yJzTHdhueLsvueLewzBfQfES_e55x8c097hgn59ZHQuXt8RPnkCN0IDu-A/exec"; 
-              
-              const payload = {
-                  base64: base64Data,
-                  filename: file.name,
-                  mimeType: file.type || "application/octet-stream",
-                  type: type // Apps script isko detect karke sahi folder decide karega
-              };
-
-              // No headers sent to avoid CORS Preflight block from Google
-              const response = await fetch(appsScriptUrl, {
-                  method: 'POST',
-                  body: JSON.stringify(payload) 
-              });
-              
-              const resultText = await response.text(); 
-              let result;
-              try {
-                  result = JSON.parse(resultText);
-              } catch(parseErr) {
-                  throw new Error("Server returned HTML or invalid response. Did you deploy Apps Script as 'Anyone'?");
-              }
-
-              if(result.status !== "success") throw new Error(result.message || "Upload failed");
-
-              const matId = Date.now().toString();
-              const cleanClass = cleanClassStr(targetClass);
-              
-              // NAYA LOGIC: Image type show karne ke liye
-              let displayType = "PDF DOCUMENT";
-              if(type === "video") displayType = "VIDEO";
-              if(type === "image") displayType = "IMAGE / PHOTO";
-              
-              const matObj = { 
-                  id: matId, 
-                  title: title, 
-                  type: displayType, 
-                  file: result.url, // Drive URL stored in Firebase
-                  class: cleanClass, 
-                  date: getTodayFormattedDate(),
-                  isHidden: false 
-              };
-
-              // Save to Firebase Realtime Database
-              await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
-
-              // Clear inputs & Close Upload Modal
-              document.getElementById("matTitleInput").value = ""; 
-              document.getElementById("matFileInput").value = "";
-              window.closeModal("addStudyMaterialModal");
-
-              // 🌟 User Required Custom Success Popup
-              window.showCustomAlert(`Study material uploaded\n\n[ ${title} ]\n[ ${displayType} ]`);
-
-          } catch (err) {
-              console.error("Upload Error:", err);
-              alert("Upload failed! Server Error: " + err.message);
-          } finally {
-              // Restore button state
-              btn.innerHTML = "🚀 Upload";
-              btn.disabled = false;
-          }
-      };
-      
-      reader.onerror = function() {
-          alert("Error reading the file from your device.");
-          btn.innerHTML = "🚀 Upload";
-          btn.disabled = false;
-      };
-      
-      reader.readAsDataURL(file);
     });
 
 
