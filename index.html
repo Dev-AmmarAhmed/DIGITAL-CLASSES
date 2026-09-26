@@ -2367,7 +2367,7 @@ body.dark-mode .btn-status-claimed {
         <div id="matFileBox">
           <label>Select File (Video/PDF) *:</label>
           <input type="file" id="matFileInput" accept=".pdf,video/*">
-          <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload & Compress</button>
+          <button id="uploadMaterialBtn" class="btn-primary btn-purple" style="margin-top:16px;">🚀 Upload</button>
         </div>
 
         <div id="matLinkBox" style="display:none;">
@@ -2750,20 +2750,7 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
-  <!-- ADD SUBJECT MODAL -->
-  <div id="addSubjectModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>➕ Add New Subject</span>
-        <span class="close-modal" onclick="closeModal('addSubjectModal')">✕</span>
-      </div>
-      <div class="modal-body">
-        <label>Subject Name *:</label>
-        <input type="text" id="newSubjectNameInput" placeholder="e.g. Science / Mathematics / History">
-        <button id="saveSubjectBtn" class="btn-primary btn-green" style="margin-top:14px;">💾 Save Subject</button>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- CREATE ONLINE TEST MODAL -->
   <div id="createOnlineTestModal" class="modal-overlay">
@@ -4839,6 +4826,97 @@ body.dark-mode .btn-status-claimed {
       });
     });
 
+    // ==========================================
+    // STUDY MATERIAL GOOGLE DRIVE UPLOAD LOGIC
+    // ==========================================
+    addSafeListener("uploadMaterialBtn", "click", () => {
+      const btn = document.getElementById("uploadMaterialBtn");
+      const title = document.getElementById("matTitleInput").value.trim();
+      const type = document.getElementById("matTypeSelect").value;
+      const fileInput = document.getElementById("matFileInput");
+      let targetClass = currentRole === "admin" ? document.getElementById("matAdminClassSelect").value : assignedClass;
+
+      if(!title || !fileInput.files.length) { 
+        alert("Please enter material title and select a file to upload."); 
+        return; 
+      }
+
+      const file = fileInput.files[0];
+
+      // Custom Spinner with Warning Text
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> Uploading... Don't close app`;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+          const base64Data = e.target.result.split(',')[1];
+          
+          try {
+              const appsScriptUrl = "https://script.google.com/macros/s/AKfycbwbgxe7xuj6yJzTHdhueLsvueLewzBfQfES_e55x8c097hgn59ZHQuXt8RPnkCN0IDu-A/exec"; 
+              
+              const payload = {
+                  base64: base64Data,
+                  filename: file.name,
+                  mimeType: file.type || "application/octet-stream",
+                  type: "study_material" 
+              };
+
+              const response = await fetch(appsScriptUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify(payload)
+              });
+              
+              const result = await response.json();
+              if(!result || result.status !== "success" || !result.url) {
+                  throw new Error(result ? result.message : "Upload failed");
+              }
+
+              const matId = Date.now().toString();
+              const cleanClass = cleanClassStr(targetClass);
+              const displayType = type === "video" ? "VIDEO" : "PDF DOCUMENT";
+              
+              const matObj = { 
+                  id: matId, 
+                  title: title, 
+                  type: displayType, 
+                  file: result.url,
+                  class: cleanClass, 
+                  date: getTodayFormattedDate(),
+                  isHidden: false 
+              };
+
+              // Save to Firebase
+              await set(ref(db, `study_material/${cleanClass}/${matId}`), matObj);
+
+              // Clear inputs & Close Upload Modal
+              document.getElementById("matTitleInput").value = ""; 
+              document.getElementById("matFileInput").value = "";
+              window.closeModal("addStudyMaterialModal");
+
+              // 🌟 User Required Custom Success Popup
+              window.showCustomAlert(`Study material uploaded\n\n[ ${title} ]\n[ ${displayType} ]`);
+
+          } catch (err) {
+              console.error("Upload Error:", err);
+              alert("Upload failed. Make sure your Apps Script Web App is deployed as 'Anyone' access and internet is working.");
+          } finally {
+              btn.innerHTML = "🚀 Upload";
+              btn.disabled = false;
+          }
+      };
+      
+      reader.onerror = function() {
+          alert("Error reading the file from your device.");
+          btn.innerHTML = "🚀 Upload";
+          btn.disabled = false;
+      };
+      
+      reader.readAsDataURL(file);
+    });
+
+
+      
 
         async function loadTeacherStudyMaterials(targetCls) {
       const tbody = document.getElementById("manageMaterialTableBody");
