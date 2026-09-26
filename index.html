@@ -6349,7 +6349,7 @@ body.dark-mode .btn-status-claimed {
        }
     };
 
-           window.viewStudentTestResult = function(testId) {
+         window.viewStudentTestResult = function(testId) {
        const cacheKey = `test_cache_${testId}_${currentStudentAdmn}`;
        const cacheItem = localStorage.getItem(cacheKey);
        
@@ -6367,14 +6367,15 @@ body.dark-mode .btn-status-claimed {
            return;
        }
        
+       // Agar live test popup khula ho to pehle usko close karein
+       window.closeModal("studentLiveTestModal");
+       
        const test = parsedCache.testData;
        const answers = parsedCache.answers;
-       currentLiveTestObj = test; 
        
-       if(document.getElementById("liveTestTitleDisplay")) document.getElementById("liveTestTitleDisplay").innerText = test.title + " (Result)";
-       if(document.getElementById("liveTestTimerBox")) document.getElementById("liveTestTimerBox").innerText = "Finished";
+       if(document.getElementById("resultModalTitle")) document.getElementById("resultModalTitle").innerText = test.title + " (Result)";
        
-       const questionsBox = document.getElementById("liveTestQuestionsBox");
+       const questionsBox = document.getElementById("resultModalQuestionsBox");
        questionsBox.innerHTML = "";
        
        let obtainedMarks = 0;
@@ -6400,24 +6401,21 @@ body.dark-mode .btn-status-claimed {
              </label>`;
          });
 
-                         questionsBox.innerHTML += `
-          <div class="test-q-patch" id="q_box_${idx}">
-            <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:12px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
-              Q${idx + 1}: ${qObj.q}
-            </div>
-            ${optionsHtml}
-          </div>`;
-      });
+         const notAttemptedBadge = (studentAnswer === null || studentAnswer === undefined) ? `<div style="color:#dc2626; font-size:11px; font-weight:800; margin-bottom:10px; display:inline-block; background:rgba(220,38,38,0.1); padding:4px 8px; border-radius:6px;">⚠️ Not Attempted</div>` : "";
 
+         questionsBox.innerHTML += `
+           <div class="test-q-patch">
+             <div dir="auto" style="font-weight:800; color:#0288d1; margin-bottom:8px; ${isQUrdu ? "font-family:'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size:22px; line-height:2; text-align:right;" : "font-size:15px;"}">
+               Q${idx + 1}: ${qObj.q}
+             </div>
+             ${notAttemptedBadge}
+             ${optionsHtml}
+           </div>`;
+       });
 
-
-       document.getElementById("submitStudentTestBtn").style.display = "none";
-       const summaryBox = document.getElementById("testResultSummaryBox");
-       summaryBox.style.display = "block";
-       document.getElementById("resultMarksText").innerText = `Score: ${obtainedMarks} / ${test.totalMarks}`;
-       document.getElementById("resultFeedbackText").innerText = "Review your answers above. This detail will remain available until the test expires.";
+       if(document.getElementById("resultModalScore")) document.getElementById("resultModalScore").innerText = `Score: ${obtainedMarks} / ${test.totalMarks}`;
        
-       window.openModal("studentLiveTestModal");
+       window.openModal("studentTestResultModal");
     };
 
 
