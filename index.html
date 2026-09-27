@@ -3280,63 +3280,79 @@ body.dark-mode .btn-status-claimed {
 
       
 
-    let autoFilledJsonQuestions = null;
+      let autoFilledJsonQuestions = null;
 
+    window.processAndCheckJsonCode = function() {
+      const btn = document.getElementById("checkJsonBtn");
+      btn.innerText = "⏳ Checking...";
+      btn.disabled = true;
 
-       window.processAndCheckJsonCode = function() {
-      // 1. Direct Textarea se value lein
-      const jsonText = document.getElementById("jsonCodeInput").value.trim();
+      setTimeout(() => {
+          const jsonText = document.getElementById("jsonCodeInput").value.trim();
 
-      if (!jsonText) {
-        alert("Please paste valid JSON code inside the text box.");
-        return;
-      }
-
-      // 2. Spinner function ko bypass karke direct try-catch chalayein
-      try {
-        const parsed = JSON.parse(jsonText);
-
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-          alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
-          return;
-        }
-
-        let isValid = true;
-        parsed.forEach(item => {
-          if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
-            isValid = false;
+          if (!jsonText) {
+            alert("Please paste valid JSON code inside the text box.");
+            resetBtn();
+            return;
           }
-        });
 
-        if (!isValid) {
-          alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
-          return;
-        }
+          try {
+            const parsed = JSON.parse(jsonText);
 
-        // 3. Global variable update karein
-        autoFilledJsonQuestions = parsed;
-        const questionCount = parsed.length;
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+              alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
+              resetBtn();
+              return;
+            }
 
-        // 4. Sabhi duplicate questions count fields ko safely update karein
-        const numQInputs = document.querySelectorAll("#cTestNumQuestions");
-        numQInputs.forEach(input => {
-            input.value = questionCount;
-            input.disabled = true;
-            input.style.backgroundColor = "rgba(0,0,0,0.12)";
-            input.style.cursor = "not-allowed";
-        });
+            let isValid = true;
+            parsed.forEach(item => {
+              if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
+                isValid = false;
+              }
+            });
 
-        alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
-        
-        // Modal close aur aage ka process start karein
-        window.closeModal("contributeJsonModal");
-        window.openModal("createOnlineTestModal");
+            if (!isValid) {
+              alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
+              resetBtn();
+              return;
+            }
 
-      } catch (err) {
-        // Agar Urdu/Arabic copy-paste karne mein koi quote (") ya comma chhoot gaya hoga toh ye direct error batayega
-        alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
+            // Global variable update karein
+            autoFilledJsonQuestions = parsed;
+            const questionCount = parsed.length;
+
+            // Sirf ek hi ID hai isliye querySelectorAll ki zaroorat nahi
+            const numQInput = document.getElementById("cTestNumQuestions");
+            if(numQInput) {
+                numQInput.value = questionCount;
+                numQInput.disabled = true;
+                numQInput.style.backgroundColor = "rgba(0,0,0,0.12)";
+                numQInput.style.cursor = "not-allowed";
+            }
+
+            alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
+            
+            // Modal close aur aage ka process start karein
+            window.closeModal("contributeJsonModal");
+            
+            // Wapas Create Test walay modal ko active karein taake background gray na reh jaye
+            const mainModal = document.getElementById("createOnlineTestModal");
+            if(mainModal) mainModal.classList.add("active");
+            resetBtn();
+
+          } catch (err) {
+            alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
+            resetBtn();
+          }
+      }, 400); // 400ms ka chota sa delay taake user ko processing feel ho
+
+      function resetBtn() {
+          btn.innerText = "🔍 Check & Parse JSON";
+          btn.disabled = false;
       }
     };
+
 
 
 
