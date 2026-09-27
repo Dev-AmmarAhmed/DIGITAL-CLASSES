@@ -3283,68 +3283,61 @@ body.dark-mode .btn-status-claimed {
     let autoFilledJsonQuestions = null;
 
 
-      window.processAndCheckJsonCode = function() {
-  // 1. Sirf ACTIVE (jo screen par dikh raha hai) modal ko dhoondein
-  const activeModal = document.querySelector(".modal-overlay.active");
-  
-  if (!activeModal) {
-      alert("Error: Koi active modal nahi mila.");
-      return;
-  }
+       window.processAndCheckJsonCode = function() {
+      // 1. Direct Textarea se value lein
+      const jsonText = document.getElementById("jsonCodeInput").value.trim();
 
-  // 2. Usi active modal ke andar ka textarea find karein
-  const textArea = activeModal.querySelector("textarea");
-  const jsonText = textArea ? textArea.value.trim() : "";
-
-  if (!jsonText) {
-    alert("Please paste valid JSON code inside the text box.");
-    return;
-  }
-
-  // 3. Spinner function ko bypass karke direct try-catch chalayein
-  try {
-    const parsed = JSON.parse(jsonText);
-
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
-      return;
-    }
-
-    let isValid = true;
-    parsed.forEach(item => {
-      if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
-        isValid = false;
+      if (!jsonText) {
+        alert("Please paste valid JSON code inside the text box.");
+        return;
       }
-    });
 
-    if (!isValid) {
-      alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
-      return;
-    }
+      // 2. Spinner function ko bypass karke direct try-catch chalayein
+      try {
+        const parsed = JSON.parse(jsonText);
 
-    autoFilledJsonQuestions = parsed;
-    const questionCount = parsed.length;
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
+          return;
+        }
 
-    // 4. Sabhi duplicate questions count fields ko safely update karein
-    const numQInputs = document.querySelectorAll("#cTestNumQuestions");
-    numQInputs.forEach(input => {
-        input.value = questionCount;
-        input.disabled = true;
-        input.style.backgroundColor = "rgba(0,0,0,0.12)";
-        input.style.cursor = "not-allowed";
-    });
+        let isValid = true;
+        parsed.forEach(item => {
+          if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
+            isValid = false;
+          }
+        });
 
-    alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
-    
-    // Modal close aur aage ka process start karein
-    window.closeModal("contributeJsonModal");
-    window.openModal("createOnlineTestModal");
+        if (!isValid) {
+          alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
+          return;
+        }
 
-  } catch (err) {
-    // Agar Urdu/Arabic copy-paste karne mein koi quote (") ya comma chhoot gaya hoga toh ye direct error batayega
-    alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
-  }
-};
+        // 3. Global variable update karein
+        autoFilledJsonQuestions = parsed;
+        const questionCount = parsed.length;
+
+        // 4. Sabhi duplicate questions count fields ko safely update karein
+        const numQInputs = document.querySelectorAll("#cTestNumQuestions");
+        numQInputs.forEach(input => {
+            input.value = questionCount;
+            input.disabled = true;
+            input.style.backgroundColor = "rgba(0,0,0,0.12)";
+            input.style.cursor = "not-allowed";
+        });
+
+        alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
+        
+        // Modal close aur aage ka process start karein
+        window.closeModal("contributeJsonModal");
+        window.openModal("createOnlineTestModal");
+
+      } catch (err) {
+        // Agar Urdu/Arabic copy-paste karne mein koi quote (") ya comma chhoot gaya hoga toh ye direct error batayega
+        alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
+      }
+    };
+
 
 
 
