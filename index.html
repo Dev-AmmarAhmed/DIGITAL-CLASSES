@@ -957,6 +957,8 @@ body.dark-mode .btn-status-claimed {
       <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); margin-top:8px;">STUDY MATERIAL (CLASS BOUND)</div>
       <div class="drawer-item" onclick="openModal('addStudyMaterialModal')">📁 Add Study Material</div>
       <div class="drawer-item" onclick="openModal('manageStudyMaterialModal')">📚 Manage Study Material</div>
+      <div class="drawer-item" onclick="window.openAssistanceMenu()" style="border-top: 1px dashed var(--border-color); color: #0288d1; margin-top: 8px;">ℹ️ System Assistance</div>
+
     </div>
     <!-- ADMIN DRAWER OPTIONS -->
     <div class="admin-only" style="display:none;">
@@ -1962,6 +1964,64 @@ body.dark-mode .btn-status-claimed {
         Error or info message will appear here.
       </div>
       <button class="btn-primary btn-blue" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px;" onclick="window.closeCustomAlert()">OK, Got it!</button>
+    </div>
+  </div>
+
+
+    <!-- ASSISTANCE DETAIL MODAL -->
+  <div id="assistanceDetailModal" class="modal-overlay" style="z-index: 100001;">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <span>ℹ️ System Assistance</span>
+        <span class="close-modal" onclick="closeModal('assistanceDetailModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <h3 id="astDetailTitle" style="color: #0288d1; font-weight: 900; font-size: 16px; margin-bottom: 8px;">Feature Title</h3>
+        <p style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Follow steps:</p>
+        
+        <div id="astDetailSteps" style="font-size: 13px; font-weight: 700; color: var(--text-color); line-height: 1.6; margin-bottom: 16px;">
+          <!-- Steps will load here dynamically -->
+        </div>
+        
+        <div style="text-align: left; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+          <span id="astTranslateBtn" style="color: #0288d1; font-weight: 900; font-size: 13px; cursor: pointer; text-decoration: underline;" onclick="window.toggleAssistanceLang()">🔄 Translate to Roman Urdu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEMINI PROMPT COPY MODAL -->
+  <div id="promptCopyModal" class="modal-overlay" style="z-index: 100002;">
+    <div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden;">
+      <div class="modal-header" style="background: #16a34a;">
+        <span>🤖 Gemini Prompt</span>
+        <span class="close-modal" onclick="closeModal('promptCopyModal')">✕</span>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <textarea id="promptTextarea" readonly style="width: 100%; height: 250px; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 11px; outline: none; background: var(--input-bg); color: var(--text-color); resize: none; line-height: 1.4;">Act as an expert educational test generator. Analyze the attached image/document and generate a high-quality Multiple Choice Question (MCQ) quiz test based on it.
+
+Task Specifications:
+Target Class: [Insert standard]
+Subject: [Insert Subject here]
+Total Questions: [no of questions. Max. 30]
+
+Strict Instructions & Rules:
+Output Format: Provide ONLY the raw JSON array. Do not include any introductory text, Markdown formatting like ```json, or closing explanations.
+
+JSON Structure Rules:
+q: The question string (Must be clear, precise, and appropriate for the specified class).
+options: An array containing exactly 4 options ["Option A", "Option B", "Option C", "Option D"].
+correct: An integer representing the 0-based index of the correct option (0 for 1st option, 1 for 2nd, 2 for 3rd, 3 for 4th).
+
+Quality Control:
+All questions must strictly cover the syllabus/topic shown in the attached image for the given class and subject.
+Options must be logical and plausible, avoiding vague choices like "None of the above" unless strictly necessary.
+Ensure 100% technical accuracy in answers and formatting.
+
+Exact Output JSON Format Required:
+[ { "q": "Question text here?", "options": [ "Option A", "Option B", "Option C", "Option D" ], "correct": 0 } ]</textarea>
+        <button class="btn-primary btn-green" style="margin-top: 14px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);" onclick="window.copyPromptText()">📋 Copy Prompt</button>
+      </div>
     </div>
   </div>
 
@@ -3026,6 +3086,30 @@ body.dark-mode .btn-status-claimed {
       <button class="btn-primary" style="background: #64748b; margin-top: 12px; padding: 10px;" onclick="closeModal('notifDetailsModal')">Close</button>
     </div>
   </div>
+
+    <div id="assistanceMenuModal" class="modal-overlay" style="z-index: 100000; padding: 0; align-items: flex-end;">
+    <div class="modal-content" style="max-width: 600px; width: 100%; height: 90vh; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; padding: 0; background: var(--app-bg);">
+      
+      <div class="live-test-header" style="background: #0288d1;">
+        <span id="assistanceMenuTitle" style="font-weight: 900; font-size: 16px; text-align: center; flex: 1; padding: 0 10px;">ℹ️ System Assistance</span>
+        <button class="btn-sm-del" style="margin: 0; padding: 6px 12px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);" onclick="closeModal('assistanceMenuModal')">✕ Close</button>
+      </div>
+      
+      <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 16px;">
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 16px; font-weight: 700;">Select a feature below to view its guide and steps.</p>
+
+        <div id="assistanceCardsContainer">
+          </div>
+
+        <div style="margin-top: 24px; padding: 16px; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Request admin for further assistance</div>
+          <div style="font-size: 20px; font-weight: 900; color: #0288d1; letter-spacing: 1px;">+91 7302132270</div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
 
   <nav id="bottomNav" class="bottom-nav" style="display: none;"></nav>
 
@@ -7563,6 +7647,128 @@ body.dark-mode .btn-status-claimed {
         tbody.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:red;">Failed to load test history.</td></tr>`;
       }
     };
+
+
+          // --- ASSISTANCE MENU ENGINE (PHASE 2 - COMPLETE) ---
+    const assistanceData = [
+      {
+        title: "Access Muster (Daily Attendance)",
+        en: "1. Open Access Muster from the menu.<br><br>2. Your check-in/out time will be recorded based on your current location.<br><br>3. Tap Check-in when you arrive, and Check-out when you leave.",
+        ur: "1. Menu se Access Muster open karein.<br><br>2. Aapki location aur wifi ke hisaab se time record hoga.<br><br>3. Aate waqt Check-in aur jaate waqt Check-out dabayein."
+      },
+      {
+        title: "Register Student",
+        en: "1. Enter the student's full name, assigned class, WhatsApp number, and DOB.<br><br>2. Upload a profile photo if available.<br><br>3. Click Submit to generate their login ID and password.",
+        ur: "1. Student ka poora naam, class, WhatsApp number aur DOB dalein.<br><br>2. Agar photo hai toh upload karein.<br><br>3. Submit dabayein taake unka naya ID aur Password ban jaye."
+      },
+      {
+        title: "Delete Test Data",
+        en: "1. Select the specific student from the dropdown.<br><br>2. Tap 'Load Test Records'.<br><br>3. Find the test you want to remove and click the 'Delete' button next to it.",
+        ur: "1. Dropdown se student select karein.<br><br>2. 'Load Test Records' par click karein.<br><br>3. Jo test delete karna hai uske aage wale 'Delete' button ko dabayein."
+      },
+      {
+        title: "Bulk Add Test Marks",
+        en: "1. Enter the Test Name and Total Marks.<br><br>2. Click Continue.<br><br>3. Enter the obtained marks for all students in the list.<br><br>4. Click Save to automatically assign performance points.",
+        ur: "1. Test ka naam aur Total marks dalein.<br><br>2. Continue dabayein.<br><br>3. List mein sab students ke obtained marks dalein.<br><br>4. Save dabayein, points auto-assign ho jayenge."
+      },
+      {
+        title: "Upload Homework",
+        en: "1. Enter the homework title or subject name.<br><br>2. Select the homework photo from your device.<br><br>3. Click Upload to save it directly to the students' dashboard.",
+        ur: "1. Homework ka title ya subject likhein.<br><br>2. Device se homework ki photo select karein.<br><br>3. Upload dabayein, ye direct students ki app mein chala jayega."
+      },
+      {
+        title: "Add Study Material",
+        en: "1. Upload material manually in your Google Drive app.<br><br>2. Tap the three dots, set access to 'Anyone with the link', and copy the link.<br><br>3. Open Digital Classes app, paste the link, set a title, and save.",
+        ur: "1. Apni Google Drive app mein material upload karein.<br><br>2. 3 dots par click karein, access ko 'Anyone with link' karein aur link copy karein.<br><br>3. Digital Classes app mein aakar link paste karein, title dalein aur save karein."
+      },
+      {
+        title: "Manage Study Material",
+        en: "1. Open Manage Study Material to see the list of all uploaded materials.<br><br>2. Use 'Hide/Unhide' to control visibility for students.<br><br>3. Use 'Delete' to remove it permanently.",
+        ur: "1. Manage Study Material open karein taake sab files dikh jayen.<br><br>2. Students se chhupane ke liye 'Hide' dabayein.<br><br>3. Hamesha ke liye hatane ke liye 'Delete' kar dein."
+      },
+      {
+        title: "Create Online Test (Interactive Test)",
+        en: "1. Go to Gemini and upload your document/photo which test do you want and Paste <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span>.<br><br>2. Gemini will give you the Code paste it at contribute section.<br><br>3. Set Time, Marks, Expiry Date and Publish.",
+        ur: "1. Gemini par jayen, document/photo upload karein aur apna <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span> paste karein.<br><br>2. Gemini aapko Code dega, usay contribute section mein paste karein.<br><br>3. Time, Marks, Expiry set karke Publish karein."
+      },
+      {
+        title: "Add Offline Test Marks",
+        en: "1. Go to the Test tab and scroll down.<br><br>2. Select the student, enter the test name, total marks, and obtained marks.<br><br>3. Click Save to record data and update points.",
+        ur: "1. Test tab mein thora neeche jayen.<br><br>2. Student select karein, test ka naam, total aur obtained marks dalein.<br><br>3. Save dabayein, marks aur points update ho jayenge."
+      },
+      {
+        title: "Manage Class Attendance",
+        en: "1. Go to the Attend tab.<br><br>2. Check the boxes for present students (unchecked means absent).<br><br>3. Click Save Today's Attendance.<br><br>4. Use the Track tab to view reports.",
+        ur: "1. Attend tab mein jayen.<br><br>2. Jo bache aaye hain unpe tick lagayein (bina tick wale absent gine jayenge).<br><br>3. Save dabayein.<br><br>4. Track tab se attendance report dekh sakte hain."
+      },
+      {
+        title: "Award / Deduct Performance Points",
+        en: "1. Go to the Perform tab.<br><br>2. Select the student and enter points (+ for award, - for deduct).<br><br>3. Write the reason (e.g., Good behavior).<br><br>4. Submit to update their rank.",
+        ur: "1. Perform tab mein jayen.<br><br>2. Student select karein, points dalein (Dene ke liye +, Kaatne ke liye - lagayein).<br><br>3. Point dene ki wajah likhein.<br><br>4. Submit dabayein taake rank update ho jaye."
+      }
+    ];
+
+    let currentAstIndex = 0;
+    let currentAstLang = 'en';
+
+    window.openAssistanceMenu = function() {
+        window.closeDrawer();
+        const container = document.getElementById("assistanceCardsContainer");
+        container.innerHTML = "";
+        
+        assistanceData.forEach((item, index) => {
+            container.innerHTML += `
+            <div class="student-grid-card" style="padding: 16px; margin-bottom: 10px; border-radius: 14px; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;" onclick="window.openAssistanceDetail(${index})">
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-color);">${item.title}</div>
+                <div style="font-size: 16px; color: #0288d1; font-weight: 900;">➔</div>
+            </div>`;
+        });
+        window.openModal("assistanceMenuModal");
+    };
+
+    window.openAssistanceDetail = function(index) {
+        currentAstIndex = index;
+        currentAstLang = 'en'; // Default English
+        window.renderAstDetail();
+        window.openModal("assistanceDetailModal");
+    };
+
+    window.renderAstDetail = function() {
+        const item = assistanceData[currentAstIndex];
+        document.getElementById("astDetailTitle").innerText = item.title;
+        document.getElementById("astDetailSteps").innerHTML = currentAstLang === 'en' ? item.en : item.ur;
+        
+        const toggleBtn = document.getElementById("astTranslateBtn");
+        if (currentAstLang === 'en') {
+            toggleBtn.innerText = "🔄 Translate to Roman Urdu";
+            toggleBtn.style.color = "#ea580c"; // Orange for translation
+        } else {
+            toggleBtn.innerText = "🔄 Translate to English";
+            toggleBtn.style.color = "#0288d1"; // Blue for english
+        }
+    };
+
+    window.toggleAssistanceLang = function() {
+        currentAstLang = currentAstLang === 'en' ? 'ur' : 'en';
+        window.renderAstDetail();
+    };
+
+    window.showPromptPopup = function() {
+        window.openModal("promptCopyModal");
+    };
+
+    window.copyPromptText = function() {
+        const textarea = document.getElementById("promptTextarea");
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // Mobile ke liye
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            alert("Prompt copied to clipboard!");
+            window.closeModal("promptCopyModal");
+        }).catch(err => {
+            alert("Failed to copy text. Please try selecting manually.");
+        });
+    };
+
 
   </script>
 </body>
