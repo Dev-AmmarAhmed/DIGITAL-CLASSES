@@ -3402,62 +3402,8 @@ body.dark-mode .btn-status-claimed {
          modal.querySelector("#testQuestionsBuilderStep").style.display = "block";
       }
 
-      // --- SUBMIT FINAL TEST BUTTON ---
-      const submitBtn = e.target.closest("#submitFinalTestBtn");
-      if (submitBtn) {
-        runWithBtnSpinner(submitBtn, "🚀 Submit & Publish Test", async () => {
-          const modal = submitBtn.closest(".modal-body");
-          const name = modal.querySelector("#cTestName").value.trim();
-          const subject = modal.querySelector("#cTestSubjectSelect").value;
-          const numQ = parseInt(modal.querySelector("#cTestNumQuestions").value);
-          const marksPerQ = parseFloat(modal.querySelector("#cTestMarksPerQ").value);
-          const timeMins = parseInt(modal.querySelector("#cTestTimeMinutes").value);
-          const expiry = modal.querySelector("#cTestExpiryDateTime").value;
-
-          const qContainer = modal.querySelector("#questionsContainer");
-          const qBoxes = qContainer.querySelectorAll(".q-box");
-          
-          const questionsList = [];
-          let isValid = true;
-
-          qBoxes.forEach((box, idx) => {
-            const qText = box.querySelector(".q-text-input").value.trim();
-            const options = Array.from(box.querySelectorAll(`.q-opt-input-${idx + 1}`)).map(inp => inp.value.trim());
-            
-            const checkedRadio = box.querySelector(`input[type="radio"]:checked`);
-            const correctOpt = checkedRadio ? checkedRadio.value : "0";
-
-            if(!qText || options.some(o => !o)) isValid = false;
-            questionsList.push({ q: qText, options: options, correct: parseInt(correctOpt) });
-          });
-
-          if(!isValid) { 
-              alert("Please fill all questions and their options properly."); 
-              return; 
-          }
-
-          const testId = Date.now().toString();
-          const cleanClass = cleanClassStr(assignedClass);
-          await set(ref(db, `online_tests/${cleanClass}/${testId}`), { 
-            id: testId, title: name, subject: subject, numQuestions: numQ, 
-            marksPerQ: marksPerQ, totalMarks: numQ * marksPerQ, timeMinutes: timeMins, 
-            expiry: expiry, questions: questionsList, class: cleanClass, createdDate: getTodayFormattedDate() 
-          });
-          
-          const targetStudents = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClass);
-          for(let s of targetStudents) {
-             await window.pushAppNotification(s.admn, "New Online Test 📝", `${name} (${subject}) has been added. Check your tests tab.`, "test_added", { testId: testId });
-          }
-
-          alert(`✔ Online Test "${name}" published successfully for Class ${assignedClass}!`);
-          autoFilledJsonQuestions = null; 
-          
-          const jsonInput = document.getElementById("jsonCodeInput");
-          if (jsonInput) jsonInput.value = "";
-          
-          window.closeModal("createOnlineTestModal");
-        });
-      }
+  
+    let activeSelectTarget = null
     });
 
 
