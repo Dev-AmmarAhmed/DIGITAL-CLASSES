@@ -1891,6 +1891,9 @@ body.dark-mode .btn-status-claimed {
     </section>
   </main>
 
+
+
+  
   <!-- ====================================================================
        SECTION 4: MODALS (POPUPS) SYSTEM INCLUDING STUDY MATERIAL MODALS
   ==================================================================== -->
@@ -6142,7 +6145,7 @@ body.dark-mode .btn-status-claimed {
       if(!hasCustomSubjects) { select.innerHTML += `<option value="English">English</option><option value="Mathematics">Mathematics</option><option value="Science">Science</option><option value="Urdu">Urdu</option><option value="General">General</option>`; }
     }
 
-   addSafeListener("continueTestBuilderBtn", "click", () => {
+     addSafeListener("continueTestBuilderBtn", "click", () => {
      const name = document.getElementById("cTestName").value.trim();
      const subject = document.getElementById("cTestSubjectSelect").value;
      const numQ = parseInt(document.getElementById("cTestNumQuestions").value);
@@ -6156,6 +6159,8 @@ body.dark-mode .btn-status-claimed {
      const qContainer = document.getElementById("questionsContainer");
      qContainer.innerHTML = "";
      const isJsonMode = autoFilledJsonQuestions && autoFilledJsonQuestions.length === numQ;
+     
+     const uniqueKey = Date.now(); // Duplicate IDs ko rokne ke liye unique key
 
      for(let i = 1; i <= numQ; i++) {
        const jsonQ = isJsonMode ? autoFilledJsonQuestions[i - 1] : null;
@@ -6164,13 +6169,14 @@ body.dark-mode .btn-status-claimed {
            <label style="font-weight: 800; color: #0288d1;">Question ${i}:</label>
            <input type="text" class="q-text-input" value="${jsonQ ? jsonQ.q : ""}" placeholder="Type question statement here..." style="margin-bottom: 8px;">
            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 4px;">Options & Correct Answer:</div>
-           ${[0,1,2,3].map(opt => `<div class="opt-row" style="display:flex; align-items:center; gap:8px; margin-top:4px;"><input type="radio" name="correct_opt_${i}" value="${opt}" ${(jsonQ && jsonQ.correct===opt) || (!jsonQ && opt===0) ? 'checked' : ''}><input type="text" class="q-opt-input-${i}" value="${jsonQ ? jsonQ.options[opt] : ""}" placeholder="Option ${['A','B','C','D'][opt]}"></div>`).join('')}
+           ${[0,1,2,3].map(opt => `<div class="opt-row" style="display:flex; align-items:center; gap:8px; margin-top:4px;"><input type="radio" name="correct_opt_${i}_${uniqueKey}" value="${opt}" ${(jsonQ && jsonQ.correct===opt) || (!jsonQ && opt===0) ? 'checked' : ''}><input type="text" class="q-opt-input-${i}" value="${jsonQ ? jsonQ.options[opt] : ""}" placeholder="Option ${['A','B','C','D'][opt]}"></div>`).join('')}
          </div>`;
      }
      document.getElementById("testFormConfigStep").style.display = "none"; document.getElementById("testQuestionsBuilderStep").style.display = "block";
    });
 
-    addSafeListener("submitFinalTestBtn", "click", () => {
+
+      addSafeListener("submitFinalTestBtn", "click", () => {
       const btn = document.getElementById("submitFinalTestBtn");
       runWithBtnSpinner(btn, "🚀 Submit & Publish Test", async () => {
         const name = document.getElementById("cTestName").value.trim();
@@ -6180,35 +6186,44 @@ body.dark-mode .btn-status-claimed {
         const timeMins = parseInt(document.getElementById("cTestTimeMinutes").value);
         const expiry = document.getElementById("cTestExpiryDateTime").value;
 
-        const qBoxes = document.querySelectorAll(".q-box");
+        const qContainer = document.getElementById("questionsContainer");
+        const qBoxes = qContainer.querySelectorAll(".q-box");
+        
         const questionsList = [];
         let isValid = true;
 
         qBoxes.forEach((box, idx) => {
           const qText = box.querySelector(".q-text-input").value.trim();
           const options = Array.from(box.querySelectorAll(`.q-opt-input-${idx + 1}`)).map(inp => inp.value.trim());
-          const correctOpt = box.querySelector(`input[name="correct_opt_${idx + 1}"]:checked`).value;
+          
+          const checkedRadio = box.querySelector(`input[type="radio"]:checked`);
+          const correctOpt = checkedRadio ? checkedRadio.value : "0";
+
           if(!qText || options.some(o => !o)) isValid = false;
           questionsList.push({ q: qText, options: options, correct: parseInt(correctOpt) });
         });
 
-        if(!isValid) { alert("Please fill all questions and their options properly."); return; }
+        if(!isValid) { 
+            alert("Please fill all questions and their options properly."); 
+            return; 
+        }
 
-              const testId = Date.now().toString();
+        const testId = Date.now().toString();
         const cleanClass = cleanClassStr(assignedClass);
         await set(ref(db, `online_tests/${cleanClass}/${testId}`), { id: testId, title: name, subject: subject, numQuestions: numQ, marksPerQ: marksPerQ, totalMarks: numQ * marksPerQ, timeMinutes: timeMins, expiry: expiry, questions: questionsList, class: cleanClass, createdDate: getTodayFormattedDate() });
         
-        // Push Test Added Notification to all students in this class
         const targetStudents = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClass);
         for(let s of targetStudents) {
            await window.pushAppNotification(s.admn, "New Online Test 📝", `${name} (${subject}) has been added. Check your tests tab.`, "test_added", { testId: testId });
         }
 
         alert(`✔ Online Test "${name}" published successfully for Class ${assignedClass}!`);
-  autoFilledJsonQuestions = null; document.getElementById("jsonCodeInput").value = "";
+        autoFilledJsonQuestions = null; 
+        if(document.getElementById("jsonCodeInput")) document.getElementById("jsonCodeInput").value = "";
         window.closeModal("createOnlineTestModal");
       });
     });
+
 
 
 
