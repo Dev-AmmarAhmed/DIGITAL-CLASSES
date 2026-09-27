@@ -3282,56 +3282,68 @@ body.dark-mode .btn-status-claimed {
 
     let autoFilledJsonQuestions = null;
 
-    window.processAndCheckJsonCode = function() {
-      const btn = document.getElementById("checkJsonBtn");
-      const jsonText = document.getElementById("jsonCodeInput").value.trim();
+ window.processAndCheckJsonCode = function() {
+  // 1. Sabhi duplicate textareas check karein aur jisme text hai use select karein
+  const textAreas = document.querySelectorAll("#jsonCodeInput");
+  let jsonText = "";
+  textAreas.forEach(ta => {
+      if (ta.value.trim() !== "") {
+          jsonText = ta.value.trim();
+      }
+  });
 
-      if (!jsonText) {
-        alert("Please paste valid JSON code inside the text box.");
+  // 2. Active button find karein (taaki spinner sahi button par aaye)
+  const btns = document.querySelectorAll("#checkJsonBtn");
+  const btn = btns[btns.length - 1]; 
+
+  if (!jsonText) {
+    alert("Please paste valid JSON code inside the text box.");
+    return;
+  }
+
+  runWithBtnSpinner(btn, "🔍 Check & Parse JSON", async () => {
+    try {
+      const parsed = JSON.parse(jsonText);
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
         return;
       }
 
-      runWithBtnSpinner(btn, "🔍 Check & Parse JSON", async () => {
-        try {
-          const parsed = JSON.parse(jsonText);
-
-          if (!Array.isArray(parsed) || parsed.length === 0) {
-            alert("Invalid JSON format! The JSON must be a non-empty array of questions.");
-            return;
-          }
-
-          let isValid = true;
-          parsed.forEach(item => {
-            if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
-              isValid = false;
-            }
-          });
-
-          if (!isValid) {
-            alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
-            return;
-          }
-
-          autoFilledJsonQuestions = parsed;
-          const questionCount = parsed.length;
-
-          const numQInput = document.getElementById("cTestNumQuestions");
-          if (numQInput) {
-            numQInput.value = questionCount;
-            numQInput.disabled = true;
-            numQInput.style.backgroundColor = "rgba(0,0,0,0.12)";
-            numQInput.style.cursor = "not-allowed";
-          }
-
-          alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
-          window.closeModal("contributeJsonModal");
-          window.openModal("createOnlineTestModal");
-
-        } catch (err) {
-          alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
+      let isValid = true;
+      parsed.forEach(item => {
+        if (!item.q || !Array.isArray(item.options) || item.options.length !== 4 || typeof item.correct !== 'number') {
+          isValid = false;
         }
       });
-    };
+
+      if (!isValid) {
+        alert("JSON format error! Ensure every item contains 'q', 'options' (array of 4 items), and 'correct' (index 0-3).");
+        return;
+      }
+
+      autoFilledJsonQuestions = parsed;
+      const questionCount = parsed.length;
+
+      // 3. Duplicate 'Number of Questions' input fields ko safely disable aur auto-fill karein
+      const numQInputs = document.querySelectorAll("#cTestNumQuestions");
+      numQInputs.forEach(numQInput => {
+          numQInput.value = questionCount;
+          numQInput.disabled = true;
+          numQInput.style.backgroundColor = "rgba(0,0,0,0.12)";
+          numQInput.style.cursor = "not-allowed";
+      });
+
+      alert(`✔ JSON Validated Successfully!\nTotal Questions Counted: ${questionCount}`);
+      window.closeModal("contributeJsonModal");
+      window.openModal("createOnlineTestModal");
+
+    } catch (err) {
+      alert("JSON Parsing Error! Please check your code syntax.\nError: " + err.message);
+    }
+  });
+};
+
 
     let activeSelectTarget = null;
     window.openCustomSelectSheet = function(selectEl) {
