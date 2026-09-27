@@ -3471,14 +3471,20 @@ body.dark-mode .btn-status-claimed {
       });
     };
 
+
+
+          window.nativeAlertBackup = window.nativeAlertBackup || window.alert; // Asli alert ko save kiya
     window.showCustomAlert = function(msg) {
       const modal = document.getElementById("customAlertModal");
       const msgEl = document.getElementById("customAlertMessage");
       if (modal && msgEl) {
         msgEl.innerText = msg;
         modal.classList.add("active");
-      } else { console.log("System message:", msg); }
+      } else { 
+        window.nativeAlertBackup(msg); // Agar custom modal na mile tou phone ka asli alert chalao!
+      }
     };
+
  
       
           window.closeCustomAlert = function() {
