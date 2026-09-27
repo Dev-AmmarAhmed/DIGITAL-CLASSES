@@ -1950,6 +1950,19 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
+    <!-- BEAUTIFUL CUSTOM ALERT MODAL -->
+  <div id="customAlertModal" class="modal-overlay" style="z-index: 999999;">
+    <div class="modal-content" style="max-width: 320px; text-align: center; padding: 22px; border-radius: 20px;">
+      <div style="font-size: 36px; margin-bottom: 12px;">⚠️</div>
+      <h3 style="color: #0288d1; font-size: 16px; font-weight: 900; margin-bottom: 8px;">System Message</h3>
+      <div id="customAlertMessage" style="font-size: 13px; font-weight: 700; color: var(--text-color); margin-bottom: 22px; line-height: 1.4;">
+        Error or info message will appear here.
+      </div>
+      <button class="btn-primary btn-blue" style="margin-top:0; width:100%; padding:11px; font-size:13px; border-radius: 12px;" onclick="window.closeCustomAlert()">OK, Got it!</button>
+    </div>
+  </div>
+
+
   <!-- CUSTOM SYSTEM CONFIRM MODAL -->
   <div id="customConfirmModal" class="modal-overlay" style="z-index: 99999;">
     <div class="modal-content" style="max-width: 320px; text-align: center; padding: 22px; border-radius: 20px;">
@@ -3473,17 +3486,23 @@ body.dark-mode .btn-status-claimed {
 
 
 
-          window.nativeAlertBackup = window.nativeAlertBackup || window.alert; // Asli alert ko save kiya
-    window.showCustomAlert = function(msg) {
+           window.showCustomAlert = function(msg) {
       const modal = document.getElementById("customAlertModal");
       const msgEl = document.getElementById("customAlertMessage");
       if (modal && msgEl) {
         msgEl.innerText = msg;
         modal.classList.add("active");
-      } else { 
-        window.nativeAlertBackup(msg); // Agar custom modal na mile tou phone ka asli alert chalao!
       }
     };
+
+    window.closeCustomAlert = function() {
+      const modal = document.getElementById("customAlertModal");
+      if (modal) { modal.classList.remove("active"); }
+    };
+    
+    // Har normal alert ko humare premium popup mein badal do
+    window.alert = function(msg) { window.showCustomAlert(msg); };
+
 
  
       
