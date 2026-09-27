@@ -5055,6 +5055,27 @@ Exact Output JSON Format Required:
       } else { tbody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted);">No materials for Class ${classKey}</td></tr>`; }
     }
 
+
+          // Delete Study Material Function
+    window.deleteStudyMaterial = async function(classKey, matKey) {
+      window.showCustomConfirm("Are you sure you want to permanently delete this study material?", async () => {
+        try {
+          // Firebase se delete karo
+          await remove(ref(db, `study_material/${classKey}/${matKey}`));
+          
+          alert("✔ Study material deleted successfully!");
+          
+          // List ko refresh karo taake delete hone ke baad item screen se hat jaye
+          const targetCls = currentRole === "admin" ? document.getElementById("matAdminManageClassSelect").value : assignedClass;
+          loadTeacherStudyMaterials(targetCls);
+        } catch (error) {
+          alert("Error deleting material: " + error.message);
+        }
+      });
+    };
+
+
+      
     // Naya function Toggle krne ke liye
     window.toggleStudyMaterialVisibility = async function(classKey, matKey, currentlyHidden) {
       const newState = !currentlyHidden;
