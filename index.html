@@ -932,10 +932,14 @@ body.dark-mode .btn-status-claimed {
   </div>
 
   <div class="drawer-body">
+
+    
     <!-- STUDENT DRAWER OPTIONS -->
     <div class="student-only" style="display:none;">
       <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted);">STUDENT ACCOUNT</div>
       <div class="drawer-item" onclick="openModal('studentProfileDrawerModal')">👤 My Profile & Fees Card</div>
+            <div class="drawer-item" onclick="window.openLeaveTab(event)">📅 Leave Application</div>
+
       <div class="drawer-item" onclick="openModal('studentUpdateModal')">✏️ Update Profile Info</div>
       
       <div style="padding: 12px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); border-top:1px solid var(--border-color); margin-top:8px;">🎨 PROFESSIONAL THEME PALETTE</div>
@@ -954,6 +958,8 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="openModal('bulkAddTestModal')">📝 Bulk Add Test Marks</div>
       <div class="drawer-item" onclick="openModal('uploadHomeworkModal')">📚 Upload Homework</div>
       <div class="drawer-item" onclick="window.openTimetableTab(event, 'teacher')">📅 Class Timetable</div>
+      <div class="drawer-item" onclick="window.openLeaveMgmtTab(event, 'teacher')">📅 Leave Applications</div>
+
 
 
       <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); margin-top:8px;">STUDY MATERIAL (CLASS BOUND)</div>
@@ -972,6 +978,8 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="openModal('bulkStudentModal')">📋 Add Bulk Students</div>
       <div class="drawer-item" onclick="window.openTeacherManagementTab(event)">👩‍🏫 Teacher List & Management</div>
       <div class="drawer-item" onclick="window.openTimetableTab(event, 'admin')">📅 Class Timetable</div>
+      <div class="drawer-item" onclick="window.openLeaveMgmtTab(event, 'admin')">📅 Leave Applications</div>
+
 
       <div class="drawer-item" onclick="window.openMusterTab(event)">📖 Teachers' Muster</div>
       <div class="drawer-item" onclick="openModal('removeAttendModal')">📅 Remove Attendance Data</div>
@@ -1066,6 +1074,63 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 
+      <!-- STUDENT LEAVE APPLICATION TAB -->
+    <section id="studentTabLeave" class="tab-section student-tab">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div class="card-title" style="border:none; margin-bottom:0;">Leave Applications</div>
+          <button class="btn-primary btn-purple" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="window.openApplyLeaveModal()">➕ Apply for Leave</button>
+        </div>
+        
+        <div class="table-container">
+          <table style="min-width: 100%;">
+            <thead><tr><th>Date</th><th>Reason</th><th>Status</th></tr></thead>
+            <tbody id="sLeaveTableBody">
+              <tr><td colspan="3" style="text-align:center;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 24px; padding: 16px; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 16px; text-align: center;">
+          <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Contact for update status</div>
+          <div style="font-size: 20px; font-weight: 900; color: #0288d1; letter-spacing: 1px;">+91 7302132270</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APPLY LEAVE MODAL -->
+    <div id="applyLeaveModal" class="modal-overlay" style="z-index: 100000;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>📅 Apply for Leave</span>
+          <span class="close-modal" onclick="closeModal('applyLeaveModal')">✕</span>
+        </div>
+        <div class="modal-body">
+          <label>Today's Date:</label>
+          <input type="text" id="leaveTodayDate" disabled style="background-color:rgba(0,0,0,0.06) !important; font-weight:800; color:#0288d1;">
+
+          <label>Leave Date (When do you need leave?) *:</label>
+          <input type="date" id="leaveReqDate">
+
+          <label>Reason (Short) *:</label>
+          <input type="text" id="leaveReason" placeholder="e.g. Sick Leave, Family Function">
+
+          <label>Message / Details *:</label>
+          <textarea id="leaveMessage" rows="4" placeholder="Type your detailed message here..." style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-color); resize: none; margin-top: 4px;"></textarea>
+
+          <button id="submitLeaveBtn" class="btn-primary btn-green" style="margin-top:16px;">🚀 Submit Application</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAITING ANIMATION OVERLAY -->
+    <div id="leaveWaitingOverlay" class="modal-overlay" style="z-index: 999999; background: rgba(0,0,0,0.85); flex-direction: column;">
+        <div class="spinner" style="width: 40px; height: 40px; border-width: 5px; margin-bottom: 16px;"></div>
+        <div style="color: white; font-weight: 900; font-size: 18px; letter-spacing: 1px; text-align:center;">Wait for Approval...</div>
+        <div style="color: #cbd5e1; font-weight: 700; font-size: 12px; margin-top: 8px; text-align:center;">Notifying Admin on WhatsApp</div>
+    </div>
+
+
   <section id="loginScreen" class="tab-section active animate-in">
     <div class="login-box">
       <div>
@@ -1079,6 +1144,58 @@ body.dark-mode .btn-status-claimed {
     </div>
   </section>
 
+
+      <!-- ADMIN & TEACHER LEAVE MANAGEMENT TAB -->
+    <section id="mgmtTabLeave" class="tab-section admin-tab teacher-tab">
+      <div class="card">
+        <div class="card-title">📅 Student Leave Applications</div>
+        
+        <!-- Status Filters -->
+        <div class="class-chips-container" style="margin-bottom: 16px;">
+          <div class="class-chip active" id="lf-all" onclick="window.filterLeaves('All', this)">All</div>
+          <div class="class-chip" id="lf-pending" onclick="window.filterLeaves('Pending', this)">Pending ⏳</div>
+          <div class="class-chip" id="lf-approved" onclick="window.filterLeaves('Approved', this)">Approved ✔</div>
+          <div class="class-chip" id="lf-denied" onclick="window.filterLeaves('Denied', this)">Denied ✖</div>
+        </div>
+
+        <!-- Dynamic Applications Container -->
+        <div id="leaveMgmtContainer">Loading applications...</div>
+      </div>
+    </section>
+
+    <!-- LEAVE ACTION MODAL -->
+    <div id="leaveActionModal" class="modal-overlay" style="z-index: 100000;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>📋 Manage Leave Request</span>
+          <span class="close-modal" onclick="closeModal('leaveActionModal')">✕</span>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+          <h3 id="laStudentName" style="color:#0288d1; font-weight:900; font-size:18px;">Student Name</h3>
+          <p id="laStudentClass" style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:12px;">Class: - | Admn: -</p>
+          
+          <div style="background:rgba(0,0,0,0.03); border:1px solid var(--border-color); border-radius:12px; padding:12px; text-align:left; margin-bottom:16px;">
+             <div style="font-size:11px; font-weight:800; color:#ea580c; margin-bottom:4px;">Leave Date: <span id="laDate" style="color:var(--text-color);"></span></div>
+             <div style="font-size:11px; font-weight:800; color:#ea580c; margin-bottom:4px;">Reason: <span id="laReason" style="color:var(--text-color);"></span></div>
+             <div style="font-size:11px; font-weight:800; color:#ea580c; margin-bottom:4px;">Message:</div>
+             <div id="laMessage" style="font-size:13px; font-weight:700; color:var(--text-color); line-height:1.4;"></div>
+          </div>
+
+          <input type="hidden" id="laLeaveId">
+          <input type="hidden" id="laAdmn">
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+             <button class="btn-primary btn-green" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Approved')">✔ Approve</button>
+             <button class="btn-primary btn-red" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Denied')">✖ Deny</button>
+             <button class="btn-primary btn-orange" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Pending')">⏳ Pending</button>
+             <button class="btn-primary" style="margin-top:0; padding:10px; background:#64748b;" onclick="window.deleteLeaveApp()">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  
 <!-- DEDICATED TEACHERS MANAGEMENT SECTION -->
 <section id="adminTabTeachers" class="tab-section admin-tab">
   <div class="card">
@@ -8029,6 +8146,273 @@ Exact Output JSON Format Required:
       
     };
 
+          // --- STUDENT LEAVE APPLICATION ENGINE (PHASE 2) ---
+
+    window.openLeaveTab = function(e) {
+        if(e) e.stopPropagation();
+        window.closeDrawer();
+        window.switchTab('studentTabLeave', null, e);
+        window.loadStudentLeaves();
+    };
+
+    window.loadStudentLeaves = async function() {
+        const tbody = document.getElementById("sLeaveTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:12px;">⏳ Loading applications...</td></tr>`;
+
+        try {
+            const leaves = await safeDataFetch(`leave_applications/${currentStudentAdmn}`) || {};
+            // Convert to array and sort by latest first
+            const leaveList = Object.values(leaves).sort((a, b) => b.timestamp - a.timestamp); 
+
+            tbody.innerHTML = "";
+            if (leaveList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:12px;">No leave applications found.</td></tr>`;
+                return;
+            }
+
+            leaveList.forEach(l => {
+                let statusHtml = "";
+                if(l.status === "Approved") {
+                  statusHtml = `<span style="background:rgba(34, 197, 94, 0.15); color:#16a34a; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Approved ✔</span>`;
+                } else if(l.status === "Denied") {
+                  statusHtml = `<span style="background:rgba(239, 68, 68, 0.15); color:#dc2626; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Denied ✖</span>`;
+                } else {
+                  statusHtml = `<span style="background:rgba(245, 158, 11, 0.15); color:#d97706; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Pending ⏳</span>`;
+                }
+
+                // UI Date format display fix for <input type="date"> value
+                let formattedDate = l.leaveDate;
+                if(l.leaveDate && l.leaveDate.includes("-")) {
+                   const parts = l.leaveDate.split("-");
+                   formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+
+                tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight:700;">${formattedDate}</td>
+                    <td style="font-weight:800; color:#0288d1; text-align:left; padding-left:8px;">${l.reason}</td>
+                    <td>${statusHtml}</td>
+                </tr>`;
+            });
+        } catch(e) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:red; padding:12px;">Failed to load data.</td></tr>`;
+        }
+    };
+
+    window.openApplyLeaveModal = function() {
+        document.getElementById("leaveTodayDate").value = getTodayFormattedDate();
+        document.getElementById("leaveReqDate").value = "";
+        document.getElementById("leaveReason").value = "";
+        document.getElementById("leaveMessage").value = "";
+        window.openModal("applyLeaveModal");
+    };
+
+    // Global listener for the Submit Leave Button (Crash-Proof from duplicates)
+    document.addEventListener("click", (e) => {
+        const submitLeaveBtn = e.target.closest("#submitLeaveBtn");
+        if (submitLeaveBtn) {
+            const modal = submitLeaveBtn.closest(".modal-body") || document;
+            const reqDate = modal.querySelector("#leaveReqDate").value;
+            const reason = modal.querySelector("#leaveReason").value.trim();
+            const msg = modal.querySelector("#leaveMessage").value.trim();
+
+            if(!reqDate || !reason || !msg) {
+                alert("Please fill Leave Date, Reason, and Message.");
+                return;
+            }
+
+            runWithBtnSpinner(submitLeaveBtn, "🚀 Submit Application", async () => {
+                const student = await getStudentRecord(currentStudentAdmn);
+                const stName = student ? student.name : "Unknown Student";
+                const stClass = student ? student.class : "Unknown";
+
+                const timestamp = Date.now();
+                const leaveId = "LV" + timestamp;
+                
+                // Format display date
+                const parts = reqDate.split("-");
+                const displayLeaveDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+                const leaveObj = {
+                    id: leaveId,
+                    admn: currentStudentAdmn,
+                    name: stName,
+                    class: cleanClassStr(stClass),
+                    applyDate: getTodayFormattedDate(),
+                    leaveDate: reqDate,
+                    displayLeaveDate: displayLeaveDate,
+                    reason: reason,
+                    message: msg,
+                    status: "Pending",
+                    timestamp: timestamp
+                };
+
+                // Save application to Firebase
+                await set(ref(db, `leave_applications/${currentStudentAdmn}/${leaveId}`), leaveObj);
+                
+                window.closeModal("applyLeaveModal");
+                
+                // Show Waiting Animation Overlay
+                const waitingScreen = document.getElementById("leaveWaitingOverlay");
+                if(waitingScreen) waitingScreen.style.display = "flex";
+
+                // Prepare WhatsApp Notification Text
+                const adminNumber = "917302132270"; // Admin's phone number
+                const waText = `*NEW LEAVE APPLICATION* 📅\n\n*Student:* ${stName}\n*Class:* ${stClass}\n*ID:* ${currentStudentAdmn}\n*Leave Date:* ${displayLeaveDate}\n*Reason:* ${reason}\n*Message:* ${msg}\n\n_Please check the Admin Dashboard to Approve or Deny._`;
+                
+                // Hold animation for 2.5 seconds to show "Wait for approval" then redirect
+                setTimeout(() => {
+                    if(waitingScreen) waitingScreen.style.display = "none";
+                    window.loadStudentLeaves(); // Refresh student's table
+                    window.open(`https://api.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(waText)}`, "_blank");
+                }, 2500); 
+            });
+        }
+    });
+
+    // --- ADMIN & TEACHER LEAVE MANAGEMENT ENGINE (PHASE 3) ---
+    let allLeavesCache = [];
+    let currentLeaveFilter = 'All';
+
+    window.openLeaveMgmtTab = function(e, role) {
+        if(e) e.stopPropagation();
+        window.closeDrawer();
+        window.switchTab('mgmtTabLeave', null, e);
+        window.loadAllLeaves();
+    };
+
+    window.filterLeaves = function(status, el) {
+        currentLeaveFilter = status;
+        document.querySelectorAll(".class-chip[id^='lf-']").forEach(c => c.classList.remove("active"));
+        if(el) el.classList.add("active");
+        window.renderLeaves();
+    };
+
+    window.loadAllLeaves = async function() {
+        const container = document.getElementById("leaveMgmtContainer");
+        if (!container) return;
+        container.innerHTML = `<div style="text-align:center; padding:14px; font-weight:800; color:var(--text-muted);">⏳ Fetching applications...</div>`;
+        
+        try {
+            const leavesSnap = await safeDataFetch("leave_applications");
+            allLeavesCache = [];
+            
+            if (leavesSnap) {
+                Object.values(leavesSnap).forEach(studentLeaves => {
+                    Object.values(studentLeaves).forEach(leave => {
+                        allLeavesCache.push(leave);
+                    });
+                });
+            }
+            
+            // Sabse naye applications upar show honge
+            allLeavesCache.sort((a, b) => b.timestamp - a.timestamp);
+            window.renderLeaves();
+        } catch(e) {
+            container.innerHTML = `<div style="text-align:center; padding:14px; color:red;">Failed to load data.</div>`;
+        }
+    };
+
+    window.renderLeaves = function() {
+        const container = document.getElementById("leaveMgmtContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        let filteredLeaves = allLeavesCache;
+        
+        // Teacher ko sirf apni class ke bacche dikhenge
+        if (currentRole === 'teacher') {
+            filteredLeaves = filteredLeaves.filter(l => cleanClassStr(l.class) === cleanClassStr(assignedClass));
+        }
+        
+        if (currentLeaveFilter !== 'All') {
+            filteredLeaves = filteredLeaves.filter(l => l.status === currentLeaveFilter);
+        }
+
+        if (filteredLeaves.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:14px; font-weight:700; color:var(--text-muted);">No applications found.</div>`;
+            return;
+        }
+
+        const liveStudents = getLiveStudents();
+
+        filteredLeaves.forEach(l => {
+            const student = liveStudents.find(s => String(s.admn) === String(l.admn));
+            const photo = student && student.photo ? student.photo : "https://via.placeholder.com/150";
+            
+            let statusColor = "#d97706"; // Pending Orange
+            if (l.status === 'Approved') statusColor = "#16a34a"; // Green
+            if (l.status === 'Denied') statusColor = "#dc2626"; // Red
+
+            const safeMsg = (l.message || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safeReason = (l.reason || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
+            container.innerHTML += `
+            <div class="student-grid-card" style="padding:14px; display:flex; gap:12px; align-items:center; background:var(--card-bg);" 
+                 onclick="window.openLeaveActionModal('${l.id}', '${l.admn}', '${l.name}', '${l.class}', '${safeReason}', '${safeMsg}', '${l.displayLeaveDate}', '${l.status}')">
+                <img src="${photo}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid ${statusColor}; flex-shrink:0;">
+                <div style="flex:1;">
+                    <div style="font-size:14px; font-weight:800; color:var(--text-color);">${l.name} <span style="font-size:10px; color:var(--text-muted);">(Cls ${l.class})</span></div>
+                    <div style="font-size:11px; font-weight:800; color:#0288d1; margin-top:2px;">📅 ${l.displayLeaveDate}</div>
+                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:2px;">Reason: ${l.reason}</div>
+                </div>
+                <div style="font-size:10px; font-weight:900; color:white; background:${statusColor}; padding:4px 8px; border-radius:8px;">
+                    ${l.status}
+                </div>
+            </div>`;
+        });
+    };
+
+    window.openLeaveActionModal = function(id, admn, name, cls, reason, msg, date, status) {
+        document.getElementById("laLeaveId").value = id;
+        document.getElementById("laAdmn").value = admn;
+        document.getElementById("laStudentName").innerText = name;
+        document.getElementById("laStudentClass").innerText = `Class: ${cls} | Admn: ${admn}`;
+        document.getElementById("laDate").innerText = date;
+        document.getElementById("laReason").innerText = reason;
+        document.getElementById("laMessage").innerText = msg;
+        
+        window.openModal("leaveActionModal");
+    };
+
+    window.updateLeaveStatus = async function(newStatus) {
+        const leaveId = document.getElementById("laLeaveId").value;
+        const admn = document.getElementById("laAdmn").value;
+        
+        if(!leaveId || !admn) return;
+
+        try {
+            await update(ref(db), { [`leave_applications/${admn}/${leaveId}/status`]: newStatus });
+            
+            // Push Notification to Student so they know instantly
+            await window.pushAppNotification(admn, "Leave Status Updated", `Your leave application for ${document.getElementById("laDate").innerText} is now: ${newStatus}`, "leave_update", { status: newStatus });
+
+            alert(`✔ Leave Application marked as ${newStatus}!`);
+            window.closeModal("leaveActionModal");
+            window.loadAllLeaves(); // Refresh the list
+        } catch(e) {
+            alert("Error updating status.");
+        }
+    };
+
+    window.deleteLeaveApp = async function() {
+        const leaveId = document.getElementById("laLeaveId").value;
+        const admn = document.getElementById("laAdmn").value;
+        
+        if(!leaveId || !admn) return;
+
+        window.showCustomConfirm("Are you sure you want to completely delete this leave application?", async () => {
+            try {
+                await remove(ref(db, `leave_applications/${admn}/${leaveId}`));
+                alert("🗑️ Leave application deleted successfully.");
+                window.closeModal("leaveActionModal");
+                window.loadAllLeaves(); // Refresh the list
+            } catch(e) {
+                alert("Error deleting application.");
+            }
+        });
+    };
 
   </script>
 </body>
