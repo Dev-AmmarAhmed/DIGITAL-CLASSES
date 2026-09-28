@@ -1173,9 +1173,10 @@ body.dark-mode .btn-status-claimed {
       </div>
     </section>
 
-    <!-- LEAVE ACTION MODAL -->
-    <div id="leaveActionModal" class="modal-overlay" style="z-index: 100000;">
-      <div class="modal-content">
+    
+      <!-- LEAVE ACTION MODAL -->
+    <div id="leaveActionModal" class="modal-overlay" style="z-index: 100005;">
+    <div class="modal-content">
         <div class="modal-header">
           <span>📋 Manage Leave Request</span>
           <span class="close-modal" onclick="closeModal('leaveActionModal')">✕</span>
@@ -5493,17 +5494,7 @@ Exact Output JSON Format Required:
       window.openModal("studentProfileModal");
     };
 
-    window.switchStudentProfileTab = function(tab) {
-      document.getElementById("spTabProfileBtn").classList.toggle("active", tab === 'profile');
-      document.getElementById("spTabLeavesBtn").classList.toggle("active", tab === 'leaves');
-      document.getElementById("spProfileSection").style.display = tab === 'profile' ? 'block' : 'none';
-      document.getElementById("spLeaveAppSection").style.display = tab === 'leaves' ? 'block' : 'none';
-
-      if(tab === 'leaves') {
-        const admn = document.getElementById("profStudentAdmn").value;
-        window.loadStudentProfileLeaves(admn);
-      }
-    };
+ 
 
     window.loadStudentProfileLeaves = async function(admn) {
       const container = document.getElementById("spLeaveAppContainer");
@@ -8401,6 +8392,49 @@ Exact Output JSON Format Required:
         window.openModal("leaveActionModal");
     };
 
+      // --- 1. SMOOTH ANIMATED TAB SWITCHING ---
+    window.switchStudentProfileTab = function(tab) {
+      const profileSec = document.getElementById("spProfileSection");
+      const leaveSec = document.getElementById("spLeaveAppSection");
+      const modalBody = document.querySelector("#studentProfileModal .modal-body");
+      
+      document.getElementById("spTabProfileBtn").classList.toggle("active", tab === 'profile');
+      document.getElementById("spTabLeavesBtn").classList.toggle("active", tab === 'leaves');
+      
+      // Smooth Height Transition Logic
+      const currentHeight = modalBody.offsetHeight;
+      modalBody.style.height = currentHeight + "px";
+      modalBody.style.overflow = "hidden";
+      modalBody.style.transition = "height 0.3s ease-in-out";
+
+      if(tab === 'profile') {
+        leaveSec.style.display = 'none';
+        profileSec.style.display = 'block';
+        profileSec.style.animation = 'slideUp 0.3s ease forwards';
+      } else {
+        profileSec.style.display = 'none';
+        leaveSec.style.display = 'block';
+        leaveSec.style.animation = 'slideUp 0.3s ease forwards';
+        const admn = document.getElementById("profStudentAdmn").value;
+        window.loadStudentProfileLeaves(admn);
+      }
+
+      // Calculate new dynamic height and animate smoothly
+      modalBody.style.height = "auto";
+      const newHeight = modalBody.offsetHeight;
+      modalBody.style.height = currentHeight + "px";
+      
+      setTimeout(() => { modalBody.style.height = newHeight + "px"; }, 10);
+      
+      // Reset styles after animation completes
+      setTimeout(() => {
+         modalBody.style.height = "auto";
+         modalBody.style.overflow = "auto";
+         modalBody.style.transition = "none";
+      }, 320);
+    };
+
+    // --- 2. LEAVE STATUS UPDATER (Also refreshes Profile App List) ---
     window.updateLeaveStatus = async function(newStatus) {
         const leaveId = document.getElementById("laLeaveId").value;
         const admn = document.getElementById("laAdmn").value;
@@ -8410,17 +8444,21 @@ Exact Output JSON Format Required:
         try {
             await update(ref(db), { [`leave_applications/${admn}/${leaveId}/status`]: newStatus });
             
-            // Push Notification to Student so they know instantly
+            // Push Notification to Student
             await window.pushAppNotification(admn, "Leave Status Updated", `Your leave application for ${document.getElementById("laDate").innerText} is now: ${newStatus}`, "leave_update", { status: newStatus });
 
             alert(`✔ Leave Application marked as ${newStatus}!`);
             window.closeModal("leaveActionModal");
-            window.loadAllLeaves(); // Refresh the list
-        } catch(e) {
-            alert("Error updating status.");
-        }
+            window.loadAllLeaves(); // Refresh the main table
+            
+            // Agar Profile Modal khula hai toh usay bhi refresh karo!
+            if (document.getElementById("studentProfileModal").classList.contains("active")) {
+                window.loadStudentProfileLeaves(admn);
+            }
+        } catch(e) { alert("Error updating status."); }
     };
 
+    // --- 3. DELETE LEAVE APP (Also refreshes Profile App List) ---
     window.deleteLeaveApp = async function() {
         const leaveId = document.getElementById("laLeaveId").value;
         const admn = document.getElementById("laAdmn").value;
@@ -8432,12 +8470,18 @@ Exact Output JSON Format Required:
                 await remove(ref(db, `leave_applications/${admn}/${leaveId}`));
                 alert("🗑️ Leave application deleted successfully.");
                 window.closeModal("leaveActionModal");
-                window.loadAllLeaves(); // Refresh the list
-            } catch(e) {
-                alert("Error deleting application.");
-            }
+                window.loadAllLeaves(); // Refresh the main table
+                
+                // Agar Profile Modal khula hai toh usay bhi refresh karo!
+                if (document.getElementById("studentProfileModal").classList.contains("active")) {
+                    window.loadStudentProfileLeaves(admn);
+                }
+            } catch(e) { alert("Error deleting application."); }
         });
     };
+
+
+  
 
   </script>
 </body>
