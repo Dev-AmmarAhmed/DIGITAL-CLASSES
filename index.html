@@ -4842,6 +4842,7 @@ Exact Output JSON Format Required:
       loadStudentHomework();
       loadStudentLeaderboard(classStudents);
       loadStudentDueTests();
+      window.loadStudentTimetable(assignedClass)
     }
 
     addSafeListener("sViewAttendanceBtn", "click", () => {
@@ -4856,10 +4857,9 @@ Exact Output JSON Format Required:
       document.getElementById("subTabHwBtn").classList.toggle("active", type === 'hw');
       document.getElementById("sStudyMatSubSection").style.display = type === 'mat' ? 'block' : 'none';
       document.getElementById("sHomeworkSubSection").style.display = type === 'hw' ? 'block' : 'none';
-
-      window.loadStudentTimetable(assignedClass)
-    
       };
+
+      
        async function loadStudentStudyMaterials() {
       const container = document.getElementById("sStudyMatContainer");
       if(!container) return;
