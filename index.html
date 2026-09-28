@@ -953,6 +953,8 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="openModal('deleteTestDataModal')">🗑️ Delete Test Data</div>
       <div class="drawer-item" onclick="openModal('bulkAddTestModal')">📝 Bulk Add Test Marks</div>
       <div class="drawer-item" onclick="openModal('uploadHomeworkModal')">📚 Upload Homework</div>
+      <div class="drawer-item" onclick="window.openTimetableTab(event, 'teacher')">📅 Class Timetable</div>
+
 
       <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); margin-top:8px;">STUDY MATERIAL (CLASS BOUND)</div>
       <div class="drawer-item" onclick="openModal('addStudyMaterialModal')">📁 Add Study Material</div>
@@ -969,6 +971,8 @@ body.dark-mode .btn-status-claimed {
       <div class="drawer-item" onclick="exportFullDatabaseJson()">📥 Export Full JSON Backup</div>
       <div class="drawer-item" onclick="openModal('bulkStudentModal')">📋 Add Bulk Students</div>
       <div class="drawer-item" onclick="window.openTeacherManagementTab(event)">👩‍🏫 Teacher List & Management</div>
+      <div class="drawer-item" onclick="window.openTimetableTab(event, 'admin')">📅 Class Timetable</div>
+
       <div class="drawer-item" onclick="window.openMusterTab(event)">📖 Teachers' Muster</div>
       <div class="drawer-item" onclick="openModal('removeAttendModal')">📅 Remove Attendance Data</div>
       <div class="drawer-item" onclick="openModal('removeStudentModal')">👤 Remove Student</div>
@@ -1196,6 +1200,64 @@ body.dark-mode .btn-status-claimed {
     </div>
   </div>
 </section>
+
+
+      <!-- ADMIN TIMETABLE SECTION -->
+    <section id="adminTabTimetable" class="tab-section admin-tab">
+      <div class="card">
+        <div class="card-title">📅 Class Timetable Management</div>
+        <label>Select Standard / Class:</label>
+        <select id="ttAdminClassSelect" onchange="window.loadTimetableData(this.value, 'admin')">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; margin-bottom:8px;">
+          <div style="font-size:12px; font-weight:800; color:var(--text-muted);" id="ttAdminClassLabel">Class 1 Timetable</div>
+          <button id="ttAdminEditBtn" onclick="window.toggleTimetableEdit('admin')" class="btn-primary btn-purple" style="width:auto; padding:6px 14px; font-size:11px; margin-top:0;">✏️ Edit</button>
+        </div>
+
+        <div class="table-container">
+          <table style="min-width: 800px;">
+            <thead><tr><th>Time</th><th>Subject</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th></tr></thead>
+            <tbody id="ttAdminTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="ttAdminActionButtons" style="display:none; gap:10px; margin-top:14px;">
+           <button class="btn-primary btn-blue" onclick="window.addTimetableRow('admin')">➕ Add Row</button>
+           <button class="btn-primary btn-red" onclick="window.deleteTimetableRow('admin')">➖ Delete Row</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEACHER TIMETABLE SECTION -->
+    <section id="teacherTabTimetable" class="tab-section teacher-tab">
+      <div class="card">
+        <div class="card-title">📅 My Class Timetable</div>
+        <label>Assigned Class:</label>
+        <input type="text" id="ttTeacherClassDisplay" disabled style="font-weight:800; color:#7c3aed;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; margin-bottom:8px;">
+          <div style="font-size:12px; font-weight:800; color:var(--text-muted);" id="ttTeacherClassLabel">Timetable</div>
+          <button id="ttTeacherEditBtn" onclick="window.toggleTimetableEdit('teacher')" class="btn-primary btn-purple" style="width:auto; padding:6px 14px; font-size:11px; margin-top:0;">✏️ Edit</button>
+        </div>
+
+        <div class="table-container">
+          <table style="min-width: 800px;">
+            <thead><tr><th>Time</th><th>Subject</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th></tr></thead>
+            <tbody id="ttTeacherTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="ttTeacherActionButtons" style="display:none; gap:10px; margin-top:14px;">
+           <button class="btn-primary btn-blue" onclick="window.addTimetableRow('teacher')">➕ Add Row</button>
+           <button class="btn-primary btn-red" onclick="window.deleteTimetableRow('teacher')">➖ Delete Row</button>
+        </div>
+      </div>
+    </section>
 
 
     <!-- LOGS & RECENT ENTRIES TAB SECTION -->
@@ -1779,7 +1841,23 @@ body.dark-mode .btn-status-claimed {
           </div>
         </div>
       </div>
+
+              <!-- STUDENT TIMETABLE CARD -->
+        <div class="card unfold-card" id="sHomeTimetableCard" style="margin-top:16px; display:none;">
+          <div class="card-title">📅 My Class Timetable</div>
+          <div class="table-container">
+            <table style="min-width: 700px;">
+              <thead>
+                <tr><th>Time</th><th>Subject</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
+              </thead>
+              <tbody id="sHomeTimetableBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
     </section>
+
 
     <section id="studentTabAttend" class="tab-section student-tab">
       <div class="card">
@@ -4772,12 +4850,16 @@ Exact Output JSON Format Required:
       document.getElementById("sAttReportArea").style.display = "block";
     });
 
+      
     window.switchStudentStudySubTab = function(type) {
       document.getElementById("subTabMatBtn").classList.toggle("active", type === 'mat');
       document.getElementById("subTabHwBtn").classList.toggle("active", type === 'hw');
       document.getElementById("sStudyMatSubSection").style.display = type === 'mat' ? 'block' : 'none';
       document.getElementById("sHomeworkSubSection").style.display = type === 'hw' ? 'block' : 'none';
-    };
+
+      window.loadStudentTimetable(assignedClass)
+    
+      };
        async function loadStudentStudyMaterials() {
       const container = document.getElementById("sStudyMatContainer");
       if(!container) return;
@@ -7788,6 +7870,163 @@ Exact Output JSON Format Required:
         }).catch(err => {
             alert("Failed to copy text. Please try selecting manually.");
         });
+    };
+
+
+          // --- TIMETABLE ENGINE (PHASE 1) ---
+    let isTtEditMode = false;
+    let currentTtData = [];
+    const defaultTtRows = 7;
+
+    window.openTimetableTab = function(e, role) {
+      if(e) e.stopPropagation();
+      window.closeDrawer();
+      if(role === 'admin') {
+        window.switchTab('adminTabTimetable', null, e);
+        const cls = document.getElementById("ttAdminClassSelect").value;
+        window.loadTimetableData(cls, 'admin');
+      } else {
+        window.switchTab('teacherTabTimetable', null, e);
+        document.getElementById("ttTeacherClassDisplay").value = `Class ${assignedClass}`;
+        window.loadTimetableData(assignedClass, 'teacher');
+      }
+    };
+
+    window.loadTimetableData = async function(clsStr, role) {
+      isTtEditMode = false;
+      const cleanCls = cleanClassStr(clsStr);
+      const labelId = role === 'admin' ? "ttAdminClassLabel" : "ttTeacherClassLabel";
+      const btnId = role === 'admin' ? "ttAdminEditBtn" : "ttTeacherEditBtn";
+      const actionBoxId = role === 'admin' ? "ttAdminActionButtons" : "ttTeacherActionButtons";
+      
+      document.getElementById(labelId).innerText = `Class ${cleanCls} Timetable`;
+      document.getElementById(btnId).innerText = "✏️ Edit";
+      document.getElementById(btnId).className = "btn-primary btn-purple";
+      document.getElementById(actionBoxId).style.display = "none";
+
+      const ttData = await safeDataFetch(`timetable/${cleanCls}`);
+      
+      if (ttData && Array.isArray(ttData) && ttData.length > 0) {
+          currentTtData = ttData;
+      } else {
+          currentTtData = [];
+          for(let i=0; i<defaultTtRows; i++) {
+              currentTtData.push({ time: "", subject: "", mon: "", tue: "", wed: "", thu: "", fri: "", sat: "" });
+          }
+      }
+      window.renderTimetableTable(role);
+    };
+
+    window.renderTimetableTable = function(role) {
+      const tbodyId = role === 'admin' ? "ttAdminTableBody" : "ttTeacherTableBody";
+      const tbody = document.getElementById(tbodyId);
+      tbody.innerHTML = "";
+
+      currentTtData.forEach((row, idx) => {
+        if(isTtEditMode) {
+          tbody.innerHTML += `
+            <tr>
+              <td><input type="text" id="tt_${role}_time_${idx}" value="${row.time}" style="width:70px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_sub_${idx}" value="${row.subject}" style="width:80px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_mon_${idx}" value="${row.mon}" style="width:60px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_tue_${idx}" value="${row.tue}" style="width:60px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_wed_${idx}" value="${row.wed}" style="width:60px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_thu_${idx}" value="${row.thu}" style="width:60px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_fri_${idx}" value="${row.fri}" style="width:60px; padding:4px; font-size:11px;"></td>
+              <td><input type="text" id="tt_${role}_sat_${idx}" value="${row.sat}" style="width:60px; padding:4px; font-size:11px;"></td>
+            </tr>`;
+        } else {
+          tbody.innerHTML += `
+            <tr>
+              <td style="font-weight:800; color:#0288d1;">${row.time || '-'}</td>
+              <td style="font-weight:800;">${row.subject || '-'}</td>
+              <td>${row.mon || '-'}</td><td>${row.tue || '-'}</td><td>${row.wed || '-'}</td>
+              <td>${row.thu || '-'}</td><td>${row.fri || '-'}</td><td>${row.sat || '-'}</td>
+            </tr>`;
+        }
+      });
+    };
+
+    window.toggleTimetableEdit = async function(role) {
+      const btnId = role === 'admin' ? "ttAdminEditBtn" : "ttTeacherEditBtn";
+      const actionBoxId = role === 'admin' ? "ttAdminActionButtons" : "ttTeacherActionButtons";
+      const cls = role === 'admin' ? document.getElementById("ttAdminClassSelect").value : assignedClass;
+      const cleanCls = cleanClassStr(cls);
+
+      if(!isTtEditMode) {
+          isTtEditMode = true;
+          document.getElementById(btnId).innerText = "💾 Update";
+          document.getElementById(btnId).className = "btn-primary btn-green";
+          document.getElementById(actionBoxId).style.display = "flex";
+          window.renderTimetableTable(role);
+      } else {
+          const btn = document.getElementById(btnId);
+          runWithBtnSpinner(btn, "💾 Update", async () => {
+              const updatedData = [];
+              for(let i=0; i<currentTtData.length; i++) {
+                  updatedData.push({
+                      time: document.getElementById(`tt_${role}_time_${i}`).value.trim(),
+                      subject: document.getElementById(`tt_${role}_sub_${i}`).value.trim(),
+                      mon: document.getElementById(`tt_${role}_mon_${i}`).value.trim(),
+                      tue: document.getElementById(`tt_${role}_tue_${i}`).value.trim(),
+                      wed: document.getElementById(`tt_${role}_wed_${i}`).value.trim(),
+                      thu: document.getElementById(`tt_${role}_thu_${i}`).value.trim(),
+                      fri: document.getElementById(`tt_${role}_fri_${i}`).value.trim(),
+                      sat: document.getElementById(`tt_${role}_sat_${i}`).value.trim()
+                  });
+              }
+              currentTtData = updatedData;
+              await set(ref(db, `timetable/${cleanCls}`), updatedData);
+              
+              window.showCustomAlert(`✔ Time table updated for Class ${cleanCls}`);
+              
+              isTtEditMode = false;
+              document.getElementById(btnId).innerText = "✏️ Edit";
+              document.getElementById(btnId).className = "btn-primary btn-purple";
+              document.getElementById(actionBoxId).style.display = "none";
+              window.renderTimetableTable(role);
+          });
+      }
+    };
+
+    window.addTimetableRow = function(role) {
+        currentTtData.push({ time: "", subject: "", mon: "", tue: "", wed: "", thu: "", fri: "", sat: "" });
+        window.renderTimetableTable(role);
+    };
+
+    window.deleteTimetableRow = function(role) {
+        if(currentTtData.length > 1) {
+            currentTtData.pop();
+            window.renderTimetableTable(role);
+        } else {
+            alert("At least 1 row is required.");
+        }
+    };
+
+    // --- STUDENT TIMETABLE LOADER (Inject this inside your refreshStudentDashboard function) ---
+    // You should manually place window.loadStudentTimetable(assignedClass) at the bottom of refreshStudentDashboard()
+    window.loadStudentTimetable = async function(cleanCls) {
+      const card = document.getElementById("sHomeTimetableCard");
+      const tbody = document.getElementById("sHomeTimetableBody");
+      if(!card || !tbody) return;
+
+      const ttData = await safeDataFetch(`timetable/${cleanCls}`);
+      if(ttData && Array.isArray(ttData) && ttData.length > 0) {
+          tbody.innerHTML = "";
+          ttData.forEach(row => {
+             tbody.innerHTML += `
+              <tr>
+                <td style="font-weight:800; color:#0288d1;">${row.time || '-'}</td>
+                <td style="font-weight:800;">${row.subject || '-'}</td>
+                <td>${row.mon || '-'}</td><td>${row.tue || '-'}</td><td>${row.wed || '-'}</td>
+                <td>${row.thu || '-'}</td><td>${row.fri || '-'}</td><td>${row.sat || '-'}</td>
+              </tr>`;
+          });
+          card.style.display = "block";
+      } else {
+          card.style.display = "none";
+      }
+      
     };
 
 
