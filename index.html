@@ -16,12 +16,15 @@
   <link id="appleAppIcon" rel="apple-touch-icon" href="https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png">
   <link rel="manifest" href="manifest.json">
 
-  <!-- PDF EXPORT ENGINE LIBRARIES -->
+   <!-- PDF EXPORT ENGINE LIBRARIES -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
+  <!-- INTERACTIVE GRAPH ENGINE (CHART.JS) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <!-- ====================================================================
-       SECTION 1: STYLESHEETS & REFINED PREMIUM DESIGN SYSTEM
+      SECTION 1: STYLESHEETS & REFINED PREMIUM DESIGN SYSTEM
        ==================================================================== -->
    <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
@@ -541,10 +544,11 @@ input:disabled, select:disabled { background-color: rgba(0,0,0,0.06) !important;
 
 .modal-overlay {
   display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 10000; /* Set a very high base z-index for all modals */
   align-items: center; justify-content: center; padding: 16px;
 }
-.modal-overlay.active { display: flex; }
+
+     .modal-overlay.active { display: flex; }
 
 .modal-content {
   background: var(--card-bg); border-radius: 22px; width: 100%; max-width: 440px; max-height: 90vh;
@@ -901,8 +905,8 @@ body.dark-mode .btn-status-claimed {
   
   <div id="menuDropdown" class="menu-dropdown">
     <div class="menu-item teacher-only" style="display:none;" onclick="openModal('addSubjectModal')">➕ Add Subject</div>
-    <div class="menu-item admin-only" onclick="openModal('addStudyMaterialModal')">📁 Add Study Material</div>
-    <div class="menu-item admin-only" onclick="openModal('manageStudyMaterialModal')">📚 Manage Study Material</div>
+    <!-- Add aur Manage dono ab naye Study Material Tab mein shift ho gaye hain -->
+    <div class="menu-item admin-only" onclick="window.openStudyMaterialTab(event, 'admin')">📚 Study Material & Syllabus</div>
     <div class="menu-item admin-only" onclick="openModal('registerStudentModal')">👤 Register Student</div>
     <div class="menu-item admin-only" onclick="openModal('registerTeacherModal')">👩‍🏫 Register Teacher</div>
     <div class="menu-item admin-only" onclick="openModal('credentialsModal')">🔑 Login IDs & Passwords</div>
@@ -974,9 +978,8 @@ body.dark-mode .btn-status-claimed {
 
 
 
-      <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); margin-top:8px;">STUDY MATERIAL (CLASS BOUND)</div>
-      <div class="drawer-item" onclick="openModal('addStudyMaterialModal')">📁 Add Study Material</div>
-      <div class="drawer-item" onclick="openModal('manageStudyMaterialModal')">📚 Manage Study Material</div>
+         <div style="padding: 10px 18px 4px 18px; font-size:11px; font-weight:800; color:var(--text-muted); margin-top:8px;">STUDY MATERIAL (CLASS BOUND)</div>
+      <div class="drawer-item" onclick="window.openStudyMaterialTab(event, 'teacher')">📚 Study Material & Syllabus</div>
       <div class="drawer-item" onclick="window.openAssistanceMenu()" style="border-top: 1px dashed var(--border-color); color: #0288d1; margin-top: 8px;">ℹ️ System Assistance</div>
 
     </div>
@@ -1972,7 +1975,9 @@ body.dark-mode .btn-status-claimed {
         </div>
       </div>
 
-      <!-- STUDENT TIMETABLE CARD -->
+      
+      
+           <!-- STUDENT TIMETABLE CARD -->
       <div class="card unfold-card" id="sHomeTimetableCard" style="margin-top:16px; display:none;">
         <div class="card-title">📅 My Class Timetable</div>
         <div class="table-container">
@@ -1985,7 +1990,20 @@ body.dark-mode .btn-status-claimed {
           </table>
         </div>
       </div>
+      
+      <!-- STUDENT SYLLABUS STATUS WIDGET -->
+      <div class="card unfold-card" id="sHomeSyllabusWidget" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+          <div class="card-title" style="border:none; margin-bottom:0;">📊 My Syllabus Status</div>
+          <a href="javascript:void(0)" onclick="window.switchTab('studentTabStudy', document.getElementById('bottomNav').children[2], event); window.switchStudentStudySubTab('syl');" style="font-size:11px; font-weight:800; color:#0288d1; text-decoration:none;">See full status &rarr;</a>
+        </div>
+        
+        <div style="position: relative; height: 180px; width: 100%;">
+           <canvas id="studentHomeSyllabusChart"></canvas>
+        </div>
+      </div>
     </section>
+
 
     <section id="studentTabAttend" class="tab-section student-tab">
       <div class="card unfold-card">
@@ -2005,26 +2023,68 @@ body.dark-mode .btn-status-claimed {
       </div>
     </section>
 
-    <section id="studentTabStudy" class="tab-section student-tab">
+
+
+
+      <section id="studentTabStudy" class="tab-section student-tab">
+      <!-- 3 Buttons Menu -->
       <div class="sub-nav-tabs">
-        <div class="sub-tab-btn active" id="subTabMatBtn" onclick="window.switchStudentStudySubTab('mat')">📁 Study Materials</div>
+        <div class="sub-tab-btn active" id="subTabMatBtn" onclick="window.switchStudentStudySubTab('mat')">📁 Material</div>
         <div class="sub-tab-btn" id="subTabHwBtn" onclick="window.switchStudentStudySubTab('hw')">📚 Homework</div>
+        <div class="sub-tab-btn" id="subTabSylBtn" onclick="window.switchStudentStudySubTab('syl')">📊 Syllabus</div>
       </div>
 
-      <div id="sStudyMatSubSection">
-        <div class="card unfold-card">
-          <div class="card-title">Class Study Materials</div>
-          <div id="sStudyMatContainer">Loading materials...</div>
+      <!-- Left-to-Right Sliding Container CSS Engine (Inline for this section) -->
+      <style>
+        .slide-container { position: relative; overflow: hidden; width: 100%; min-height: 400px; }
+        .slide-pane { position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; opacity: 0; pointer-events: none; }
+        .slide-pane.active { opacity: 1; pointer-events: auto; position: relative; transform: translateX(0); }
+        .slide-pane.hidden-left { transform: translateX(-50px); }
+        .slide-pane.hidden-right { transform: translateX(50px); }
+      </style>
+
+      <div class="slide-container">
+        <!-- PANE 1: MATERIAL -->
+        <div id="sStudyMatSubSection" class="slide-pane active">
+          <div class="card unfold-card">
+            <div class="card-title">Class Study Materials</div>
+            <div id="sStudyMatContainer">Loading materials...</div>
+          </div>
         </div>
-      </div>
 
-      <div id="sHomeworkSubSection" style="display:none;">
-        <div class="card unfold-card">
-          <div class="card-title">Class Homework Assignments</div>
-          <div id="sHomeworkContainer">Loading homework...</div>
+        <!-- PANE 2: HOMEWORK -->
+        <div id="sHomeworkSubSection" class="slide-pane hidden-right">
+          <div class="card unfold-card">
+            <div class="card-title">Class Homework Assignments</div>
+            <div id="sHomeworkContainer">Loading homework...</div>
+          </div>
+        </div>
+
+        <!-- PANE 3: SYLLABUS STATUS -->
+        <div id="sSyllabusSubSection" class="slide-pane hidden-right">
+          <div class="card unfold-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+               <div class="card-title" style="border:none; margin-bottom:0;">Syllabus Status</div>
+               <span style="font-size:10px; background:rgba(34,197,94,0.15); color:#16a34a; padding:4px 8px; border-radius:6px; font-weight:800;">Auto Sync ☁</span>
+            </div>
+            
+            <label>Filter Subject:</label>
+            <select id="sStudentSylSubjectSelect">
+               <option value="ALL">All Subjects</option>
+            </select>
+            
+            <!-- Table will be generated here in Phase 3 -->
+            <div id="sStudentSyllabusTableContainer" style="margin-top: 14px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">
+               Phase 3 Table Loading...
+            </div>
+          </div>
+          
+          <!-- Student Individual Donut Graphs Container -->
+          <div id="sStudentSyllabusGraphsContainer"></div>
         </div>
       </div>
     </section>
+
 
     <section id="studentTabPerform" class="tab-section student-tab">
       <div class="card unfold-card" style="text-align:center; background:var(--header-bg); color:white;">
@@ -2106,9 +2166,12 @@ body.dark-mode .btn-status-claimed {
        SECTION 4: MODALS (POPUPS) SYSTEM INCLUDING STUDY MATERIAL MODALS
   ==================================================================== -->
 
-  <!-- UNIVERSAL NATIVE CUSTOM SELECT SHEET MODAL -->
-  <div id="customSelectModal" class="modal-overlay" style="z-index: 100000;">
+   <!-- UNIVERSAL NATIVE CUSTOM SELECT SHEET MODAL -->
+  <!-- z-index ko 1000000 kar diya hai taake ye hamesha sabse aage rahe -->
+  <div id="customSelectModal" class="modal-overlay" style="z-index: 1000000;">
     <div class="modal-content" style="max-width: 380px; border-radius: 24px; padding: 0; overflow: hidden; animation: slideUp 0.25s cubic-bezier(0.25, 1, 0.5, 1);">
+
+      
       <div class="modal-header" style="background: var(--header-bg); padding: 16px 20px;">
         <span id="customSelectTitle" style="font-size: 15px; font-weight: 800; color: #ffffff;">Select Option</span>
         <span class="close-modal" onclick="window.closeCustomSelectSheet()">✕</span>
@@ -2657,36 +2720,70 @@ Exact Output JSON Format Required:
   </div>
 
 
-  <!-- MANAGE STUDY MATERIAL MODAL -->
-  <div id="manageStudyMaterialModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>📚 Manage Study Material</span>
-        <span class="close-modal" onclick="closeModal('manageStudyMaterialModal')">✕</span>
+  <!-- ====================================================================
+       ADMIN & TEACHER STUDY MATERIAL & SYLLABUS TAB
+       ==================================================================== -->
+  <section id="mgmtTabStudyMaterial" class="tab-section admin-tab teacher-tab">
+    <div class="card unfold-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+        <div class="card-title" style="border:none; margin-bottom:0;">📚 Manage Study Materials</div>
+        <button class="btn-primary btn-purple" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="openModal('addStudyMaterialModal')">➕ Add Material</button>
       </div>
-      <div class="modal-body">
-        <div id="adminManageClassBox" style="display:none; margin-bottom:10px;">
-          <label>Select Class to Manage Materials:</label>
-          <select id="matAdminManageClassSelect">
-            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-            <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-          </select>
-        </div>
 
-        <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:10px;" id="manageClassText">
-          Materials List
-        </div>
-        <div class="table-container">
-          <table style="min-width: 100%;">
-            <thead><tr><th>Title</th><th>Type</th><th>Action</th></tr></thead>
-            <tbody id="manageMaterialTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
-          </table>
-        </div>
+      <div id="adminManageClassBoxTab" style="display:none; margin-bottom:10px;">
+        <label>Select Class to Manage Materials:</label>
+        <select id="matAdminManageClassSelectTab" onchange="window.loadTeacherStudyMaterials(this.value)">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+      </div>
+
+      <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:10px;" id="manageClassTextTab">
+        Materials List
+      </div>
+      <div class="table-container" style="max-height: 35vh; overflow-y: auto;">
+        <table style="min-width: 100%;">
+          <thead><tr><th>Title</th><th>Type</th><th>Action</th></tr></thead>
+          <tbody id="manageMaterialTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+        </table>
       </div>
     </div>
-  </div>
+
+        <!-- SYLLABUS STATUS BOX (INTERACTIVE GRAPH UI) -->
+    <div class="card unfold-card" style="margin-top: 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+        <div class="card-title" style="border:none; margin-bottom:0;">📊 Syllabus Status</div>
+        <button class="btn-primary btn-blue" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="window.openUpdateSyllabusModal()">✏️ Update Syllabus</button>
+      </div>
+      
+      <label>Select Target Standard:</label>
+      <!-- Dropdown badalte hi Graph load hoga -->
+      <select id="sylTrackClassSelect" onchange="window.initAdminSyllabusTracker()">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+      </select>
+      
+      <!-- Graph Canvas -->
+      <div style="position: relative; height: 240px; width: 100%; margin-top: 16px;">
+         <canvas id="adminSyllabusChart"></canvas>
+      </div>
+
+      <!-- Selected Subjects Checkboxes -->
+      <div class="checkbox-grid" id="sylAdminCheckboxes" style="margin-top: 16px;">
+         <!-- JavaScript se auto fill hoga -->
+      </div>
+
+      <!-- Graph Data Breakdown -->
+      <div id="sylTrackBreakdown" style="margin-top: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 12px; border: 1px dashed var(--border-color);">
+         <!-- Percentages will appear here -->
+      </div>
+    </div>
+
+  </section>
 
 
   
@@ -3156,6 +3253,77 @@ Exact Output JSON Format Required:
       </div>
     </div>
   </div>
+
+
+    <!-- UPDATE SYLLABUS MODAL -->
+  <div id="updateSyllabusModal" class="modal-overlay" style="z-index: 100000;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>📊 Update Syllabus Subjects</span>
+        <span class="close-modal" onclick="closeModal('updateSyllabusModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Class:</label>
+        <!-- Teacher ke case mein ye automatically disable ho jayega JS se -->
+        <select id="sylUpdateClassSelect" onchange="window.loadSyllabusSubjects()">
+          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+
+        <label>Enable Subjects for Syllabus Tracker:</label>
+        <div class="checkbox-grid" id="sylSubjectsCheckboxContainer" style="max-height: 200px; overflow-y: auto;">
+          <!-- Subject checkboxes dynamically load yahan honge -->
+        </div>
+
+        <button id="saveSylSubjectsBtn" class="btn-primary btn-green" style="margin-top:16px;" onclick="window.saveSyllabusSubjects()">💾 Save Enabled Subjects</button>
+        
+        <div style="margin-top: 16px; border-top: 2px dashed var(--border-color); padding-top: 16px;">
+          <button class="btn-primary btn-blue" onclick="window.openAddChaptersModal()">📝 Add / Edit Chapters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CHAPTERS MODAL -->
+  <!-- Modals should be stacked properly, increasing z-index for nested ones -->
+  <div id="addChaptersModal" class="modal-overlay" style="z-index: 100050;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <span>📑 Manage Chapters</span>
+        <span class="close-modal" onclick="closeModal('addChaptersModal')">✕</span>
+      </div>
+      <div class="modal-body">
+        <label>Select Enabled Subject:</label>
+        <select id="sylChapterSubjectSelect" onchange="window.loadSyllabusChapters()">
+          <option value="">-- Select Subject --</option>
+        </select>
+
+        <div class="table-container" style="max-height: 40vh; overflow-y: auto; margin-top: 12px;">
+          <table style="min-width: 100%;" id="chaptersTable">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Ch No.</th>
+                <th style="text-align: left; padding-left: 8px;">Chapter Name</th>
+              </tr>
+            </thead>
+            <tbody id="chaptersTableBody">
+              <!-- Rows yahan generate hongi bina text delete kiye -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:14px;">
+           <!-- Ye buttons existing data ko disturb nahi karenge -->
+           <button class="btn-primary" style="background:#64748b;" onclick="window.addChapterRow()">➕ Add Row</button>
+           <button class="btn-primary btn-red" onclick="window.deleteChapterRow()">➖ Delete Row</button>
+        </div>
+        <button id="saveChaptersBtn" class="btn-primary btn-green" style="margin-top:14px;" onclick="window.saveSyllabusChapters()">💾 Save Chapters</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- TEACHER MUSTER DETAILS MODAL -->
   <div id="teacherMusterDetailsModal" class="modal-overlay">
@@ -7640,7 +7808,8 @@ localStorage.setItem("loggedPass", p);
     // 🚀 RECOVERED MISSING ENGINES
     // ==========================================
 
-    // --- 1. ASSISTANCE MENU ENGINE ---
+
+          // --- 1. ASSISTANCE MENU ENGINE ---
     const assistanceData = [
       {
         title: "Access Muster (Daily Attendance)",
@@ -7649,38 +7818,33 @@ localStorage.setItem("loggedPass", p);
       },
       {
         title: "Register Student",
-        en: "1. Enter the student's full name, assigned class, WhatsApp number, and DOB.<br><br>2. Upload a profile photo if available.<br><br>3. Click Submit to generate their login ID and password.",
-        ur: "1. Student ka poora naam, class, WhatsApp number aur DOB dalein.<br><br>2. Agar photo hai toh upload karein.<br><br>3. Submit dabayein taake unka naya ID aur Password ban jaye."
+        en: "1. Enter the student's full name, WhatsApp number, and DOB.<br><br>2. Upload a profile photo if available.<br><br>3. Click Submit to register them to your assigned class.",
+        ur: "1. Student ka poora naam, WhatsApp number aur DOB dalein.<br><br>2. Agar photo hai toh upload karein.<br><br>3. Submit dabayein taake wo aapki class mein add ho jayein."
+      },
+      {
+        title: "Study Material & Syllabus Tracker", // 🔥 THE NEW SYLLABUS FEATURE GUIDE
+        en: "1. Open 'Study Material & Syllabus' from the left menu.<br><br>2. <b>Add Material:</b> Click '+ Add Material' to share PDF or Video links with your class.<br><br>3. <b>Enable Subjects:</b> Click 'Update Syllabus' to enable specific subjects for your class.<br><br>4. <b>Add Chapters:</b> Inside the Syllabus modal, click 'Add / Edit Chapters' to create chapter tracking lists.<br><br>5. <b>Graphs:</b> The graphs will auto-update as your students tick off completed chapters.",
+        ur: "1. Menu se 'Study Material & Syllabus' open karein.<br><br>2. <b>Add Material:</b> Naya material add karne ke liye '+ Add Material' dabayein.<br><br>3. <b>Update Syllabus:</b> Apni class ke subjects enable karne ke liye 'Update Syllabus' par jayen.<br><br>4. <b>Add Chapters:</b> Syllabus modal ke andar 'Add / Edit Chapters' se baccho ke liye chapters add karein.<br><br>5. <b>Graphs:</b> Jaise hi aapke bacche chapter complete karke tick karenge, aapka graph auto-update ho jayega."
       },
       {
         title: "Delete Test Data",
-        en: "1. Select the specific student from the dropdown.<br><br>2. Tap 'Load Test Records'.<br><br>3. Find the test you want to remove and click the 'Delete' button next to it.",
-        ur: "1. Dropdown se student select karein.<br><br>2. 'Load Test Records' par click karein.<br><br>3. Jo test delete karna hai uske aage wale 'Delete' button ko dabayein."
+        en: "1. Select the specific student from your class.<br><br>2. Tap 'Load Test Records'.<br><br>3. Find the test you want to remove and click the 'Delete' button.",
+        ur: "1. Apni class ke student ko select karein.<br><br>2. 'Load Test Records' par click karein.<br><br>3. Jo test delete karna hai uske aage wale 'Delete' button ko dabayein."
       },
       {
         title: "Bulk Add Test Marks",
-        en: "1. Enter the Test Name and Total Marks.<br><br>2. Click Continue.<br><br>3. Enter the obtained marks for all students in the list.<br><br>4. Click Save to automatically assign performance points.",
-        ur: "1. Test ka naam aur Total marks dalein.<br><br>2. Continue dabayein.<br><br>3. List mein sab students ke obtained marks dalein.<br><br>4. Save dabayein, points auto-assign ho jayenge."
+        en: "1. Enter the Test Name and Total Marks.<br><br>2. Click Continue.<br><br>3. Enter the obtained marks for all students in your class.<br><br>4. Click Save to automatically assign performance points.",
+        ur: "1. Test ka naam aur Total marks dalein.<br><br>2. Continue dabayein.<br><br>3. Apni class ke sab students ke marks dalein.<br><br>4. Save dabayein, points auto-assign ho jayenge."
       },
       {
         title: "Upload Homework",
-        en: "1. Enter the homework title or subject name.<br><br>2. Select the homework photo from your device.<br><br>3. Click Upload to save it directly to the students' dashboard.",
-        ur: "1. Homework ka title ya subject likhein.<br><br>2. Device se homework ki photo select karein.<br><br>3. Upload dabayein, ye direct students ki app mein chala jayega."
-      },
-      {
-        title: "Add Study Material",
-        en: "1. Upload material manually in your Google Drive app.<br><br>2. Tap the three dots, set access to 'Anyone with the link', and copy the link.<br><br>3. Open Digital Classes app, paste the link, set a title, and save.",
-        ur: "1. Apni Google Drive app mein material upload karein.<br><br>2. 3 dots par click karein, access ko 'Anyone with link' karein aur link copy karein.<br><br>3. Digital Classes app mein aakar link paste karein, title dalein aur save karein."
-      },
-      {
-        title: "Manage Study Material",
-        en: "1. Open Manage Study Material to see the list of all uploaded materials.<br><br>2. Use 'Hide/Unhide' to control visibility for students.<br><br>3. Use 'Delete' to remove it permanently.",
-        ur: "1. Manage Study Material open karein taake sab files dikh jayen.<br><br>2. Students se chhupane ke liye 'Hide' dabayein.<br><br>3. Hamesha ke liye hatane ke liye 'Delete' kar dein."
+        en: "1. Enter the homework title or subject name.<br><br>2. Select the homework photo from your device.<br><br>3. Click Upload to save it directly to your students' dashboard.",
+        ur: "1. Homework ka title ya subject likhein.<br><br>2. Device se homework ki photo select karein.<br><br>3. Upload dabayein, ye direct aapke students ki app mein chala jayega."
       },
       {
         title: "Create Online Test (Interactive Test)",
-        en: "1. Go to Gemini and upload your document/photo which test do you want and Paste <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span>.<br><br>2. Gemini will give you the Code paste it at contribute section.<br><br>3. Set Time, Marks, Expiry Date and Publish.",
-        ur: "1. Gemini par jayen, document/photo upload karein aur apna <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span> paste karein.<br><br>2. Gemini aapko Code dega, usay contribute section mein paste karein.<br><br>3. Time, Marks, Expiry set karke Publish karein."
+        en: "1. Go to Gemini and upload your document/photo which test do you want and Paste <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span>.<br><br>2. Gemini will give you the Code, paste it at contribute section.<br><br>3. Set Time, Marks, Expiry Date and Publish for your class.",
+        ur: "1. Gemini par jayen, document/photo upload karein aur apna <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span> paste karein.<br><br>2. Gemini aapko Code dega, usay contribute section mein paste karein.<br><br>3. Time, Marks, Expiry set karke apni class ke liye Publish karein."
       },
       {
         title: "Add Offline Test Marks",
@@ -7698,6 +7862,7 @@ localStorage.setItem("loggedPass", p);
         ur: "1. Perform tab mein jayen.<br><br>2. Student select karein, points dalein (Dene ke liye +, Kaatne ke liye - lagayein).<br><br>3. Point dene ki wajah likhein.<br><br>4. Submit dabayein taake rank update ho jaye."
       }
     ];
+
 
     let currentAstIndex = 0;
     let currentAstLang = 'en';
@@ -8144,6 +8309,579 @@ localStorage.setItem("loggedPass", p);
         });
     };
 
+    // ==========================================
+    // 🚀 NEW SYLLABUS TRACK & TAB ENGINES (PHASE 1)
+    // ==========================================
+    
+    // Open Teacher/Admin Tab safely
+    window.openStudyMaterialTab = function(e, role) {
+      if(e) e.stopPropagation();
+      window.closeDrawer();
+      window.switchTab('mgmtTabStudyMaterial', null, e);
+      
+      if(role === 'admin') {
+        document.getElementById("adminManageClassBoxTab").style.display = "block";
+        const adminClsSelect = document.getElementById("matAdminManageClassSelectTab");
+        document.getElementById("manageClassTextTab").innerText = `Materials for Class ${adminClsSelect.value}`;
+        window.loadTeacherStudyMaterials(adminClsSelect.value);
+      } else {
+        document.getElementById("adminManageClassBoxTab").style.display = "none";
+        document.getElementById("manageClassTextTab").innerText = `Materials for Class ${assignedClass}`;
+        window.loadTeacherStudyMaterials(assignedClass);
+      }
+    };
+
+
+          // Smooth Sliding Animation for Student Study SubTabs
+    window.switchStudentStudySubTab = function(type) {
+      document.getElementById("subTabMatBtn").classList.toggle("active", type === 'mat');
+      document.getElementById("subTabHwBtn").classList.toggle("active", type === 'hw');
+      document.getElementById("subTabSylBtn").classList.toggle("active", type === 'syl');
+      
+      const matPane = document.getElementById("sStudyMatSubSection");
+      const hwPane = document.getElementById("sHomeworkSubSection");
+      const sylPane = document.getElementById("sSyllabusSubSection");
+
+      [matPane, hwPane, sylPane].forEach(p => { p.className = "slide-pane"; });
+
+      if (type === 'mat') {
+         matPane.classList.add("active");
+         hwPane.classList.add("hidden-right");
+         sylPane.classList.add("hidden-right");
+      } else if (type === 'hw') {
+         matPane.classList.add("hidden-left");
+         hwPane.classList.add("active");
+         sylPane.classList.add("hidden-right");
+      } else if (type === 'syl') {
+         matPane.classList.add("hidden-left");
+         hwPane.classList.add("hidden-left");
+         sylPane.classList.add("active");
+         // 🔥 NEW: Syllabus tab open hone par data auto-load hoga
+         if(typeof window.initStudentSyllabusTab === 'function') window.initStudentSyllabusTab();
+      }
+    };
+
+
+
+      
+          // ==========================================
+    // 🚀 SYLLABUS TRACKER ENGINE (PHASE 2)
+    // ==========================================
+
+    window.openUpdateSyllabusModal = function() {
+        const classSelect = document.getElementById("sylUpdateClassSelect");
+        
+        // Teacher Class Lock Logic
+        if(currentRole === 'teacher') {
+            classSelect.value = cleanClassStr(assignedClass);
+            classSelect.disabled = true;
+            classSelect.style.backgroundColor = "rgba(0,0,0,0.06)";
+            classSelect.style.cursor = "not-allowed";
+        } else {
+            classSelect.disabled = false;
+            classSelect.style.backgroundColor = "";
+            classSelect.style.cursor = "pointer";
+        }
+        
+        window.loadSyllabusSubjects();
+        window.openModal("updateSyllabusModal");
+    };
+
+    window.loadSyllabusSubjects = async function() {
+        const classSelect = document.getElementById("sylUpdateClassSelect");
+        const targetClass = cleanClassStr(classSelect.value);
+        const container = document.getElementById("sylSubjectsCheckboxContainer");
+        
+        container.innerHTML = "Loading subjects...";
+        
+        // Fetch all subjects added by teacher
+        const allSubjects = await safeDataFetch(`subjects/${targetClass}`) || {};
+        // Fetch currently enabled subjects for syllabus
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${targetClass}`) || {};
+        
+        container.innerHTML = "";
+        
+        let hasSubjects = false;
+        Object.values(allSubjects).forEach(sub => {
+            if(sub && sub.name) {
+                hasSubjects = true;
+                const isChecked = enabledSubjects[sub.name] === true ? "checked" : "";
+                container.innerHTML += `
+                    <div class="checkbox-item">
+                        <input type="checkbox" class="syl-sub-chk" value="${sub.name}" ${isChecked}> ${sub.name}
+                    </div>`;
+            }
+        });
+        
+        if(!hasSubjects) {
+            container.innerHTML = `<div style="grid-column: span 3; color: var(--text-muted); font-size: 11px;">No subjects found for Class ${targetClass}. Please 'Add Subject' from menu first.</div>`;
+        }
+    };
+
+    window.saveSyllabusSubjects = async function() {
+        const btn = document.getElementById("saveSylSubjectsBtn");
+        const targetClass = cleanClassStr(document.getElementById("sylUpdateClassSelect").value);
+        const checkboxes = document.querySelectorAll(".syl-sub-chk");
+        
+        runWithBtnSpinner(btn, "💾 Save Enabled Subjects", async () => {
+            const enabledObj = {};
+            checkboxes.forEach(chk => {
+                if(chk.checked) enabledObj[chk.value] = true;
+            });
+            
+            await set(ref(db, `enabled_syllabus/${targetClass}`), enabledObj);
+            alert("✔ Syllabus subjects updated successfully.");
+        });
+    };
+
+    // --- CHAPTERS MANAGEMENT (BUG-FREE ROW ADDITION) ---
+    window.openAddChaptersModal = async function() {
+        const targetClass = cleanClassStr(document.getElementById("sylUpdateClassSelect").value);
+        const subjectSelect = document.getElementById("sylChapterSubjectSelect");
+        
+        subjectSelect.innerHTML = `<option value="">Loading...</option>`;
+        window.openModal("addChaptersModal"); 
+        
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${targetClass}`) || {};
+        subjectSelect.innerHTML = `<option value="">-- Select Subject --</option>`;
+        
+        Object.keys(enabledSubjects).forEach(subName => {
+            subjectSelect.innerHTML += `<option value="${subName}">${subName}</option>`;
+        });
+        
+        document.getElementById("chaptersTableBody").innerHTML = `<tr><td colspan="2" style="text-align:center;">Please select a subject first</td></tr>`;
+    };
+
+    window.loadSyllabusChapters = async function() {
+        const targetClass = cleanClassStr(document.getElementById("sylUpdateClassSelect").value);
+        const targetSubject = document.getElementById("sylChapterSubjectSelect").value;
+        const tbody = document.getElementById("chaptersTableBody");
+        
+        if(!targetSubject) {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Please select a subject first</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Loading chapters...</td></tr>`;
+        
+        const chapters = await safeDataFetch(`syllabus_chapters/${targetClass}/${targetSubject}`) || [];
+        
+        tbody.innerHTML = ""; // Clear loader
+        
+        if(chapters.length > 0) {
+            chapters.forEach((ch, idx) => window.appendChapterRowDOM(idx + 1, ch.name));
+        } else {
+            // Pre-fill 12 rows automatically as requested
+            for(let i = 1; i <= 12; i++) {
+                window.appendChapterRowDOM(i, "");
+            }
+        }
+    };
+
+    // 🚀 THE FIX: Safely Append Row Without innerHTML += (Saves Text Data)
+    window.appendChapterRowDOM = function(chNumber, chNameValue) {
+        const tbody = document.getElementById("chaptersTableBody");
+        const tr = document.createElement("tr");
+        
+        const td1 = document.createElement("td");
+        td1.style.fontWeight = "900";
+        td1.style.color = "#0288d1";
+        td1.innerText = chNumber;
+        
+        const td2 = document.createElement("td");
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "ch-name-input";
+        inp.placeholder = `Chapter ${chNumber} Name`;
+        inp.value = chNameValue || "";
+        inp.style.width = "100%";
+        inp.style.padding = "10px";
+        inp.style.fontSize = "12px";
+        inp.style.border = "1px solid var(--border-color)";
+        inp.style.borderRadius = "8px";
+        inp.style.background = "var(--input-bg)";
+        inp.style.color = "var(--text-color)";
+        inp.style.outline = "none";
+        
+        td2.appendChild(inp);
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        
+        tbody.appendChild(tr);
+    };
+
+    window.addChapterRow = function() {
+        const tbody = document.getElementById("chaptersTableBody");
+        if(!document.getElementById("sylChapterSubjectSelect").value) {
+            alert("Select a subject first.");
+            return;
+        }
+        const currentRows = tbody.getElementsByTagName("tr").length;
+        window.appendChapterRowDOM(currentRows + 1, "");
+    };
+
+    window.deleteChapterRow = function() {
+        const tbody = document.getElementById("chaptersTableBody");
+        if(tbody.getElementsByTagName("tr").length > 1) {
+            tbody.deleteRow(-1); // Sirf aakhri row delete hogi, baaqi text safe rahega
+        } else {
+            alert("At least 1 chapter row is required.");
+        }
+    };
+
+    window.saveSyllabusChapters = async function() {
+        const btn = document.getElementById("saveChaptersBtn");
+        const targetClass = cleanClassStr(document.getElementById("sylUpdateClassSelect").value);
+        const targetSubject = document.getElementById("sylChapterSubjectSelect").value;
+        
+        if(!targetSubject) {
+            alert("Please select a subject to save chapters.");
+            return;
+        }
+        
+        runWithBtnSpinner(btn, "💾 Save Chapters", async () => {
+            const inputs = document.querySelectorAll(".ch-name-input");
+            const chaptersData = [];
+            
+            inputs.forEach((inp, idx) => {
+                const val = inp.value.trim();
+                if(val !== "") {
+                   chaptersData.push({ no: idx + 1, name: val });
+                }
+            });
+            
+            await set(ref(db, `syllabus_chapters/${targetClass}/${targetSubject}`), chaptersData);
+            alert(`✔ Chapters saved successfully for ${targetSubject}.`);
+        });
+    };
+
+
+          // ==========================================
+    // 🚀 STUDENT SYLLABUS AUTO-SAVE ENGINE (PHASE 3)
+    // ==========================================
+
+    window.initStudentSyllabusTab = async function() {
+        const student = await getStudentRecord(currentStudentAdmn);
+        if(!student) return;
+        
+        const cleanClass = cleanClassStr(student.class);
+        const subjectSelect = document.getElementById("sStudentSylSubjectSelect");
+        
+        // Sirf wahi subjects fetch karein jo Teacher ne Syllabus Tracker ke liye enable kiye hain
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cleanClass}`) || {};
+        
+        subjectSelect.innerHTML = `<option value="ALL">All Subjects</option>`;
+        let hasSubjects = false;
+        
+        Object.keys(enabledSubjects).forEach(subName => {
+            if(enabledSubjects[subName] === true) {
+                hasSubjects = true;
+                subjectSelect.innerHTML += `<option value="${subName}">${subName}</option>`;
+            }
+        });
+        
+        if(!hasSubjects) {
+            document.getElementById("sStudentSyllabusTableContainer").innerHTML = `<div style="padding:16px;">No syllabus subjects enabled by the teacher yet.</div>`;
+        } else {
+            subjectSelect.onchange = () => window.loadStudentSyllabusTable(cleanClass);
+            window.loadStudentSyllabusTable(cleanClass);
+        }
+    };
+
+    window.loadStudentSyllabusTable = async function(cleanClass) {
+        const subject = document.getElementById("sStudentSylSubjectSelect").value;
+        const container = document.getElementById("sStudentSyllabusTableContainer");
+        
+        if (subject === "ALL") {
+            container.innerHTML = `<div style="padding: 16px; color: var(--text-muted);">Please select a specific subject from the dropdown above to update your chapter progress. Overall graphs are shown below.</div>`;
+            return;
+        }
+        
+        container.innerHTML = "Loading chapters...";
+        
+        const chapters = await safeDataFetch(`syllabus_chapters/${cleanClass}/${subject}`) || [];
+        const progress = await safeDataFetch(`syllabus_progress/${currentStudentAdmn}/${subject}`) || {};
+        
+        if(chapters.length === 0) {
+            container.innerHTML = `<div style="padding: 16px; color: var(--text-muted);">No chapters added for ${subject} yet.</div>`;
+            return;
+        }
+        
+        let html = `
+        <div class="table-container" style="max-height: 40vh; overflow-y: auto; border-radius: 12px;">
+            <table style="min-width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Ch No.</th>
+                        <th style="text-align: left; padding-left: 8px;">Chapter Name</th>
+                        <th style="width: 80px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        chapters.forEach(ch => {
+            const isCompleted = progress[`ch_${ch.no}`] === true;
+            html += `
+                <tr style="${isCompleted ? 'background: rgba(34, 197, 94, 0.05);' : ''}">
+                    <td style="font-weight: 900; color: #0288d1;">${ch.no}</td>
+                    <td style="text-align: left; padding-left: 8px; font-weight: 700; ${isCompleted ? 'color: #16a34a; text-decoration: line-through opacity:0.7;' : ''}">${ch.name}</td>
+                    <td>
+                        <input type="checkbox" style="width: 22px; height: 22px; accent-color: #16a34a; cursor: pointer;" 
+                               ${isCompleted ? 'checked' : ''} 
+                               onchange="window.updateChapterProgress('${subject}', '${ch.no}', this.checked)">
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+    };
+
+    // Auto-Save Tickbox function directly syncing to Firebase
+    window.updateChapterProgress = async function(subject, chapterNo, isCompleted) {
+        try {
+            await update(ref(db), {
+                [`syllabus_progress/${currentStudentAdmn}/${subject}/ch_${chapterNo}`]: isCompleted
+            });
+            
+            // Reload the table silently to apply strikethrough/color effects instantly
+            const student = await getStudentRecord(currentStudentAdmn);
+            window.loadStudentSyllabusTable(cleanClassStr(student.class));
+            
+            // (Graph update trigger will be placed here in Phase 4)
+            if(typeof window.renderSyllabusGraphs === "function") {
+                window.renderSyllabusGraphs(); 
+            }
+        } catch(e) {
+            alert("Error saving progress. Please check your internet connection.");
+        }
+    };
+
+
+          // ==========================================
+    // 🚀 INTERACTIVE GRAPH ENGINE (PHASE 4)
+    // ==========================================
+    let adminSylChart = null;
+    let stHomeSylChart = null;
+    let stIndividualCharts = {};
+
+    // 1. ADMIN/TEACHER GRAPH LOGIC
+    window.initAdminSyllabusTracker = async function() {
+        let cls = document.getElementById("sylTrackClassSelect").value;
+        if(currentRole === 'teacher') {
+            cls = cleanClassStr(assignedClass);
+            document.getElementById("sylTrackClassSelect").value = cls;
+            document.getElementById("sylTrackClassSelect").disabled = true;
+        }
+        cls = cleanClassStr(cls);
+
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
+        const chkContainer = document.getElementById("sylAdminCheckboxes");
+        
+        chkContainer.innerHTML = `<div class="checkbox-item" style="font-weight:900;"><input type="checkbox" id="sylChkAll" checked onchange="window.toggleAllSylSubjects(this)"> ALL</div>`;
+
+        let hasSub = false;
+        Object.keys(enabledSubjects).forEach(sub => {
+            if(enabledSubjects[sub]) {
+                hasSub = true;
+                chkContainer.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="syl-filter-chk" value="${sub}" checked onchange="window.refreshAdminSyllabusGraph()"> ${sub}</div>`;
+            }
+        });
+
+        if(!hasSub) chkContainer.innerHTML = "<div style='grid-column:span 3; font-size:11px; color:var(--text-muted);'>No syllabus configured.</div>";
+        
+        window.refreshAdminSyllabusGraph();
+    };
+
+    window.toggleAllSylSubjects = function(el) {
+        document.querySelectorAll(".syl-filter-chk").forEach(chk => chk.checked = el.checked);
+        window.refreshAdminSyllabusGraph();
+    };
+
+    window.refreshAdminSyllabusGraph = async function() {
+        const allChk = document.getElementById("sylChkAll");
+        const chks = Array.from(document.querySelectorAll(".syl-filter-chk"));
+        if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
+
+        const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
+        const breakdownDiv = document.getElementById("sylTrackBreakdown");
+        const ctx = document.getElementById("adminSyllabusChart");
+        if(!ctx) return;
+
+        if(selectedSubs.length === 0) {
+            breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted);'>Select at least one subject to view graph.</div>";
+            if(adminSylChart) adminSylChart.destroy();
+            return;
+        }
+
+        const cls = cleanClassStr(document.getElementById("sylTrackClassSelect").value);
+        const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cls);
+
+        let totalPossibleCompletions = 0;
+        let actualCompletions = 0;
+        let breakdownHtml = "";
+
+        const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
+        const allProgress = await safeDataFetch(`syllabus_progress`) || {};
+
+        const labels = [];
+        const dataVals = [];
+        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
+
+        selectedSubs.forEach((sub, i) => {
+            const subChaps = allChapters[sub] || [];
+            if(subChaps.length === 0) return;
+
+            let subCompletedCount = 0;
+            let subPossible = subChaps.length * students.length;
+
+            students.forEach(st => {
+                const stProg = allProgress[st.admn] ? allProgress[st.admn][sub] : null;
+                if(stProg) {
+                    subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
+                }
+            });
+
+            totalPossibleCompletions += subPossible;
+            actualCompletions += subCompletedCount;
+            
+            const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
+            labels.push(sub);
+            dataVals.push(subPercent);
+
+            breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
+                <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
+                <span>${subPercent}% Student Completion</span>
+            </div>`;
+        });
+
+        breakdownDiv.innerHTML = breakdownHtml || "No progress data generated.";
+        const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
+
+        if(adminSylChart) adminSylChart.destroy();
+        adminSylChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataVals,
+                    backgroundColor: bgColors.slice(0, labels.length),
+                    borderWidth: 2, borderColor: 'var(--card-bg)',
+                    hoverOffset: 15 // This creates the 3D Pop Out interaction!
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    var width = chart.width, height = chart.height, cCtx = chart.ctx;
+                    cCtx.restore();
+                    var fontSize = (height / 114).toFixed(2);
+                    cCtx.font = "900 " + fontSize + "em sans-serif";
+                    cCtx.textBaseline = "middle"; cCtx.fillStyle = "#0288d1";
+                    var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
+                    cCtx.fillText(text, textX, textY); cCtx.save();
+                }
+            }]
+        });
+    };
+
+    // 2. STUDENT GRAPH LOGIC (Individual & Home)
+    window.renderSyllabusGraphs = async function() {
+        const student = await getStudentRecord(currentStudentAdmn);
+        if(!student) return;
+        const cls = cleanClassStr(student.class);
+        
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
+        const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
+        const myProgress = await safeDataFetch(`syllabus_progress/${currentStudentAdmn}`) || {};
+
+        const container = document.getElementById("sStudentSyllabusGraphsContainer");
+        if(!container) return;
+        
+        let html = "";
+        let totalChapsOverall = 0; let completedChapsOverall = 0;
+
+        Object.keys(enabledSubjects).forEach((sub, idx) => {
+            if(enabledSubjects[sub]) {
+                const subChaps = allChapters[sub] || [];
+                if(subChaps.length === 0) return;
+
+                let subCompleted = 0;
+                subChaps.forEach(ch => { if(myProgress[sub] && myProgress[sub][`ch_${ch.no}`]) subCompleted++; });
+
+                totalChapsOverall += subChaps.length;
+                completedChapsOverall += subCompleted;
+                const subPercent = Math.round((subCompleted / subChaps.length) * 100);
+
+                html += `
+                <div class="card unfold-card" style="margin-top:16px; padding:16px; display:flex; align-items:center; gap:16px;">
+                    <div style="position:relative; width:80px; height:80px;"><canvas id="stSylChart_${idx}"></canvas></div>
+                    <div style="flex:1;">
+                        <div style="font-size:14px; font-weight:900; color:var(--text-color);">${sub}</div>
+                        <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:4px;">${subCompleted} out of ${subChaps.length} Chaps Completed</div>
+                        <div style="font-size:18px; font-weight:900; color:#16a34a; margin-top:4px;">${subPercent}%</div>
+                    </div>
+                </div>`;
+            }
+        });
+
+        container.innerHTML = html || "<div style='text-align:center; padding:16px; color:var(--text-muted); font-weight:800;'>No data generated yet.</div>";
+
+        Object.keys(enabledSubjects).forEach((sub, idx) => {
+            if(enabledSubjects[sub]) {
+                const ctx = document.getElementById(`stSylChart_${idx}`);
+                if(!ctx) return;
+                const subChaps = allChapters[sub] || [];
+                let subCompleted = 0;
+                subChaps.forEach(ch => { if(myProgress[sub] && myProgress[sub][`ch_${ch.no}`]) subCompleted++; });
+                const remain = subChaps.length - subCompleted;
+
+                if(stIndividualCharts[idx]) stIndividualCharts[idx].destroy();
+                stIndividualCharts[idx] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: ['#16a34a', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 5 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            }
+        });
+
+        // Trigger Home Widget Graph Update
+        window.renderStudentHomeSyllabusChart(totalChapsOverall, completedChapsOverall);
+    };
+
+    window.renderStudentHomeSyllabusChart = function(total, completed) {
+        const ctx = document.getElementById("studentHomeSyllabusChart");
+        if(!ctx) return;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const remain = total - completed;
+
+        if(stHomeSylChart) stHomeSylChart.destroy();
+        stHomeSylChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: ['Completed', 'Remaining'], datasets: [{ data: [completed, remain], backgroundColor: ['#0288d1', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 10 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } },
+            plugins: [{
+                id: 'centerTextHome',
+                beforeDraw: function(chart) {
+                    var width = chart.width, height = chart.height, cCtx = chart.ctx; cCtx.restore();
+                    var fontSize = (height / 100).toFixed(2); cCtx.font = "900 " + fontSize + "em sans-serif";
+                    cCtx.textBaseline = "middle"; cCtx.fillStyle = "#0288d1";
+                    var text = percent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
+                    cCtx.fillText(text, textX, textY); cCtx.save();
+                }
+            }]
+        });
+    };
+
+    // Phase 4 Hook: Also trigger graph render when student opens syllabus tab
+    const oldInitStudentSylTab = window.initStudentSyllabusTab;
+    window.initStudentSyllabusTab = async function() {
+        await oldInitStudentSylTab();
+        window.renderSyllabusGraphs();
+    };
 
       
     </script>
