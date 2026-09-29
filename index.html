@@ -3961,12 +3961,12 @@ Exact Output JSON Format Required:
       onValue(ref(db), (snap) => {
       if (snap.exists()) {
         fullDbCache = snap.val();
+                // PREVENT LAG: Debounced LocalStorage Save (Saves only once every 5 seconds)
         if(dbSaveTimeout) clearTimeout(dbSaveTimeout);
         dbSaveTimeout = setTimeout(() => {
             localStorage.setItem("offlineDbCache", JSON.stringify(fullDbCache));
         }, 5000); 
 
-        localStorage.setItem("offlineDbCache", JSON.stringify(fullDbCache)); // 🚀 Backup for Offline Use
         if (fullDbCache.students) {
           inMemoryStudentsData = fullDbCache.students;
           if(currentRole === "admin") renderAdminStudentsDirectory();
@@ -4844,17 +4844,38 @@ localStorage.setItem("loggedPass", p);
       if(tabId === "studentTabTest") loadStudentDueTests();
     };
 
-        async function refreshAllTeacherData() {
+           // MISSING FUNCTION ADDED: Teacher Class Leaderboard
+    window.loadTeacherLeaderboard = function() {
+      const container = document.getElementById("leaderboardListContainer");
+      if(!container) return;
+      
+      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      students.sort((a,b) => (b.points || 0) - (a.points || 0));
+      
+      container.innerHTML = "";
+      if(students.length === 0) { 
+        container.innerHTML = `<p style="padding:14px; font-size:12px; color:var(--text-muted); text-align:center;">No students found in Class ${assignedClass}.</p>`; 
+        return; 
+      }
+
+      students.forEach((st, idx) => {
+        const pts = st.points || 0;
+        const stars = Math.floor(pts / 10);
+        container.innerHTML += `<div class="lb-row"><div style="display:flex; align-items:center;"><div class="lb-badge">${idx + 1}</div><span style="font-size:13px; font-weight:700;">${st.name}</span></div><span class="pts-chip" style="background:#fbbf24; color:#0f172a !important;">⭐ ${stars} (${pts} PTS)</span></div>`;
+      });
+    };
+
+    async function refreshAllTeacherData() {
       await safeDataFetch("students");
       loadTeacherTodayAttendance();
       loadTeacherStudentsDirectory();
-      loadTeacherLeaderboard();
-      populateTeacherStudentDropdowns();
-      // FIX: Added function call to load active tests
+      window.loadTeacherLeaderboard(); // Call fixed function
+      populateTeacherStudentDropdowns(); // Ab ye properly execute hoga!
       if (typeof window.loadTeacherActiveOnlineTests === 'function') {
          window.loadTeacherActiveOnlineTests();
       }
     }
+
 
 
     addSafeListener("refreshTeacherDashboardBtn", "click", () => {
