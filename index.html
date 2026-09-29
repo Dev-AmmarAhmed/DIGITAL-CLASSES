@@ -3462,20 +3462,12 @@ Exact Output JSON Format Required:
              </div>`;
          }
          modal.querySelector("#testFormConfigStep").style.display = "none"; 
-         modal.querySelector("#testQuestionsBuilderStep").style.display = "block";
+                  modal.querySelector("#testQuestionsBuilderStep").style.display = "block";
       }
-
-  
-    let activeSelectTarget = null
     });
 
-
-
-
-
-
-
     let activeSelectTarget = null;
+
     window.openCustomSelectSheet = function(selectEl) {
       if(!selectEl) return;
       activeSelectTarget = selectEl;
@@ -4832,9 +4824,34 @@ localStorage.setItem("loggedPass", p);
       loadStudentStudyMaterials();
       loadStudentHomework();
       loadStudentLeaderboard(classStudents);
-      loadStudentDueTests();
-      window.loadStudentTimetable(assignedClass)
+            loadStudentDueTests();
+      
+      if(typeof window.loadStudentTimetable === "function") {
+         window.loadStudentTimetable(assignedClass);
+      }
     }
+
+    // Student Timetable Loader
+    window.loadStudentTimetable = async function(cls) {
+      const tbody = document.getElementById("sHomeTimetableBody");
+      const card = document.getElementById("sHomeTimetableCard");
+      if(!tbody || !card) return;
+
+      const ttData = await safeDataFetch(`timetable/${cleanClassStr(cls)}`);
+      tbody.innerHTML = "";
+      
+      if(ttData && Object.keys(ttData).length > 0) {
+        let html = "";
+        Object.values(ttData).forEach(row => {
+          html += `<tr><td style="font-weight:800; color:#0288d1;">${row.time}</td><td style="font-weight:700;">${row.subject}</td><td>${row.mon || '-'}</td><td>${row.tue || '-'}</td><td>${row.wed || '-'}</td><td>${row.thu || '-'}</td><td>${row.fri || '-'}</td><td>${row.sat || '-'}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
+      }
+    };
+
 
     addSafeListener("sViewAttendanceBtn", "click", () => {
       const month = document.getElementById("sAttMonthSelect").value;
