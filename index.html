@@ -3957,23 +3957,25 @@ Exact Output JSON Format Required:
       window.updateFeeCheckboxes(e.target.value, "feeModalCheckboxes", "fee-chk");
     });
 
-          let dbSaveTimeout = null;
-      onValue(ref(db), (snap) => {
+
+
+            let dbSaveTimeout = null;
+      
+      // OPTIMIZATION: Poore DB ke bajaye sirf 'students' node ko real-time listen karenge
+      onValue(ref(db, 'students'), (snap) => {
       if (snap.exists()) {
-        fullDbCache = snap.val();
-                // PREVENT LAG: Debounced LocalStorage Save (Saves only once every 5 seconds)
+        inMemoryStudentsData = snap.val();
+        
+        // PREVENT LAG: Ab sirf students ka data save hoga, poora DB nahi
         if(dbSaveTimeout) clearTimeout(dbSaveTimeout);
         dbSaveTimeout = setTimeout(() => {
-            localStorage.setItem("offlineDbCache", JSON.stringify(fullDbCache));
+            localStorage.setItem("offlineDbCache_students", JSON.stringify(inMemoryStudentsData));
         }, 5000); 
 
-        if (fullDbCache.students) {
-          inMemoryStudentsData = fullDbCache.students;
-          if(currentRole === "admin") renderAdminStudentsDirectory();
-          if(currentRole === "teacher") { refreshAllTeacherData(); window.loadTeacherLeaderboard(); }
-        }
+        if(currentRole === "admin") renderAdminStudentsDirectory();
+        if(currentRole === "teacher") { refreshAllTeacherData(); window.loadTeacherLeaderboard(); }
       } else {
-        fullDbCache = {}; inMemoryStudentsData = {};
+        inMemoryStudentsData = {};
       }
     });
 
@@ -3999,15 +4001,15 @@ Exact Output JSON Format Required:
     window.addEventListener('load', () => {
       window.cleanExpiredTestCaches();
       if (!navigator.onLine) {
-
-        const cachedDb = localStorage.getItem("offlineDbCache");
-        if (cachedDb) {
-          fullDbCache = JSON.parse(cachedDb);
-          if (fullDbCache.students) inMemoryStudentsData = fullDbCache.students;
+        const cachedStudents = localStorage.getItem("offlineDbCache_students");
+        if (cachedStudents) {
+          inMemoryStudentsData = JSON.parse(cachedStudents);
           window.showCustomAlert("⚡ You are currently offline. Working from local backup. Attendance will auto-sync when online.");
         }
       }
     });
+
+      
     window.openInteractiveTestTab = function(e) {
       if(e) e.stopPropagation();
       window.closeDrawer();
@@ -4524,20 +4526,22 @@ Exact Output JSON Format Required:
       }
     });
 
-    addSafeListener("loginBtn", "click", () => {
+      addSafeListener("loginBtn", "click", () => {
       const btn = document.getElementById("loginBtn");
       runWithBtnSpinner(btn, "PORTAL LOGIN", async () => {
         const u = document.getElementById("loginUsername").value.trim();
         const p = document.getElementById("loginPassword").value.trim();
         if(!u || !p) { alert("Please enter both Username and Password."); return; }
 
-        const usersData = await safeDataFetch("users");
-        const uData = usersData ? usersData[u] : null;
+        // 🛡️ SECURITY & PERFORMANCE FIX: Fetch ONLY the specific user's data
+        // Pehle poora "users" database download hota tha jo insecure aur slow tha
+        const uData = await safeDataFetch(`users/${u}`);
 
-                                            if(uData && uData.password === p) {
+        if(uData && uData.password === p) {
           const previousUser = localStorage.getItem("loggedUser");
           if (previousUser !== u) {
-              const theme = localStorage.getItem("appTheme");
+
+            const theme = localStorage.getItem("appTheme");
               const darkMode = localStorage.getItem("darkMode");
               localStorage.clear();
               if(theme) localStorage.setItem("appTheme", theme);
@@ -6286,18 +6290,31 @@ localStorage.setItem("loggedPass", p);
     };
 
 
-    window.exportFullDatabaseJson = function() {
+      window.exportFullDatabaseJson = async function() {
       try {
-        if (!fullDbCache || Object.keys(fullDbCache).length === 0) { alert("Database sync loading... Please wait 2 seconds and try again."); return; }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullDbCache, null, 2));
+        window.showCustomAlert("⏳ Fetching complete database... Please wait.");
+        // OPTIMIZATION: On-demand fetching insted of keeping it in memory
+        const dbSnapshot = await get(ref(db));
+        if (!dbSnapshot.exists()) {
+           alert("Database is empty or connection failed."); 
+           return; 
+        }
+        const fullData = dbSnapshot.val();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", `digital_classes_backup_${getTodayKey()}.json`);
         document.body.appendChild(downloadAnchor);
-        downloadAnchor.click(); downloadAnchor.remove();
+        downloadAnchor.click(); 
+        downloadAnchor.remove();
+        window.closeCustomAlert();
         alert("✔ Full Firebase Database Backup Exported Successfully!");
-      } catch (err) { alert("Failed to export database: " + err.message); }
+      } catch (err) { 
+        window.closeCustomAlert();
+        alert("Failed to export database: " + err.message); 
+      }
     };
+
 
     const savedUser = localStorage.getItem("loggedUser");
     const savedRole = localStorage.getItem("loggedRole");
