@@ -448,6 +448,8 @@ body.dark-mode div[style*="#0288d1"], body.dark-mode span[style*="#0288d1"] {
 .drawer-item {
   padding: 14px 18px; font-size: 13px; font-weight: 700; color: var(--text-color);
   border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 12px;
+  position: relative; /* Wave ko is item ke aagey-peeche lock karne ke liye */
+  overflow: hidden;   /* Wave ko button ke bahar nikalne se rokne ke liye */
 }
 
 .dark-mode-toggle-row {
