@@ -5288,11 +5288,12 @@ localStorage.setItem("loggedPass", p);
 
       
 
-        async function loadTeacherStudyMaterials(targetCls) {
+          // FIX: Added window. prefix so the dropdown can trigger it properly
+    window.loadTeacherStudyMaterials = async function(targetCls) {
       const tbody = document.getElementById("manageMaterialTableBody");
       const classKey = cleanClassStr(targetCls || assignedClass);
       const materials = await safeDataFetch(`study_material/${classKey}`);
-      
+
       tbody.innerHTML = "";
       if(materials && Object.keys(materials).length > 0) {
         Object.entries(materials).forEach(([key, mat]) => {
@@ -8788,7 +8789,7 @@ localStorage.setItem("loggedPass", p);
         });
     };
 
-    // 2. STUDENT GRAPH LOGIC (Individual & Home)
+       // 2. STUDENT GRAPH LOGIC (Individual & Home)
     window.renderSyllabusGraphs = async function() {
         const student = await getStudentRecord(currentStudentAdmn);
         if(!student) return;
@@ -8803,6 +8804,11 @@ localStorage.setItem("loggedPass", p);
         
         let html = "";
         let totalChapsOverall = 0; let completedChapsOverall = 0;
+        
+        // Arrays for new Subject-wise breakdown on Home Chart
+        const homeLabels = [];
+        const homeData = [];
+        const homeColorsList = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
 
         Object.keys(enabledSubjects).forEach((sub, idx) => {
             if(enabledSubjects[sub]) {
@@ -8815,6 +8821,12 @@ localStorage.setItem("loggedPass", p);
                 totalChapsOverall += subChaps.length;
                 completedChapsOverall += subCompleted;
                 const subPercent = Math.round((subCompleted / subChaps.length) * 100);
+
+                // Add to Home Chart
+                if(subCompleted > 0) {
+                    homeLabels.push(sub);
+                    homeData.push(subCompleted);
+                }
 
                 html += `
                 <div class="card unfold-card" style="margin-top:16px; padding:16px; display:flex; align-items:center; gap:16px;">
@@ -8848,33 +8860,53 @@ localStorage.setItem("loggedPass", p);
             }
         });
 
-        // Trigger Home Widget Graph Update
-        window.renderStudentHomeSyllabusChart(totalChapsOverall, completedChapsOverall);
+        // Trigger Home Widget Graph Update (With Subject Breakdown)
+        let finalLabels = homeLabels;
+        let finalData = homeData;
+        let finalColors = homeColorsList.slice(0, homeLabels.length);
+
+        // Fallback agar bilkul bhi progress na ho (Empty Grey Donut)
+        if (completedChapsOverall === 0) {
+            finalLabels = ['Not Started'];
+            finalData = [1];
+            finalColors = ['rgba(0,0,0,0.05)'];
+        }
+
+        window.renderStudentHomeSyllabusChart(totalChapsOverall, completedChapsOverall, finalLabels, finalData, finalColors);
     };
 
-    window.renderStudentHomeSyllabusChart = function(total, completed) {
+    window.renderStudentHomeSyllabusChart = function(total, completed, labels, dataVals, colors) {
         const ctx = document.getElementById("studentHomeSyllabusChart");
         if(!ctx) return;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const remain = total - completed;
 
         if(stHomeSylChart) stHomeSylChart.destroy();
         stHomeSylChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: ['Completed', 'Remaining'], datasets: [{ data: [completed, remain], backgroundColor: ['#0288d1', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 10 }] },
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    data: dataVals, 
+                    backgroundColor: colors, 
+                    borderWidth: 2,
+                    borderColor: 'var(--card-bg)',
+                    hoverOffset: 10 
+                }] 
+            },
             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } },
             plugins: [{
                 id: 'centerTextHome',
                 beforeDraw: function(chart) {
                     var width = chart.width, height = chart.height, cCtx = chart.ctx; cCtx.restore();
                     var fontSize = (height / 100).toFixed(2); cCtx.font = "900 " + fontSize + "em sans-serif";
-                    cCtx.textBaseline = "middle"; cCtx.fillStyle = "#0288d1";
+                    cCtx.textBaseline = "middle"; cCtx.fillStyle = completed === 0 ? "var(--text-muted)" : "#0288d1";
                     var text = percent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
                     cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
     };
+
 
     // Phase 4 Hook: Also trigger graph render when student opens syllabus tab
     const oldInitStudentSylTab = window.initStudentSyllabusTab;
