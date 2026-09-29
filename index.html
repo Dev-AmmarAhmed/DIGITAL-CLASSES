@@ -7568,10 +7568,9 @@ localStorage.setItem("loggedPass", p);
         }
       }
     };
-
-
-     // ==========================================
-    // NOTIFICATION ENGINE (PHASE 2)
+      
+    // ==========================================
+    // NOTIFICATION ENGINE & SILENT AUTO-UPDATE (PHASE 4)
     // ==========================================
     window.pushAppNotification = async function(targetUserId, title, detail, type, extraData = {}) {
       const notifId = Date.now().toString();
@@ -7587,24 +7586,15 @@ localStorage.setItem("loggedPass", p);
       const keys = Object.keys(existingNotifs).sort();
       
       const updates = {};
-      // Max 500 Notifications Limit
       if(keys.length >= 500) {
         const excess = keys.length - 499;
         for(let i = 0; i < excess; i++) { updates[`${targetRefPath}/${keys[i]}`] = null; }
       }
       
-           updates[`${targetRefPath}/${notifId}`] = notifObj;
-      
-      // Node.js Backend ko batane ke liye push_queue mein bhi data dalein!
-      updates[`push_queue/${notifId}`] = { 
-          targetId: targetUserId, 
-          title: title, 
-          detail: detail 
-      };
-
+      updates[`${targetRefPath}/${notifId}`] = notifObj;
+      updates[`push_queue/${notifId}`] = { targetId: targetUserId, title: title, detail: detail };
       await update(ref(db), updates);
     };
-
 
     window.toggleNotifTargetUI = function() {
       const type = document.getElementById("notifTargetType").value;
@@ -7619,9 +7609,7 @@ localStorage.setItem("loggedPass", p);
       const teachers = await safeDataFetch("teachers") || {};
       container.innerHTML = "";
       Object.values(teachers).forEach(t => {
-        if(t && t.username) {
-          container.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="notif-t-chk" value="${t.username}"> ${t.name}</div>`;
-        }
+        if(t && t.username) container.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="notif-t-chk" value="${t.username}"> ${t.name}</div>`;
       });
       if(container.innerHTML === "") container.innerHTML = "No teachers found.";
     };
@@ -7651,14 +7639,12 @@ localStorage.setItem("loggedPass", p);
       });
     };
 
-       // Override openModal for Admin Notif
     const originalOpenModalNotif = window.openModal;
     window.openModal = async function(id) {
       originalOpenModalNotif(id);
       if(id === 'adminSendNotifModal') window.toggleNotifTargetUI();
     };
 
-        // UI Render Engine for 15 Notifications & NATIVE PUSH TRIGGERS
     window.listenToNotifications = function() {
       const loggedUser = localStorage.getItem("loggedUser");
       if(!loggedUser) return;
@@ -7677,108 +7663,61 @@ localStorage.setItem("loggedPass", p);
         if(!snap.exists()) {
           panel.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; font-weight: 700;">No new notifications.</div>`;
           if(badge) badge.style.display = "none";
-          isInitialNotifLoad = false;
-          return;
+          isInitialNotifLoad = false; return;
         }
 
         const notifs = Object.values(snap.val());
-        
-               // --- NATIVE PUSH NOTIFICATION TRIGGER (ANDROID FORCED) ---
         if (!isInitialNotifLoad && notifs.length > lastNotifCount && Notification.permission === "granted") {
            const newestNotif = notifs.reduce((max, obj) => Number(obj.id) > Number(max.id) ? obj : max, notifs[0]);
-           
            if ('serviceWorker' in navigator) {
                navigator.serviceWorker.ready.then(reg => {
                    reg.showNotification(newestNotif.title, { 
                        body: newestNotif.detail, 
                        icon: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
                        badge: "https://raw.githubusercontent.com/Dev-AmmarAhmed/DIGITAL-CLASSES/a4a25f244fa56db83e669d00a5b3023296ab67a6/icon.png",
-                       vibrate: [200, 100, 200, 100, 200],
-                       requireInteraction: true
+                       vibrate: [200, 100, 200, 100, 200], requireInteraction: true
                    });
-               }).catch(err => {
-                   new Notification(newestNotif.title, { body: newestNotif.detail });
-               });
-           } else {
-               new Notification(newestNotif.title, { body: newestNotif.detail });
-           }
+               }).catch(err => { new Notification(newestNotif.title, { body: newestNotif.detail }); });
+           } else { new Notification(newestNotif.title, { body: newestNotif.detail }); }
         }
-        lastNotifCount = notifs.length;
-        isInitialNotifLoad = false;
-        // ----------------------------------------
-
+        lastNotifCount = notifs.length; isInitialNotifLoad = false;
         
-        notifs.sort((a,b) => Number(b.id) - Number(a.id)); // Newest first
-        
-        let unreadCount = 0;
-
-
-        
-        let html = "";
-        
-        // Show only last 15 in Drawer
-        const displayNotifs = notifs.slice(0, 15);
-
-        displayNotifs.forEach(n => {
+        notifs.sort((a,b) => Number(b.id) - Number(a.id)); 
+        let unreadCount = 0, html = "";
+        notifs.slice(0, 15).forEach(n => {
           if(!n.read) unreadCount++;
           const bg = n.read ? "transparent" : "rgba(2, 136, 209, 0.08)";
           const weight = n.read ? "700" : "900";
           const safeTitle = (n.title || "").replace(/'/g, "\\'");
           const safeDetail = (n.detail || "").replace(/'/g, "\\'");
           const safeExtra = n.extra ? encodeURIComponent(JSON.stringify(n.extra)) : "%7B%7D";
-          
-          html += `
-          <div class="notif-card" style="background: ${bg}; padding: 14px 16px; border-bottom: 1px solid var(--border-color);" 
-               onclick="window.openNotifDetails('${n.id}', '${safeTitle}', '${safeDetail}', '${n.type}', '${safeExtra}')">
-              <div style="font-size: 13px; font-weight: ${weight}; color: var(--text-color);">${n.title}</div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.detail}</div>
-              <div class="notif-time">${n.date} at ${n.time}</div>
-          </div>`;
+          html += `<div class="notif-card" style="background: ${bg}; padding: 14px 16px; border-bottom: 1px solid var(--border-color);" onclick="window.openNotifDetails('${n.id}', '${safeTitle}', '${safeDetail}', '${n.type}', '${safeExtra}')"><div style="font-size: 13px; font-weight: ${weight}; color: var(--text-color);">${n.title}</div><div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.detail}</div><div class="notif-time">${n.date} at ${n.time}</div></div>`;
         });
 
         panel.innerHTML = html;
         if(badge) {
-          if(unreadCount > 0) {
-            badge.innerText = unreadCount > 9 ? "9+" : unreadCount;
-            badge.style.display = "block";
-          } else {
-            badge.style.display = "none";
-          }
+          if(unreadCount > 0) { badge.innerText = unreadCount > 9 ? "9+" : unreadCount; badge.style.display = "block"; } 
+          else { badge.style.display = "none"; }
         }
       });
     };
 
-    // Click Logic & Formatting
     window.openNotifDetails = async function(id, title, detail, type, extraStr) {
-      const loggedUser = localStorage.getItem("loggedUser");
-      const role = localStorage.getItem("loggedRole");
+      const loggedUser = localStorage.getItem("loggedUser"), role = localStorage.getItem("loggedRole");
       const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
-      
-      // Mark as read in DB
       update(ref(db), { [`notifications/${targetId}/${id}/read`]: true });
-
-      let extra = {};
-      try { extra = JSON.parse(decodeURIComponent(extraStr)); } catch(e){}
+      let extra = {}; try { extra = JSON.parse(decodeURIComponent(extraStr)); } catch(e){}
 
       document.getElementById("notifDetailsTitle").innerText = title;
-      document.getElementById("notifDetailsBody").innerHTML = detail; // innerHTML for line breaks
+      document.getElementById("notifDetailsBody").innerHTML = detail; 
       const actionBox = document.getElementById("notifDetailsActionBox");
       actionBox.innerHTML = "";
 
-      // Dynamic Icons & UI based on Type
       if(type === 'pay_fees' || type === 'fees_due') {
         document.getElementById("notifDetailsIcon").innerText = "⚠️";
-        if(extra.amount) {
-           actionBox.innerHTML = `
-           <div style="background: rgba(220,38,38,0.1); padding: 12px; border-radius: 12px; margin-bottom: 12px; color: #dc2626; font-weight: 800;">
-               Due Amount: ₹${extra.amount}<br><span style="font-size:10px;">For: ${extra.months || 'Dues'}</span>
-           </div>
-           <button class="btn-primary btn-green" onclick="window.payFromNotif('${extra.amount}')">💳 Pay Now (UPI)</button>`;
-        }
+        if(extra.amount) { actionBox.innerHTML = `<div style="background: rgba(220,38,38,0.1); padding: 12px; border-radius: 12px; margin-bottom: 12px; color: #dc2626; font-weight: 800;">Due Amount: ₹${extra.amount}<br><span style="font-size:10px;">For: ${extra.months || 'Dues'}</span></div><button class="btn-primary btn-green" onclick="window.payFromNotif('${extra.amount}')">💳 Pay Now (UPI)</button>`; }
       } else if (type === 'test_added') { document.getElementById("notifDetailsIcon").innerText = "📝";
-      } else if (type === 'admin_msg') { 
-        document.getElementById("notifDetailsIcon").innerText = "📢";
-        document.getElementById("notifDetailsBody").innerHTML += `<br><br><span style="background:rgba(2, 136, 209, 0.15); color:#0288d1; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Message From Admin</span>`;
+      } else if (type === 'admin_msg') { document.getElementById("notifDetailsIcon").innerText = "📢"; document.getElementById("notifDetailsBody").innerHTML += `<br><br><span style="background:rgba(2, 136, 209, 0.15); color:#0288d1; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Message From Admin</span>`;
       } else if (type === 'points_update') { document.getElementById("notifDetailsIcon").innerText = "⭐";
       } else if (type === 'test_submitted') { document.getElementById("notifDetailsIcon").innerText = "✅";
       } else if (type === 'absent_alert') { document.getElementById("notifDetailsIcon").innerText = "❌";
@@ -7789,57 +7728,50 @@ localStorage.setItem("loggedPass", p);
 
     window.payFromNotif = async function(amount) {
       const student = await getStudentRecord(currentStudentAdmn);
-      const studentName = student ? student.name : "Student";
-      const upiId = "7302132270@ybl";
-      window.location.href = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=DIGITAL CLASSES&am=${amount}&cu=INR&tn=Fee ID ${currentStudentAdmn} (${studentName})`;
+      window.location.href = `upi://pay?pa=7302132270@ybl&pn=DIGITAL CLASSES&am=${amount}&cu=INR&tn=Fee ID ${currentStudentAdmn}`;
     };
 
-       window.runSmartScheduledTasks = async function() {
-      // Disabled in Frontend. 
-      // Now handled securely by Node.js Backend Server via Cron Jobs.
-    };
+    window.runSmartScheduledTasks = async function() {};
 
-    
-
-          // Ask for Permission, Register SW, Handle Multiple Devices & Unblock Scenarios
+    // 🚀 NEW AUTO-UPDATE & SERVICE WORKER ENGINE
     let isNagging = false;
     window.initNativePushAndSW = async function(isFromClick = false) {
       if ('serviceWorker' in navigator && 'Notification' in window) {
         try {
           const registration = await navigator.serviceWorker.register('sw.js');
-          let permission = Notification.permission;
           
-          // Agar user ne permanently block kiya hai aur touch kar raha hai
+          // 🔄 SILENT AUTO-UPDATE CHECK ON INIT
+          registration.update();
+          registration.onupdatefound = () => {
+              const installingWorker = registration.installing;
+              installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      console.log("New update installed. Refreshing silently...");
+                      setTimeout(() => { window.location.reload(true); }, 1500);
+                  }
+              };
+          };
+
+          let permission = Notification.permission;
           if (permission === 'denied' && isFromClick && !isNagging) {
              isNagging = true;
              alert("🔔 Aapne Notifications block ki hui hain!\n\nPlease Chrome ki 'Site Settings' mein ja kar Allow karein taake important updates mil sakein.");
-             setTimeout(() => { isNagging = false; }, 5000); // 5 sec cooldown taake alert spam na ho
+             setTimeout(() => { isNagging = false; }, 5000); 
              return;
           }
 
-          // Agar un-answered (default) hai toh popup maange
-          if (permission !== 'granted' && permission !== 'denied') {
-             permission = await Notification.requestPermission();
-          }
+          if (permission !== 'granted' && permission !== 'denied') { permission = await Notification.requestPermission(); }
           
-          // Agar allow kar diya gaya hai (ya settings se theek kar diya gaya hai)
           if (permission === 'granted') {
-            const currentToken = await getToken(messaging, { 
-                vapidKey: "BMy6YCNZIFapXi6K2-V2pELcMXcQiL0MMnsjQmMcM7phuvRr3ScNmU48LAHms5jOnowLFa_YcdDian86x02kIzg", 
-                serviceWorkerRegistration: registration 
-            });
-            
+            const currentToken = await getToken(messaging, { vapidKey: "BMy6YCNZIFapXi6K2-V2pELcMXcQiL0MMnsjQmMcM7phuvRr3ScNmU48LAHms5jOnowLFa_YcdDian86x02kIzg", serviceWorkerRegistration: registration });
             if (currentToken) {
                 const loggedUser = localStorage.getItem("loggedUser");
                 const role = localStorage.getItem("loggedRole");
                 const targetId = role === 'student' ? currentStudentAdmn : loggedUser;
-                
                 if (targetId) {
-                    // MULTI-DEVICE SUPPORT: Purane token delete kiye bina list mein naya token dalein
                     const tokenSnap = await get(ref(db, `users/${targetId}/fcmTokens`));
                     let tokensObj = tokenSnap.exists() ? tokenSnap.val() : {};
                     let tokenExists = Object.values(tokensObj).includes(currentToken);
-                    
                     if(!tokenExists) {
                         const newKey = Date.now().toString();
                         await update(ref(db), { [`users/${targetId}/fcmTokens/${newKey}`]: currentToken });
@@ -7847,699 +7779,26 @@ localStorage.setItem("loggedPass", p);
                 }
             }
           }
-        } catch(e) { console.log("FCM Token Error: ", e); }
+        } catch(e) { console.log("SW/FCM Error: ", e); }
       }
     };
 
-    // Har Touch/Click par permission check karega (Jaise aapne manga!)
     document.addEventListener("click", () => {
-        if ('Notification' in window && Notification.permission !== 'granted') {
-            window.initNativePushAndSW(true);
-        } else if ('Notification' in window && Notification.permission === 'granted') {
-            // Agar pehle block tha aur ab user ne setting se open kar diya hai, toh token fetch kar lo!
-            window.initNativePushAndSW(false);
-        }
+        if ('Notification' in window && Notification.permission !== 'granted') { window.initNativePushAndSW(true); } 
+        else if ('Notification' in window && Notification.permission === 'granted') { window.initNativePushAndSW(false); }
     });
 
-
-
-    
     document.addEventListener("DOMContentLoaded", () => {
-      // 🚀 YAHAN FUNCTION CALL KARNA ZAROORI THA!
       window.initNativePushAndSW();
-      
-    
       setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
         if(loggedUser && loggedRole) {
-          window.listenToNotifications(); // Enable Live Notifications Array
-          
+          if(typeof window.listenToNotifications === 'function') window.listenToNotifications();
           if(loggedRole === "teacher") { window.loadTeacherBoardNotifications(); window.checkTeacherDailyClaimStatus(); }
           if(loggedRole === "admin") { window.calculateAdminEntryTabAnalytics(); window.renderAdminHomeTeacherboardCards(); }
-          if(loggedRole === "student") { window.runSmartScheduledTasks(); }
         }
       }, 500);
     });
-
-
-        window.openAdminTestHistoryModal = async function(classKey, testId) {
-      const modal = document.getElementById("adminTestHistoryModal");
-      const titleEl = document.getElementById("adminTestModalTitle");
-      const subtitleEl = document.getElementById("adminTestModalSubtitle");
-      const tbody = document.getElementById("adminTestAttemptsTableBody");
-      
-      if(!modal || !tbody) return;
-
-      tbody.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center;">⏳ Loading student attempts...</td></tr>`;
-      window.openModal("adminTestHistoryModal");
-
-      try {
-        const testObj = await safeDataFetch(`online_tests/${classKey}/${testId}`);
-        const classStudents = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(classKey));
-        const attemptsData = await safeDataFetch(`test_attempts/${testId}`) || {};
-
-        if(testObj) {
-          titleEl.innerText = `Test: ${testObj.title || testObj.testName || 'Test'}`;
-          subtitleEl.innerText = `Subject: ${testObj.subject || '-'} | Class: ${classKey} | Total Marks: ${testObj.totalMarks || '-'}`;
-        } else {
-          titleEl.innerText = `Test Results`;
-          subtitleEl.innerText = `Class: ${classKey}`;
-        }
-
-        if(classStudents.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center;">No students found in Class ${classKey}.</td></tr>`;
-          return;
-        }
-
-        let html = "";
-        classStudents.forEach(st => {
-          const attempt = attemptsData[st.admn];
-          if(attempt) {
-            html += `
-              <tr>
-                <td style="text-align:left; padding-left:10px; font-weight:800;">${st.name}</td>
-                <td><span style="background:rgba(34, 197, 94, 0.15); color:#16a34a; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Completed</span></td>
-                <td style="font-weight:900; color:#0288d1;">${attempt.obtained} / ${attempt.total}</td>
-                <td style="font-size:11px; font-weight:700;">${attempt.date || '-'}</td>
-              </tr>
-            `;
-          } else {
-            html += `
-              <tr>
-                <td style="text-align:left; padding-left:10px; font-weight:700; color:var(--text-muted);">${st.name}</td>
-                <td><span style="background:rgba(239, 68, 68, 0.15); color:#dc2626; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Not Attempted</span></td>
-                <td style="color:var(--text-muted);">-</td>
-                <td style="color:var(--text-muted);">-</td>
-              </tr>
-            `;
-          }
-        });
-        tbody.innerHTML = html;
-
-      } catch(err) {
-        tbody.innerHTML = `<tr><td colspan="4" style="padding:14px; text-align:center; color:red;">Failed to load test history.</td></tr>`;
-      }
-    };
-
-
-          // --- ASSISTANCE MENU ENGINE (PHASE 2 - COMPLETE) ---
-    const assistanceData = [
-      {
-        title: "Access Muster (Daily Attendance)",
-        en: "1. Open Access Muster from the menu.<br><br>2. Your check-in/out time will be recorded based on your current location.<br><br>3. Tap Check-in when you arrive, and Check-out when you leave.",
-        ur: "1. Menu se Access Muster open karein.<br><br>2. Aapki location aur wifi ke hisaab se time record hoga.<br><br>3. Aate waqt Check-in aur jaate waqt Check-out dabayein."
-      },
-      {
-        title: "Register Student",
-        en: "1. Enter the student's full name, assigned class, WhatsApp number, and DOB.<br><br>2. Upload a profile photo if available.<br><br>3. Click Submit to generate their login ID and password.",
-        ur: "1. Student ka poora naam, class, WhatsApp number aur DOB dalein.<br><br>2. Agar photo hai toh upload karein.<br><br>3. Submit dabayein taake unka naya ID aur Password ban jaye."
-      },
-      {
-        title: "Delete Test Data",
-        en: "1. Select the specific student from the dropdown.<br><br>2. Tap 'Load Test Records'.<br><br>3. Find the test you want to remove and click the 'Delete' button next to it.",
-        ur: "1. Dropdown se student select karein.<br><br>2. 'Load Test Records' par click karein.<br><br>3. Jo test delete karna hai uske aage wale 'Delete' button ko dabayein."
-      },
-      {
-        title: "Bulk Add Test Marks",
-        en: "1. Enter the Test Name and Total Marks.<br><br>2. Click Continue.<br><br>3. Enter the obtained marks for all students in the list.<br><br>4. Click Save to automatically assign performance points.",
-        ur: "1. Test ka naam aur Total marks dalein.<br><br>2. Continue dabayein.<br><br>3. List mein sab students ke obtained marks dalein.<br><br>4. Save dabayein, points auto-assign ho jayenge."
-      },
-      {
-        title: "Upload Homework",
-        en: "1. Enter the homework title or subject name.<br><br>2. Select the homework photo from your device.<br><br>3. Click Upload to save it directly to the students' dashboard.",
-        ur: "1. Homework ka title ya subject likhein.<br><br>2. Device se homework ki photo select karein.<br><br>3. Upload dabayein, ye direct students ki app mein chala jayega."
-      },
-      {
-        title: "Add Study Material",
-        en: "1. Upload material manually in your Google Drive app.<br><br>2. Tap the three dots, set access to 'Anyone with the link', and copy the link.<br><br>3. Open Digital Classes app, paste the link, set a title, and save.",
-        ur: "1. Apni Google Drive app mein material upload karein.<br><br>2. 3 dots par click karein, access ko 'Anyone with link' karein aur link copy karein.<br><br>3. Digital Classes app mein aakar link paste karein, title dalein aur save karein."
-      },
-      {
-        title: "Manage Study Material",
-        en: "1. Open Manage Study Material to see the list of all uploaded materials.<br><br>2. Use 'Hide/Unhide' to control visibility for students.<br><br>3. Use 'Delete' to remove it permanently.",
-        ur: "1. Manage Study Material open karein taake sab files dikh jayen.<br><br>2. Students se chhupane ke liye 'Hide' dabayein.<br><br>3. Hamesha ke liye hatane ke liye 'Delete' kar dein."
-      },
-      {
-        title: "Create Online Test (Interactive Test)",
-        en: "1. Go to Gemini and upload your document/photo which test do you want and Paste <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span>.<br><br>2. Gemini will give you the Code paste it at contribute section.<br><br>3. Set Time, Marks, Expiry Date and Publish.",
-        ur: "1. Gemini par jayen, document/photo upload karein aur apna <span style='color:#16a34a; font-weight:900; cursor:pointer; text-decoration:underline; padding:2px 4px; background:rgba(22,163,74,0.1); border-radius:4px;' onclick='window.showPromptPopup()'>Prompt</span> paste karein.<br><br>2. Gemini aapko Code dega, usay contribute section mein paste karein.<br><br>3. Time, Marks, Expiry set karke Publish karein."
-      },
-      {
-        title: "Add Offline Test Marks",
-        en: "1. Go to the Test tab and scroll down.<br><br>2. Select the student, enter the test name, total marks, and obtained marks.<br><br>3. Click Save to record data and update points.",
-        ur: "1. Test tab mein thora neeche jayen.<br><br>2. Student select karein, test ka naam, total aur obtained marks dalein.<br><br>3. Save dabayein, marks aur points update ho jayenge."
-      },
-      {
-        title: "Manage Class Attendance",
-        en: "1. Go to the Attend tab.<br><br>2. Check the boxes for present students (unchecked means absent).<br><br>3. Click Save Today's Attendance.<br><br>4. Use the Track tab to view reports.",
-        ur: "1. Attend tab mein jayen.<br><br>2. Jo bache aaye hain unpe tick lagayein (bina tick wale absent gine jayenge).<br><br>3. Save dabayein.<br><br>4. Track tab se attendance report dekh sakte hain."
-      },
-      {
-        title: "Award / Deduct Performance Points",
-        en: "1. Go to the Perform tab.<br><br>2. Select the student and enter points (+ for award, - for deduct).<br><br>3. Write the reason (e.g., Good behavior).<br><br>4. Submit to update their rank.",
-        ur: "1. Perform tab mein jayen.<br><br>2. Student select karein, points dalein (Dene ke liye +, Kaatne ke liye - lagayein).<br><br>3. Point dene ki wajah likhein.<br><br>4. Submit dabayein taake rank update ho jaye."
-      }
-    ];
-
-    let currentAstIndex = 0;
-    let currentAstLang = 'en';
-
-    window.openAssistanceMenu = function() {
-        window.closeDrawer();
-        const container = document.getElementById("assistanceCardsContainer");
-        container.innerHTML = "";
-        
-        assistanceData.forEach((item, index) => {
-            container.innerHTML += `
-            <div class="student-grid-card" style="padding: 16px; margin-bottom: 10px; border-radius: 14px; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;" onclick="window.openAssistanceDetail(${index})">
-                <div style="font-size: 13px; font-weight: 800; color: var(--text-color);">${item.title}</div>
-                <div style="font-size: 16px; color: #0288d1; font-weight: 900;">➔</div>
-            </div>`;
-        });
-        window.openModal("assistanceMenuModal");
-    };
-
-    window.openAssistanceDetail = function(index) {
-        currentAstIndex = index;
-        currentAstLang = 'en'; // Default English
-        window.renderAstDetail();
-        window.openModal("assistanceDetailModal");
-    };
-
-    window.renderAstDetail = function() {
-        const item = assistanceData[currentAstIndex];
-        document.getElementById("astDetailTitle").innerText = item.title;
-        document.getElementById("astDetailSteps").innerHTML = currentAstLang === 'en' ? item.en : item.ur;
-        
-        const toggleBtn = document.getElementById("astTranslateBtn");
-        if (currentAstLang === 'en') {
-            toggleBtn.innerText = "🔄 Translate to Roman Urdu";
-            toggleBtn.style.color = "#ea580c"; // Orange for translation
-        } else {
-            toggleBtn.innerText = "🔄 Translate to English";
-            toggleBtn.style.color = "#0288d1"; // Blue for english
-        }
-    };
-
-    window.toggleAssistanceLang = function() {
-        currentAstLang = currentAstLang === 'en' ? 'ur' : 'en';
-        window.renderAstDetail();
-    };
-
-    window.showPromptPopup = function() {
-        window.openModal("promptCopyModal");
-    };
-
-    window.copyPromptText = function() {
-        const textarea = document.getElementById("promptTextarea");
-        textarea.select();
-        textarea.setSelectionRange(0, 99999); // Mobile ke liye
-        navigator.clipboard.writeText(textarea.value).then(() => {
-            alert("Prompt copied to clipboard!");
-            window.closeModal("promptCopyModal");
-        }).catch(err => {
-            alert("Failed to copy text. Please try selecting manually.");
-        });
-    };
-
-
-          // --- TIMETABLE ENGINE (PHASE 1) ---
-    let isTtEditMode = false;
-    let currentTtData = [];
-    const defaultTtRows = 7;
-
-    window.openTimetableTab = function(e, role) {
-      if(e) e.stopPropagation();
-      window.closeDrawer();
-      if(role === 'admin') {
-        window.switchTab('adminTabTimetable', null, e);
-        const cls = document.getElementById("ttAdminClassSelect").value;
-        window.loadTimetableData(cls, 'admin');
-      } else {
-        window.switchTab('teacherTabTimetable', null, e);
-        document.getElementById("ttTeacherClassDisplay").value = `Class ${assignedClass}`;
-        window.loadTimetableData(assignedClass, 'teacher');
-      }
-    };
-
-    window.loadTimetableData = async function(clsStr, role) {
-      isTtEditMode = false;
-      const cleanCls = cleanClassStr(clsStr);
-      const labelId = role === 'admin' ? "ttAdminClassLabel" : "ttTeacherClassLabel";
-      const btnId = role === 'admin' ? "ttAdminEditBtn" : "ttTeacherEditBtn";
-      const actionBoxId = role === 'admin' ? "ttAdminActionButtons" : "ttTeacherActionButtons";
-      
-      document.getElementById(labelId).innerText = `Class ${cleanCls} Timetable`;
-      document.getElementById(btnId).innerText = "✏️ Edit";
-      document.getElementById(btnId).className = "btn-primary btn-purple";
-      document.getElementById(actionBoxId).style.display = "none";
-
-      const ttData = await safeDataFetch(`timetable/${cleanCls}`);
-      
-      if (ttData && Array.isArray(ttData) && ttData.length > 0) {
-          currentTtData = ttData;
-      } else {
-          currentTtData = [];
-          for(let i=0; i<defaultTtRows; i++) {
-              currentTtData.push({ time: "", subject: "", mon: "", tue: "", wed: "", thu: "", fri: "", sat: "" });
-          }
-      }
-      window.renderTimetableTable(role);
-    };
-
-    window.renderTimetableTable = function(role) {
-      const tbodyId = role === 'admin' ? "ttAdminTableBody" : "ttTeacherTableBody";
-      const tbody = document.getElementById(tbodyId);
-      tbody.innerHTML = "";
-
-      currentTtData.forEach((row, idx) => {
-        if(isTtEditMode) {
-          tbody.innerHTML += `
-            <tr>
-              <td><input type="text" id="tt_${role}_time_${idx}" value="${row.time}" style="width:70px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_sub_${idx}" value="${row.subject}" style="width:80px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_mon_${idx}" value="${row.mon}" style="width:60px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_tue_${idx}" value="${row.tue}" style="width:60px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_wed_${idx}" value="${row.wed}" style="width:60px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_thu_${idx}" value="${row.thu}" style="width:60px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_fri_${idx}" value="${row.fri}" style="width:60px; padding:4px; font-size:11px;"></td>
-              <td><input type="text" id="tt_${role}_sat_${idx}" value="${row.sat}" style="width:60px; padding:4px; font-size:11px;"></td>
-            </tr>`;
-        } else {
-          tbody.innerHTML += `
-            <tr>
-              <td style="font-weight:800; color:#0288d1;">${row.time || '-'}</td>
-              <td style="font-weight:800;">${row.subject || '-'}</td>
-              <td>${row.mon || '-'}</td><td>${row.tue || '-'}</td><td>${row.wed || '-'}</td>
-              <td>${row.thu || '-'}</td><td>${row.fri || '-'}</td><td>${row.sat || '-'}</td>
-            </tr>`;
-        }
-      });
-    };
-
-    window.toggleTimetableEdit = async function(role) {
-      const btnId = role === 'admin' ? "ttAdminEditBtn" : "ttTeacherEditBtn";
-      const actionBoxId = role === 'admin' ? "ttAdminActionButtons" : "ttTeacherActionButtons";
-      const cls = role === 'admin' ? document.getElementById("ttAdminClassSelect").value : assignedClass;
-      const cleanCls = cleanClassStr(cls);
-
-      if(!isTtEditMode) {
-          isTtEditMode = true;
-          document.getElementById(btnId).innerText = "💾 Update";
-          document.getElementById(btnId).className = "btn-primary btn-green";
-          document.getElementById(actionBoxId).style.display = "flex";
-          window.renderTimetableTable(role);
-      } else {
-          const btn = document.getElementById(btnId);
-          runWithBtnSpinner(btn, "💾 Update", async () => {
-              const updatedData = [];
-              for(let i=0; i<currentTtData.length; i++) {
-                  updatedData.push({
-                      time: document.getElementById(`tt_${role}_time_${i}`).value.trim(),
-                      subject: document.getElementById(`tt_${role}_sub_${i}`).value.trim(),
-                      mon: document.getElementById(`tt_${role}_mon_${i}`).value.trim(),
-                      tue: document.getElementById(`tt_${role}_tue_${i}`).value.trim(),
-                      wed: document.getElementById(`tt_${role}_wed_${i}`).value.trim(),
-                      thu: document.getElementById(`tt_${role}_thu_${i}`).value.trim(),
-                      fri: document.getElementById(`tt_${role}_fri_${i}`).value.trim(),
-                      sat: document.getElementById(`tt_${role}_sat_${i}`).value.trim()
-                  });
-              }
-              currentTtData = updatedData;
-              await set(ref(db, `timetable/${cleanCls}`), updatedData);
-              
-              window.showCustomAlert(`✔ Time table updated for Class ${cleanCls}`);
-              
-              isTtEditMode = false;
-              document.getElementById(btnId).innerText = "✏️ Edit";
-              document.getElementById(btnId).className = "btn-primary btn-purple";
-              document.getElementById(actionBoxId).style.display = "none";
-              window.renderTimetableTable(role);
-          });
-      }
-    };
-
-    window.addTimetableRow = function(role) {
-        currentTtData.push({ time: "", subject: "", mon: "", tue: "", wed: "", thu: "", fri: "", sat: "" });
-        window.renderTimetableTable(role);
-    };
-
-    window.deleteTimetableRow = function(role) {
-        if(currentTtData.length > 1) {
-            currentTtData.pop();
-            window.renderTimetableTable(role);
-        } else {
-            alert("At least 1 row is required.");
-        }
-    };
-
-    // --- STUDENT TIMETABLE LOADER (Inject this inside your refreshStudentDashboard function) ---
-    // You should manually place window.loadStudentTimetable(assignedClass) at the bottom of refreshStudentDashboard()
-    window.loadStudentTimetable = async function(cleanCls) {
-      const card = document.getElementById("sHomeTimetableCard");
-      const tbody = document.getElementById("sHomeTimetableBody");
-      if(!card || !tbody) return;
-
-      const ttData = await safeDataFetch(`timetable/${cleanCls}`);
-      if(ttData && Array.isArray(ttData) && ttData.length > 0) {
-          tbody.innerHTML = "";
-          ttData.forEach(row => {
-             tbody.innerHTML += `
-              <tr>
-                <td style="font-weight:800; color:#0288d1;">${row.time || '-'}</td>
-                <td style="font-weight:800;">${row.subject || '-'}</td>
-                <td>${row.mon || '-'}</td><td>${row.tue || '-'}</td><td>${row.wed || '-'}</td>
-                <td>${row.thu || '-'}</td><td>${row.fri || '-'}</td><td>${row.sat || '-'}</td>
-              </tr>`;
-          });
-          card.style.display = "block";
-      } else {
-          card.style.display = "none";
-      }
-      
-    };
-
-          // --- STUDENT LEAVE APPLICATION ENGINE (PHASE 2) ---
-
-    window.openLeaveTab = function(e) {
-        if(e) e.stopPropagation();
-        window.closeDrawer();
-        window.switchTab('studentTabLeave', null, e);
-        window.loadStudentLeaves();
-    };
-
-    window.loadStudentLeaves = async function() {
-        const tbody = document.getElementById("sLeaveTableBody");
-        if (!tbody) return;
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:12px;">⏳ Loading applications...</td></tr>`;
-
-        try {
-            const leaves = await safeDataFetch(`leave_applications/${currentStudentAdmn}`) || {};
-            // Convert to array and sort by latest first
-            const leaveList = Object.values(leaves).sort((a, b) => b.timestamp - a.timestamp); 
-
-            tbody.innerHTML = "";
-            if (leaveList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:12px;">No leave applications found.</td></tr>`;
-                return;
-            }
-
-            leaveList.forEach(l => {
-                let statusHtml = "";
-                if(l.status === "Approved") {
-                  statusHtml = `<span style="background:rgba(34, 197, 94, 0.15); color:#16a34a; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Approved ✔</span>`;
-                } else if(l.status === "Denied") {
-                  statusHtml = `<span style="background:rgba(239, 68, 68, 0.15); color:#dc2626; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Denied ✖</span>`;
-                } else {
-                  statusHtml = `<span style="background:rgba(245, 158, 11, 0.15); color:#d97706; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800;">Pending ⏳</span>`;
-                }
-
-                // UI Date format display fix for <input type="date"> value
-                let formattedDate = l.leaveDate;
-                if(l.leaveDate && l.leaveDate.includes("-")) {
-                   const parts = l.leaveDate.split("-");
-                   formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                }
-
-                tbody.innerHTML += `
-                <tr>
-                    <td style="font-weight:700;">${formattedDate}</td>
-                    <td style="font-weight:800; color:#0288d1; text-align:left; padding-left:8px;">${l.reason}</td>
-                    <td>${statusHtml}</td>
-                </tr>`;
-            });
-        } catch(e) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:red; padding:12px;">Failed to load data.</td></tr>`;
-        }
-    };
-
-    window.openApplyLeaveModal = function() {
-        document.getElementById("leaveTodayDate").value = getTodayFormattedDate();
-        document.getElementById("leaveReqDate").value = "";
-        document.getElementById("leaveReason").value = "";
-        document.getElementById("leaveMessage").value = "";
-        window.openModal("applyLeaveModal");
-    };
-
-    // Global listener for the Submit Leave Button (Crash-Proof from duplicates)
-    document.addEventListener("click", (e) => {
-        const submitLeaveBtn = e.target.closest("#submitLeaveBtn");
-        if (submitLeaveBtn) {
-            const modal = submitLeaveBtn.closest(".modal-body") || document;
-            const reqDate = modal.querySelector("#leaveReqDate").value;
-            const reason = modal.querySelector("#leaveReason").value.trim();
-            const msg = modal.querySelector("#leaveMessage").value.trim();
-
-            if(!reqDate || !reason || !msg) {
-                alert("Please fill Leave Date, Reason, and Message.");
-                return;
-            }
-
-            runWithBtnSpinner(submitLeaveBtn, "🚀 Submit Application", async () => {
-                const student = await getStudentRecord(currentStudentAdmn);
-                const stName = student ? student.name : "Unknown Student";
-                const stClass = student ? student.class : "Unknown";
-
-                const timestamp = Date.now();
-                const leaveId = "LV" + timestamp;
-                
-                // Format display date
-                const parts = reqDate.split("-");
-                const displayLeaveDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-
-                const leaveObj = {
-                    id: leaveId,
-                    admn: currentStudentAdmn,
-                    name: stName,
-                    class: cleanClassStr(stClass),
-                    applyDate: getTodayFormattedDate(),
-                    leaveDate: reqDate,
-                    displayLeaveDate: displayLeaveDate,
-                    reason: reason,
-                    message: msg,
-                    status: "Pending",
-                    timestamp: timestamp
-                };
-
-                // Save application to Firebase
-                await set(ref(db, `leave_applications/${currentStudentAdmn}/${leaveId}`), leaveObj);
-                
-                window.closeModal("applyLeaveModal");
-                
-                // Show Waiting Animation Overlay
-                const waitingScreen = document.getElementById("leaveWaitingOverlay");
-                if(waitingScreen) waitingScreen.style.display = "flex";
-
-                // Prepare WhatsApp Notification Text
-                const adminNumber = "917302132270"; // Admin's phone number
-                const waText = `*NEW LEAVE APPLICATION* 📅\n\n*Student:* ${stName}\n*Class:* ${stClass}\n*ID:* ${currentStudentAdmn}\n*Leave Date:* ${displayLeaveDate}\n*Reason:* ${reason}\n*Message:* ${msg}\n\n_Please check the Admin Dashboard to Approve or Deny._`;
-                
-                // Hold animation for 2.5 seconds to show "Wait for approval" then redirect
-                setTimeout(() => {
-                    if(waitingScreen) waitingScreen.style.display = "none";
-                    window.loadStudentLeaves(); // Refresh student's table
-                    window.open(`https://api.whatsapp.com/send?phone=${adminNumber}&text=${encodeURIComponent(waText)}`, "_blank");
-                }, 2500); 
-            });
-        }
-    });
-
-    // --- ADMIN & TEACHER LEAVE MANAGEMENT ENGINE (PHASE 3) ---
-    let allLeavesCache = [];
-    let currentLeaveFilter = 'All';
-
-    window.openLeaveMgmtTab = function(e, role) {
-        if(e) e.stopPropagation();
-        window.closeDrawer();
-        window.switchTab('mgmtTabLeave', null, e);
-        window.loadAllLeaves();
-    };
-
-    window.filterLeaves = function(status, el) {
-        currentLeaveFilter = status;
-        document.querySelectorAll(".class-chip[id^='lf-']").forEach(c => c.classList.remove("active"));
-        if(el) el.classList.add("active");
-        window.renderLeaves();
-    };
-
-    window.loadAllLeaves = async function() {
-        const container = document.getElementById("leaveMgmtContainer");
-        if (!container) return;
-        container.innerHTML = `<div style="text-align:center; padding:14px; font-weight:800; color:var(--text-muted);">⏳ Fetching applications...</div>`;
-        
-        try {
-            const leavesSnap = await safeDataFetch("leave_applications");
-            allLeavesCache = [];
-            
-            if (leavesSnap) {
-                Object.values(leavesSnap).forEach(studentLeaves => {
-                    Object.values(studentLeaves).forEach(leave => {
-                        allLeavesCache.push(leave);
-                    });
-                });
-            }
-            
-            // Sabse naye applications upar show honge
-            allLeavesCache.sort((a, b) => b.timestamp - a.timestamp);
-            window.renderLeaves();
-        } catch(e) {
-            container.innerHTML = `<div style="text-align:center; padding:14px; color:red;">Failed to load data.</div>`;
-        }
-    };
-
-    window.renderLeaves = function() {
-        const container = document.getElementById("leaveMgmtContainer");
-        if (!container) return;
-        container.innerHTML = "";
-
-        let filteredLeaves = allLeavesCache;
-        
-        // Teacher ko sirf apni class ke bacche dikhenge
-        if (currentRole === 'teacher') {
-            filteredLeaves = filteredLeaves.filter(l => cleanClassStr(l.class) === cleanClassStr(assignedClass));
-        }
-        
-        if (currentLeaveFilter !== 'All') {
-            filteredLeaves = filteredLeaves.filter(l => l.status === currentLeaveFilter);
-        }
-
-        if (filteredLeaves.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:14px; font-weight:700; color:var(--text-muted);">No applications found.</div>`;
-            return;
-        }
-
-        const liveStudents = getLiveStudents();
-
-        filteredLeaves.forEach(l => {
-            const student = liveStudents.find(s => String(s.admn) === String(l.admn));
-            const photo = student && student.photo ? student.photo : "https://via.placeholder.com/150";
-            
-            let statusColor = "#d97706"; // Pending Orange
-            if (l.status === 'Approved') statusColor = "#16a34a"; // Green
-            if (l.status === 'Denied') statusColor = "#dc2626"; // Red
-
-            const safeMsg = (l.message || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            const safeReason = (l.reason || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            
-            container.innerHTML += `
-            <div class="student-grid-card" style="padding:14px; display:flex; gap:12px; align-items:center; background:var(--card-bg);" 
-                 onclick="window.openLeaveActionModal('${l.id}', '${l.admn}', '${l.name}', '${l.class}', '${safeReason}', '${safeMsg}', '${l.displayLeaveDate}', '${l.status}')">
-                <img src="${photo}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid ${statusColor}; flex-shrink:0;">
-                <div style="flex:1;">
-                    <div style="font-size:14px; font-weight:800; color:var(--text-color);">${l.name} <span style="font-size:10px; color:var(--text-muted);">(Cls ${l.class})</span></div>
-                    <div style="font-size:11px; font-weight:800; color:#0288d1; margin-top:2px;">📅 ${l.displayLeaveDate}</div>
-                    <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:2px;">Reason: ${l.reason}</div>
-                </div>
-                <div style="font-size:10px; font-weight:900; color:white; background:${statusColor}; padding:4px 8px; border-radius:8px;">
-                    ${l.status}
-                </div>
-            </div>`;
-        });
-    };
-
-    window.openLeaveActionModal = function(id, admn, name, cls, reason, msg, date, status) {
-        document.getElementById("laLeaveId").value = id;
-        document.getElementById("laAdmn").value = admn;
-        document.getElementById("laStudentName").innerText = name;
-        document.getElementById("laStudentClass").innerText = `Class: ${cls} | Admn: ${admn}`;
-        document.getElementById("laDate").innerText = date;
-        document.getElementById("laReason").innerText = reason;
-        document.getElementById("laMessage").innerText = msg;
-        
-        window.openModal("leaveActionModal");
-    };
-
-      // --- 1. SMOOTH ANIMATED TAB SWITCHING ---
-    window.switchStudentProfileTab = function(tab) {
-      const profileSec = document.getElementById("spProfileSection");
-      const leaveSec = document.getElementById("spLeaveAppSection");
-      const modalBody = document.querySelector("#studentProfileModal .modal-body");
-      
-      document.getElementById("spTabProfileBtn").classList.toggle("active", tab === 'profile');
-      document.getElementById("spTabLeavesBtn").classList.toggle("active", tab === 'leaves');
-      
-      // Smooth Height Transition Logic
-      const currentHeight = modalBody.offsetHeight;
-      modalBody.style.height = currentHeight + "px";
-      modalBody.style.overflow = "hidden";
-      modalBody.style.transition = "height 0.3s ease-in-out";
-
-      if(tab === 'profile') {
-        leaveSec.style.display = 'none';
-        profileSec.style.display = 'block';
-        profileSec.style.animation = 'slideUp 0.3s ease forwards';
-      } else {
-        profileSec.style.display = 'none';
-        leaveSec.style.display = 'block';
-        leaveSec.style.animation = 'slideUp 0.3s ease forwards';
-        const admn = document.getElementById("profStudentAdmn").value;
-        window.loadStudentProfileLeaves(admn);
-      }
-
-      // Calculate new dynamic height and animate smoothly
-      modalBody.style.height = "auto";
-      const newHeight = modalBody.offsetHeight;
-      modalBody.style.height = currentHeight + "px";
-      
-      setTimeout(() => { modalBody.style.height = newHeight + "px"; }, 10);
-      
-      // Reset styles after animation completes
-      setTimeout(() => {
-         modalBody.style.height = "auto";
-         modalBody.style.overflow = "auto";
-         modalBody.style.transition = "none";
-      }, 320);
-    };
-
-    // --- 2. LEAVE STATUS UPDATER (Also refreshes Profile App List) ---
-    window.updateLeaveStatus = async function(newStatus) {
-        const leaveId = document.getElementById("laLeaveId").value;
-        const admn = document.getElementById("laAdmn").value;
-        
-        if(!leaveId || !admn) return;
-
-        try {
-            await update(ref(db), { [`leave_applications/${admn}/${leaveId}/status`]: newStatus });
-            
-            // Push Notification to Student
-            await window.pushAppNotification(admn, "Leave Status Updated", `Your leave application for ${document.getElementById("laDate").innerText} is now: ${newStatus}`, "leave_update", { status: newStatus });
-
-            alert(`✔ Leave Application marked as ${newStatus}!`);
-            window.closeModal("leaveActionModal");
-            window.loadAllLeaves(); // Refresh the main table
-            
-            // Agar Profile Modal khula hai toh usay bhi refresh karo!
-            if (document.getElementById("studentProfileModal").classList.contains("active")) {
-                window.loadStudentProfileLeaves(admn);
-            }
-        } catch(e) { alert("Error updating status."); }
-    };
-
-    // --- 3. DELETE LEAVE APP (Also refreshes Profile App List) ---
-    window.deleteLeaveApp = async function() {
-        const leaveId = document.getElementById("laLeaveId").value;
-        const admn = document.getElementById("laAdmn").value;
-        
-        if(!leaveId || !admn) return;
-
-        window.showCustomConfirm("Are you sure you want to completely delete this leave application?", async () => {
-            try {
-                await remove(ref(db, `leave_applications/${admn}/${leaveId}`));
-                alert("🗑️ Leave application deleted successfully.");
-                window.closeModal("leaveActionModal");
-                window.loadAllLeaves(); // Refresh the main table
-                
-                // Agar Profile Modal khula hai toh usay bhi refresh karo!
-                if (document.getElementById("studentProfileModal").classList.contains("active")) {
-                    window.loadStudentProfileLeaves(admn);
-                }
-            } catch(e) { alert("Error deleting application."); }
-        });
-    };
-
-
-  
-
-  </script>
+    </script>
 </body>
 </html>
