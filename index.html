@@ -4354,17 +4354,33 @@ localStorage.setItem("loggedPass", p);
       refreshAllTeacherData();
     };
 
-        function renderDashboardForRole(role, aClass, sAdmn) {
+           function renderDashboardForRole(role, aClass, sAdmn) {
       currentRole = role; 
       
-      // 🚀 PHASE 1 FIX: Real-time User Validation & Ghost Login Security
+      // 🛡️ GHOST LOGIN FIX: Bulletproof Session Invalidation
       const loggedUser = localStorage.getItem("loggedUser");
+      const loggedPass = localStorage.getItem("loggedPass");
+
       if(loggedUser) {
         onValue(ref(db, `users/${loggedUser}`), (snap) => {
-          if(!snap.exists()) {
-            alert("⚠️ You have been logged out. Your account was deleted or disabled by the Admin.");
-            localStorage.clear();
-            window.location.reload();
+          // Check 1: Account delete ho gaya (snap doesn't exist)
+          // Check 2: Admin ne password change kar diya (saved password se match nahi kar raha)
+          if(!snap.exists() || (snap.exists() && snap.val().password !== loggedPass)) {
+            
+            // Saari sensitive login details hata do (Themes wagaira delete nahi honge)
+            localStorage.removeItem("loggedUser");
+            localStorage.removeItem("loggedRole");
+            localStorage.removeItem("loggedPass");
+            localStorage.removeItem("assignedClass");
+            localStorage.removeItem("studentAdmn");
+
+            // Native alert ki jagah Custom Alert (ye background tabs me bhi kaam karta hai)
+            window.showCustomAlert("⚠️ SESSION EXPIRED: Your account was deleted or password was changed by Admin.");
+            
+            // 3 second baad app automatically login screen par chali jayegi
+            setTimeout(() => {
+               window.location.reload(true);
+            }, 3000);
           }
         });
       }
@@ -4372,6 +4388,9 @@ localStorage.setItem("loggedPass", p);
       // Split assigned classes by comma and pick the first one as default
       const tClasses = (aClass || "1").split(",");
 
+
+
+      
       assignedClass = role === "teacher" ? tClasses[0] : (aClass || "1"); 
       currentStudentAdmn = sAdmn || localStorage.getItem("studentAdmn");
 
