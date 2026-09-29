@@ -1991,7 +1991,7 @@ body.dark-mode .btn-status-claimed {
         </div>
       </div>
       
-      <!-- STUDENT SYLLABUS STATUS WIDGET -->
+           <!-- STUDENT SYLLABUS STATUS WIDGET -->
       <div class="card unfold-card" id="sHomeSyllabusWidget" style="margin-top:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
           <div class="card-title" style="border:none; margin-bottom:0;">📊 My Syllabus Status</div>
@@ -2001,7 +2001,13 @@ body.dark-mode .btn-status-claimed {
         <div style="position: relative; height: 180px; width: 100%;">
            <canvas id="studentHomeSyllabusChart"></canvas>
         </div>
+
+        <!-- NEW GRAPH BREAKDOWN / LEGEND -->
+        <div id="sHomeSyllabusBreakdown" style="margin-top: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 12px; border: 1px dashed var(--border-color);">
+           <div style='text-align:center; color:var(--text-muted); font-size:11px;'>Loading Breakdown...</div>
+        </div>
       </div>
+
     </section>
 
 
@@ -5289,7 +5295,7 @@ localStorage.setItem("loggedPass", p);
       
 
           // FIX: Added window. prefix so the dropdown can trigger it properly
-    window.loadTeacherStudyMaterials = async function(targetCls) {
+      window.loadTeacherStudyMaterials = async function(targetCls) {
       const tbody = document.getElementById("manageMaterialTableBody");
       const classKey = cleanClassStr(targetCls || assignedClass);
       const materials = await safeDataFetch(`study_material/${classKey}`);
@@ -8875,8 +8881,9 @@ localStorage.setItem("loggedPass", p);
         window.renderStudentHomeSyllabusChart(totalChapsOverall, completedChapsOverall, finalLabels, finalData, finalColors);
     };
 
-    window.renderStudentHomeSyllabusChart = function(total, completed, labels, dataVals, colors) {
+      window.renderStudentHomeSyllabusChart = function(total, completed, labels, dataVals, colors) {
         const ctx = document.getElementById("studentHomeSyllabusChart");
+        const breakdownDiv = document.getElementById("sHomeSyllabusBreakdown");
         if(!ctx) return;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -8905,7 +8912,25 @@ localStorage.setItem("loggedPass", p);
                 }
             }]
         });
+
+        // NEW: Generate Subject-wise Breakdown HTML
+        if(breakdownDiv) {
+            let bHtml = "";
+            if (completed === 0) {
+                bHtml = "<div style='text-align:center; color:var(--text-muted); font-size:11px; font-weight:700;'>No chapters completed yet.</div>";
+            } else {
+                labels.forEach((lbl, i) => {
+                    bHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; font-size:12px; font-weight:800; border-bottom:1px solid var(--border-color);">
+                      <span style="color:${colors[i]}">● ${lbl}</span>
+                      <span>${dataVals[i]} Chaps Completed</span>
+                    </div>`;
+                });
+            }
+            breakdownDiv.innerHTML = bHtml;
+        }
     };
+
+
 
 
     // Phase 4 Hook: Also trigger graph render when student opens syllabus tab
