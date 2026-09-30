@@ -873,6 +873,29 @@ body.dark-mode .btn-status-claimed {
 </head>
 <body>
 
+    <!-- ==========================================
+       PREMIUM SPLASH SCREEN ANIMATION (REKHTA STYLE)
+       ========================================== -->
+  <div id="premiumSplashScreen" class="splash-overlay">
+    <div class="splash-text-container">
+      <span class="splash-letter" style="animation-delay: 0.1s;">D</span>
+      <span class="splash-letter" style="animation-delay: 0.15s;">I</span>
+      <span class="splash-letter" style="animation-delay: 0.2s;">G</span>
+      <span class="splash-letter" style="animation-delay: 0.25s;">I</span>
+      <span class="splash-letter" style="animation-delay: 0.3s;">T</span>
+      <span class="splash-letter" style="animation-delay: 0.35s;">A</span>
+      <span class="splash-letter" style="animation-delay: 0.4s;">L</span>
+      <span class="splash-letter" style="animation-delay: 0.45s;">&nbsp;</span>
+      <span class="splash-letter" style="animation-delay: 0.5s;">C</span>
+      <span class="splash-letter" style="animation-delay: 0.55s;">L</span>
+      <span class="splash-letter" style="animation-delay: 0.6s;">A</span>
+      <span class="splash-letter" style="animation-delay: 0.65s;">S</span>
+      <span class="splash-letter" style="animation-delay: 0.7s;">S</span>
+      <span class="splash-letter" style="animation-delay: 0.75s;">E</span>
+      <span class="splash-letter" style="animation-delay: 0.8s;">S</span>
+    </div>
+  </div>
+
 
 
   
@@ -2042,7 +2065,61 @@ body.dark-mode .btn-status-claimed {
 
       <!-- Left-to-Right Sliding Container CSS Engine (Inline for this section) -->
       <style>
-        .slide-container { position: relative; overflow: hidden; width: 100%; min-height: 400px; }
+
+
+            /* ====================================================================
+       SPLASH SCREEN CSS ENGINE
+       ==================================================================== */
+    .splash-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--app-bg); /* App ke theme ke hisaab se dark/light auto hoga */
+      z-index: 99999999; /* Sabse aage rahega */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease;
+    }
+    
+        /* Jab animation khatam hoga toh ye class add hogi Left slide karne ke liye */
+    .splash-overlay.slide-left-hide {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+
+    .splash-text-container {
+      display: flex;
+      font-size: 28px;
+      font-weight: 900;
+      color: #0288d1;
+      letter-spacing: 2px;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .splash-letter {
+      opacity: 0;
+      display: inline-block;
+      transform: translateY(15px) scale(0.8);
+      animation: letterPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    body.dark-mode .splash-text-container {
+      color: #38bdf8; /* Dark mode mein thoda bright blue */
+    }
+
+    @keyframes letterPopIn {
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+
+        
+        .slide-container { position
+        : relative; overflow: hidden; width: 100%; min-height: 400px; }
         .slide-pane { position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; opacity: 0; pointer-events: none; }
         .slide-pane.active { opacity: 1; pointer-events: auto; position: relative; transform: translateX(0); }
         .slide-pane.hidden-left { transform: translateX(-50px); }
@@ -7799,12 +7876,19 @@ localStorage.setItem("loggedPass", p);
         else if ('Notification' in window && Notification.permission === 'granted') { window.initNativePushAndSW(false); }
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", () => {
+          // SPLASH SCREEN REMOVAL LOGIC (Runs after 2 seconds)
+      setTimeout(() => {
+          const splash = document.getElementById("premiumSplashScreen");
+          if(splash) splash.classList.add("slide-left-hide");
+      }, 2000);
+
+
       window.initNativePushAndSW();
       setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
         if(loggedUser && loggedRole) {
-          if(typeof window.listenToNotifications === 'function') window.listenToNotifications();
+        if(typeof window.listenToNotifications === 'function') window.listenToNotifications();
           if(loggedRole === "teacher") { window.loadTeacherBoardNotifications(); window.checkTeacherDailyClaimStatus(); }
           if(loggedRole === "admin") { window.calculateAdminEntryTabAnalytics(); window.renderAdminHomeTeacherboardCards(); }
         }
