@@ -516,9 +516,16 @@ body.dark-mode .card {
 .card-title { font-size: 15px; font-weight: 800; color: var(--text-color); margin-bottom: 14px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px; }
 
 label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 10px; margin-bottom: 4px; }
-input[type="text"], input[type="password"], input[type="number"], input[type="file"], input[type="datetime-local"], select {
+/* ADDED: type="date" AND type="time" */
+input[type="text"], input[type="password"], input[type="number"], input[type="file"], input[type="datetime-local"], input[type="date"], input[type="time"], select {
   width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 13px; outline: none; background: var(--input-bg); color: var(--text-color);
 }
+
+/* NATIVE CALENDAR ICON BLEND FIX */
+::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: 0.2s; }
+::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+body.dark-mode input[type="date"], body.dark-mode input[type="time"], body.dark-mode input[type="datetime-local"] { color-scheme: dark; }
+body.dark-mode ::-webkit-calendar-picker-indicator { filter: invert(1); }
 
 input:disabled, select:disabled { background-color: rgba(0,0,0,0.06) !important; cursor: not-allowed; opacity: 0.7; }
 
@@ -673,26 +680,34 @@ body.dark-mode .daily-reward-card {
 .bulk-table th { background: #0f172a; position: sticky; top: 0; color: white; }
 .bulk-table input { padding: 6px; font-size: 11px; border-radius: 6px; }
 
-/* HIGH GLOSS NEON GLASSMORPHISM FOR STUDENT DASHBOARD */
+/* REFINED PREMIUM GLASSMORPHISM FOR STUDENT DASHBOARD */
 body.student-mode .card, 
-body.student-mode .daily-reward-card,
-body.student-mode .modal-content {
-  background: rgba(255, 255, 255, 0.45) !important;
-  backdrop-filter: blur(20px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
-  border: 1.5px solid rgba(2, 136, 209, 0.3) !important;
-  box-shadow: 0 8px 32px 0 rgba(2, 136, 209, 0.15), inset 0 0 15px rgba(255, 255, 255, 0.6) !important;
-  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+body.student-mode .daily-reward-card {
+  background: rgba(255, 255, 255, 0.85) !important; /* Increased opacity for readability */
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  border: 1px solid rgba(2, 136, 209, 0.2) !important;
+  box-shadow: 0 8px 32px 0 rgba(2, 136, 209, 0.08), inset 0 0 10px rgba(255, 255, 255, 0.5) !important;
 }
 
 body.dark-mode.student-mode .card,
-body.dark-mode.student-mode .daily-reward-card,
+body.dark-mode.student-mode .daily-reward-card {
+  background: rgba(15, 23, 42, 0.85) !important; /* Increased opacity for dark mode */
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Fix for Modals: Modals containing forms should be strictly solid/readable */
+body.student-mode .modal-content {
+  background: var(--card-bg) !important;
+  border: 1.5px solid rgba(2, 136, 209, 0.4) !important;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.25) !important;
+}
 body.dark-mode.student-mode .modal-content {
-  background: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(20px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
-  border: 1.5px solid rgba(56, 189, 248, 0.35) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.12), inset 0 0 12px rgba(255, 255, 255, 0.05) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.7) !important;
 }
 
 /* WEEKLY SCHEDULE GRID LAYOUT FIXES - PRO GLASS LOOK */
