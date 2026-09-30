@@ -879,13 +879,19 @@ body.dark-mode .btn-status-claimed {
   background: rgba(0,0,0,0.02);
 }
 
-     .opt-row {
+    .opt-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 6px;
 }
+
+/* MASTER SCROLL & HEIGHT FIX */
+canvas { touch-action: pan-y !important; }
+.slide-container, .prof-slide-container { overflow-x: hidden !important; overflow-y: visible !important; height: auto !important; min-height: 400px; }
+.slide-pane.active, .prof-slide-pane.active { position: relative !important; height: auto !important; }
 </style>
+
 
 </head>
 <body>
@@ -3012,9 +3018,9 @@ Exact Output JSON Format Required:
             </div>
 
                             <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
-            <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
-                <div style="position: relative; height: 180px; width: 100%; touch-action: pan-y;">
-                    <canvas id="spStudyChartCanvas" style="touch-action: pan-y;"></canvas>
+                       <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
+                <div style="position: relative; height: 280px; width: 100%; touch-action: pan-y;">
+                    <canvas id="spStudyChartCanvas"></canvas>
                 </div>
 
                 
@@ -9120,8 +9126,9 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10 
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
-            plugins: [{
+                   options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
+
+          plugins: [{
                 id: 'centerText',
                 beforeDraw: function(chart) {
                     var width = chart.width, height = chart.height, cCtx = chart.ctx;
@@ -9206,7 +9213,8 @@ localStorage.setItem("loggedPass", p);
                 stIndividualCharts[idx] = new Chart(ctx, {
                     type: 'doughnut',
                     data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: ['#16a34a', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 5 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
+                                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
+
                 });
             }
         });
@@ -9447,8 +9455,8 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10
                 }]
             },
-            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip:{enabled:false} } },
-            plugins: [{
+                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
+       plugins: [{
                 id: 'centerTextSp',
                 beforeDraw: function(chart) {
                     var width = chart.width, height = chart.height, cCtx = chart.ctx;
