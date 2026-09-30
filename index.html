@@ -9039,6 +9039,35 @@ localStorage.setItem("loggedPass", p);
         window.renderSyllabusGraphs();
     };
 
+
+          // ==========================================
+    // 🚀 STUDENT PROFILE MODAL - TABS ENGINE FIX
+    // ==========================================
+    window.switchStudentProfileTab = function(tabName) {
+        const btnProfile = document.getElementById("spTabProfileBtn");
+        const btnLeaves = document.getElementById("spTabLeavesBtn");
+        const secProfile = document.getElementById("spProfileSection");
+        const secLeaves = document.getElementById("spLeaveAppSection");
+
+        if (tabName === 'profile') {
+            btnProfile.classList.add("active");
+            btnLeaves.classList.remove("active");
+            secProfile.style.display = "block";
+            secLeaves.style.display = "none";
+        } else if (tabName === 'leaves') {
+            btnProfile.classList.remove("active");
+            btnLeaves.classList.add("active");
+            secProfile.style.display = "none";
+            secLeaves.style.display = "block";
+            
+            // Student ka ID utha kar uski Leave Applications load karna
+            const admn = document.getElementById("profStudentAdmn").value;
+            if (admn) {
+                window.loadStudentProfileLeaves(admn);
+            }
+        }
+    };
+
       
     </script>
 </body>
