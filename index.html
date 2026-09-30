@@ -2915,14 +2915,33 @@ Exact Output JSON Format Required:
           <div class="sub-tab-btn" id="spTabStudyBtn" onclick="window.switchStudentProfileTab('study')" style="flex:1;">📊 Status</div>
         </div>
 
-        <!-- Sliding CSS Engine directly for this modal -->
+                <!-- Sliding CSS Engine directly for this modal -->
         <style>
-          .prof-slide-container { position: relative; overflow: hidden; width: 100%; min-height: 380px; }
-          .prof-slide-pane { position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; opacity: 0; pointer-events: none; }
-          .prof-slide-pane.active { opacity: 1; pointer-events: auto; position: relative; transform: translateX(0); }
+          .prof-slide-container { 
+            position: relative; 
+            overflow: hidden; 
+            width: 100%; 
+            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* Bada-Chota hone ki Smooth Animation */
+          }
+          .prof-slide-pane { 
+            position: absolute; 
+            width: 100%; 
+            top: 0; 
+            left: 0; 
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease; 
+            opacity: 0; 
+            pointer-events: none; 
+          }
+          .prof-slide-pane.active { 
+            opacity: 1; 
+            pointer-events: auto; 
+            transform: translateX(0); 
+            /* Yahan se relative hata diya taake height JS se control ho sake */
+          }
           .prof-slide-pane.hidden-left { transform: translateX(-50px); }
           .prof-slide-pane.hidden-right { transform: translateX(50px); }
         </style>
+
 
         <div class="prof-slide-container">
             <!-- TAB 1: PROFILE INFO -->
@@ -5692,10 +5711,14 @@ localStorage.setItem("loggedPass", p);
               <div style="font-size:10px; font-weight:900; color:white; background:${statusColor}; padding:4px 8px; border-radius:8px;">${l.status}</div>
             </div>`;
         });
-      } catch(e) {
+          } catch(e) {
         container.innerHTML = `<div style="text-align:center; padding:14px; color:red;">Failed to load applications.</div>`;
       }
+      
+      // ✅ YE EK LINE YAHAN ADD KARNI HAI
+      setTimeout(() => window.syncProfileModalHeight(), 150);
     };
+
 
 
     function populateTeacherStudentDropdowns() {
@@ -9165,10 +9188,19 @@ localStorage.setItem("loggedPass", p);
     };
 
 
-             // ==========================================
+     // ==========================================
     // 🚀 STUDENT PROFILE MODAL - TABS & GRAPH ENGINE
     // ==========================================
     let spStudyChart = null;
+
+    // Har screen ke content ke hisaab se modal ko bada-chota karne ka engine
+    window.syncProfileModalHeight = function() {
+        const container = document.querySelector(".prof-slide-container");
+        const activePane = document.querySelector(".prof-slide-pane.active");
+        if(container && activePane) {
+            container.style.height = activePane.scrollHeight + "px";
+        }
+    };
 
     window.switchStudentProfileTab = function(tabName) {
         document.getElementById("spTabProfileBtn").classList.toggle("active", tabName === 'profile');
@@ -9185,6 +9217,8 @@ localStorage.setItem("loggedPass", p);
             profPane.classList.add("active");
             leavePane.classList.add("hidden-right");
             studyPane.classList.add("hidden-right");
+            setTimeout(() => window.syncProfileModalHeight(), 150);
+            
         } else if (tabName === 'leaves') {
             profPane.classList.add("hidden-left");
             leavePane.classList.add("active");
@@ -9192,6 +9226,7 @@ localStorage.setItem("loggedPass", p);
             
             const admn = document.getElementById("profStudentAdmn").value;
             if (admn) window.loadStudentProfileLeaves(admn);
+            setTimeout(() => window.syncProfileModalHeight(), 150);
             
         } else if (tabName === 'study') {
             profPane.classList.add("hidden-left");
@@ -9201,8 +9236,10 @@ localStorage.setItem("loggedPass", p);
             const admn = document.getElementById("profStudentAdmn").value;
             const cls = document.getElementById("profClassSelect").value;
             if (admn && cls) window.initProfileStudyStatus(admn, cls);
+            setTimeout(() => window.syncProfileModalHeight(), 150);
         }
     };
+
 
     window.initProfileStudyStatus = async function(admn, clsStr) {
         const cls = cleanClassStr(clsStr);
@@ -9321,11 +9358,15 @@ localStorage.setItem("loggedPass", p);
                     cCtx.font = "900 " + fontSize + "em sans-serif";
                     cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
                     var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
-                    cCtx.fillText(text, textX, textY); cCtx.save();
+                                    cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
+        
+        // ✅ YE EK LINE YAHAN BHI ADD KARNI HAI
+        setTimeout(() => window.syncProfileModalHeight(), 150);
     };
+
 
 
       
