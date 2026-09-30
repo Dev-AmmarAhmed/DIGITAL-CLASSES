@@ -886,10 +886,9 @@ body.dark-mode .btn-status-claimed {
   margin-top: 6px;
 }
 
-/* MASTER SCROLL & HEIGHT FIX */
+/* MASTER SCROLL & HEIGHT FIX (UPDATED) */
 canvas { touch-action: pan-y !important; }
-.slide-container, .prof-slide-container { overflow-x: hidden !important; overflow-y: visible !important; height: auto !important; min-height: 400px; }
-.slide-pane.active, .prof-slide-pane.active { position: relative !important; height: auto !important; }
+/* Humne !important overrides hata diye hain taake JS perfectly slide animation aur scroll handle kar sake */
 </style>
 
 
@@ -5279,8 +5278,8 @@ localStorage.setItem("loggedPass", p);
       container.innerHTML = "";
       if(homeworks && Object.keys(homeworks).length > 0) {
         Object.values(homeworks).forEach(hw => {
-          container.innerHTML += `<div style="padding:14px; border:1px solid var(--border-color); border-radius:16px; margin-bottom:12px; background:rgba(0,0,0,0.02);"><div style="font-size:14px; font-weight:800; color:#0288d1;">${hw.title}</div><div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Date: ${hw.date}</div><img src="${hw.file}" class="homework-card-img" alt="Homework Photo"></div>`;
-             });
+          container.innerHTML += `<div style="padding:14px; border:1px solid var(--border-color); border-radius:16px; margin-bottom:12px; background:rgba(0,0,0,0.02);"><div style="font-size:14px; font-weight:800; color:#0288d1;">${hw.title}</div><div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Date: ${hw.date}</div><img src="${hw.file}" class="homework-card-img" alt="Homework Photo" onload="window.syncStudentStudyHeight()"></div>`;
+   });
       } else { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No homework assigned yet.</p>`; }
       setTimeout(() => window.syncStudentStudyHeight(), 150); // Height Update Engine
     }
@@ -8029,6 +8028,30 @@ localStorage.setItem("loggedPass", p);
       }, 2000);
 
 
+    // YEH NAYA CODE ADD KAREIN: Auto Height Adjuster (Syllabus aur Study Material ke liye)
+    const resizeObserver = new ResizeObserver(entries => {
+        let updatedStudy = false;
+        let updatedProf = false;
+        for(let entry of entries) {
+            if(entry.target.classList.contains('active')) {
+                if(entry.target.classList.contains('slide-pane') && !updatedStudy) {
+                    window.syncStudentStudyHeight();
+                    updatedStudy = true;
+                }
+                if(entry.target.classList.contains('prof-slide-pane') && !updatedProf) {
+                    window.syncProfileModalHeight();
+                    updatedProf = true;
+                }
+            }
+        }
+    });
+
+    // Observer ko sab tabs par laga dein
+    document.querySelectorAll('.slide-pane, .prof-slide-pane').forEach(pane => {
+        resizeObserver.observe(pane);
+    });
+
+   
       window.initNativePushAndSW();
       setTimeout(() => {
         const loggedUser = localStorage.getItem("loggedUser"), loggedRole = localStorage.getItem("loggedRole");
@@ -8597,12 +8620,22 @@ localStorage.setItem("loggedPass", p);
     };
 
 
-    // HEIGHT SYNC ENGINE FOR STUDENT TAB
     window.syncStudentStudyHeight = function() {
-        const container = document.querySelector(".slide-container");
-        const activePane = document.querySelector(".slide-pane.active");
-        if(container && activePane) { container.style.height = activePane.scrollHeight + "px"; }
-    };
+    const container = document.querySelector(".slide-container");
+    const activePane = document.querySelector(".slide-pane.active");
+    if(container && activePane) { 
+        container.style.height = (activePane.scrollHeight + 50) + "px"; 
+    }
+};
+
+window.syncProfileModalHeight = function() {
+    const container = document.querySelector(".prof-slide-container");
+    const activePane = document.querySelector(".prof-slide-pane.active");
+    if(container && activePane) {
+        container.style.height = (activePane.scrollHeight + 50) + "px";
+    }
+};
+
 
     // Smooth Sliding Animation for Student Study SubTabs
     window.switchStudentStudySubTab = function(type) {
@@ -9299,14 +9332,7 @@ localStorage.setItem("loggedPass", p);
     // ==========================================
     let spStudyChart = null;
 
-    // Har screen ke content ke hisaab se modal ko bada-chota karne ka engine
-    window.syncProfileModalHeight = function() {
-        const container = document.querySelector(".prof-slide-container");
-        const activePane = document.querySelector(".prof-slide-pane.active");
-        if(container && activePane) {
-            container.style.height = activePane.scrollHeight + "px";
-        }
-    };
+  
 
     window.switchStudentProfileTab = function(tabName) {
         document.getElementById("spTabProfileBtn").classList.toggle("active", tabName === 'profile');
