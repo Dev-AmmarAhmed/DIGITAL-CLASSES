@@ -2889,10 +2889,11 @@ Exact Output JSON Format Required:
           <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
       </select>
       
-          <!-- Graph Canvas -->
+           <!-- Graph Canvas -->
       <div style="position: relative; height: 240px; width: 100%; margin-top: 16px; touch-action: pan-y;">
-         <canvas id="adminSyllabusChart" style="pointer-events: none;"></canvas>
+         <canvas id="adminSyllabusChart" style="touch-action: pan-y;"></canvas>
       </div>
+
 
 
       <!-- Selected Subjects Checkboxes -->
@@ -3007,10 +3008,10 @@ Exact Output JSON Format Required:
               </div>
             </div>
 
-                      <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
+                            <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
             <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
                 <div style="position: relative; height: 180px; width: 100%; touch-action: pan-y;">
-                    <canvas id="spStudyChartCanvas" style="pointer-events: none;"></canvas>
+                    <canvas id="spStudyChartCanvas" style="touch-action: pan-y;"></canvas>
                 </div>
 
                 
@@ -6747,11 +6748,24 @@ localStorage.setItem("loggedPass", p);
       });
     });
 
-    async function populateClassSubjectsDropdown() {
+
+          async function populateClassSubjectsDropdown() {
       const select = document.getElementById("cTestSubjectSelect");
       if(!select) return;
       select.innerHTML = '<option value="">-- Loading Subjects... --</option>';
-      const classKey = cleanClassStr(assignedClass);
+      
+      // FIX: Admin ke case mein target class theek se pakdo
+      let targetClass = assignedClass;
+      if(currentRole === "admin") {
+         const adminInteractiveStd = document.getElementById("adminInteractiveTestStdSelect");
+         if (adminInteractiveStd && adminInteractiveStd.value !== "ALL") {
+             targetClass = adminInteractiveStd.value;
+         } else {
+             targetClass = "1"; // Default fallback
+         }
+      }
+      
+      const classKey = cleanClassStr(targetClass);
       const subjectsData = await safeDataFetch(`subjects/${classKey}`);
       select.innerHTML = '<option value="">-- Select Subject --</option>';
       let hasCustomSubjects = false;
@@ -6760,6 +6774,7 @@ localStorage.setItem("loggedPass", p);
       }
       if(!hasCustomSubjects) { select.innerHTML += `<option value="English">English</option><option value="Mathematics">Mathematics</option><option value="Science">Science</option><option value="Urdu">Urdu</option><option value="General">General</option>`; }
     }
+
 
      addSafeListener("continueTestBuilderBtn", "click", () => {
      const name = document.getElementById("cTestName").value.trim();
@@ -9102,7 +9117,7 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10 
                 }]
             },
-            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
             plugins: [{
                 id: 'centerText',
                 beforeDraw: function(chart) {
@@ -9188,7 +9203,7 @@ localStorage.setItem("loggedPass", p);
                 stIndividualCharts[idx] = new Chart(ctx, {
                     type: 'doughnut',
                     data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: ['#16a34a', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 5 }] },
-                    options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
                 });
             }
         });
@@ -9227,7 +9242,7 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10 
                 }] 
             },
-            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip:{enabled:true} } },
             plugins: [{
                 id: 'centerTextHome',
                 beforeDraw: function(chart) {
