@@ -2849,8 +2849,11 @@ Exact Output JSON Format Required:
       </div>
     </div>
 
-        <!-- SYLLABUS STATUS BOX (INTERACTIVE GRAPH UI) -->
-    <div class="card unfold-card" style="margin-top: 16px;">
+
+    
+    <!-- SYLLABUS STATUS BOX (INTERACTIVE GRAPH UI) -->
+    <!-- Scrolling fix: Added margin-bottom 80px to clear the nav bar -->
+    <div class="card unfold-card" style="margin-top: 16px; margin-bottom: 80px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
         <div class="card-title" style="border:none; margin-bottom:0;">📊 Syllabus Status</div>
         <button class="btn-primary btn-blue" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="window.openUpdateSyllabusModal()">✏️ Update Syllabus</button>
@@ -2859,8 +2862,9 @@ Exact Output JSON Format Required:
       <label>Select Target Standard:</label>
       <!-- Dropdown badalte hi Graph load hoga -->
       <select id="sylTrackClassSelect" onchange="window.initAdminSyllabusTracker()">
+          <option value="ALL">All Standard</option>
           <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-          <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+      <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
           <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
           <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
       </select>
@@ -8445,24 +8449,43 @@ localStorage.setItem("loggedPass", p);
     // ==========================================
     // 🚀 NEW SYLLABUS TRACK & TAB ENGINES (PHASE 1)
     // ==========================================
-    
-    // Open Teacher/Admin Tab safely
+
+
+          // Open Teacher/Admin Tab safely
     window.openStudyMaterialTab = function(e, role) {
       if(e) e.stopPropagation();
       window.closeDrawer();
       window.switchTab('mgmtTabStudyMaterial', null, e);
+      
+      const sylTrackSelect = document.getElementById("sylTrackClassSelect");
       
       if(role === 'admin') {
         document.getElementById("adminManageClassBoxTab").style.display = "block";
         const adminClsSelect = document.getElementById("matAdminManageClassSelectTab");
         document.getElementById("manageClassTextTab").innerText = `Materials for Class ${adminClsSelect.value}`;
         window.loadTeacherStudyMaterials(adminClsSelect.value);
+        
+        // ADMIN Settings: Default "ALL" aur Enabled Select
+        sylTrackSelect.disabled = false;
+        sylTrackSelect.style.backgroundColor = "";
+        sylTrackSelect.style.cursor = "pointer";
+        sylTrackSelect.value = "ALL";
       } else {
         document.getElementById("adminManageClassBoxTab").style.display = "none";
         document.getElementById("manageClassTextTab").innerText = `Materials for Class ${assignedClass}`;
         window.loadTeacherStudyMaterials(assignedClass);
+        
+        // TEACHER Settings: Pre-locked, No dropdown popup
+        sylTrackSelect.value = cleanClassStr(assignedClass);
+        sylTrackSelect.disabled = true; 
+        sylTrackSelect.style.backgroundColor = "rgba(0,0,0,0.06)";
+        sylTrackSelect.style.cursor = "not-allowed";
       }
+      
+      // Initialize Tracker Graphics
+      window.initAdminSyllabusTracker();
     };
+
 
 
           // Smooth Sliding Animation for Student Study SubTabs
@@ -8800,9 +8823,19 @@ localStorage.setItem("loggedPass", p);
     let stHomeSylChart = null;
     let stIndividualCharts = {};
 
-    // 1. ADMIN/TEACHER GRAPH LOGIC
+     // 1. ADMIN/TEACHER GRAPH LOGIC
     window.initAdminSyllabusTracker = async function() {
         let cls = document.getElementById("sylTrackClassSelect").value;
+        const chkContainer = document.getElementById("sylAdminCheckboxes");
+
+        if (cls === "ALL") {
+            chkContainer.style.display = "none"; // Admin mode mein checkboxes gayab
+            window.refreshAdminSyllabusGraph();
+            return;
+        }
+
+        chkContainer.style.display = "grid"; // Wapas lao agar specific class ho
+        
         if(currentRole === 'teacher') {
             cls = cleanClassStr(assignedClass);
             document.getElementById("sylTrackClassSelect").value = cls;
@@ -8811,7 +8844,6 @@ localStorage.setItem("loggedPass", p);
         cls = cleanClassStr(cls);
 
         const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
-        const chkContainer = document.getElementById("sylAdminCheckboxes");
         
         chkContainer.innerHTML = `<div class="checkbox-item" style="font-weight:900;"><input type="checkbox" id="sylChkAll" checked onchange="window.toggleAllSylSubjects(this)"> ALL</div>`;
 
@@ -8834,75 +8866,140 @@ localStorage.setItem("loggedPass", p);
     };
 
     window.refreshAdminSyllabusGraph = async function() {
-        const allChk = document.getElementById("sylChkAll");
-        const chks = Array.from(document.querySelectorAll(".syl-filter-chk"));
-        if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
-
-        const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
+        const cls = document.getElementById("sylTrackClassSelect").value;
         const breakdownDiv = document.getElementById("sylTrackBreakdown");
         const ctx = document.getElementById("adminSyllabusChart");
         if(!ctx) return;
 
-        if(selectedSubs.length === 0) {
-            breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted);'>Select at least one subject to view graph.</div>";
-            if(adminSylChart) adminSylChart.destroy();
-            return;
-        }
-
-        const cls = cleanClassStr(document.getElementById("sylTrackClassSelect").value);
-        const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cls);
-
         let totalPossibleCompletions = 0;
         let actualCompletions = 0;
         let breakdownHtml = "";
-
-        const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
-        const allProgress = await safeDataFetch(`syllabus_progress`) || {};
-
         const labels = [];
         const dataVals = [];
-        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
+        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a', '#e11d48', '#059669', '#ea580c', '#4f46e5'];
 
-        selectedSubs.forEach((sub, i) => {
-            const subChaps = allChapters[sub] || [];
-            if(subChaps.length === 0) return;
+        const allChapters = await safeDataFetch(`syllabus_chapters`) || {};
+        const allProgress = await safeDataFetch(`syllabus_progress`) || {};
+        const liveStudents = getLiveStudents();
 
-            let subCompletedCount = 0;
-            let subPossible = subChaps.length * students.length;
+        if (cls === "ALL") {
+            // ADMIN ALL CLASSES LOGIC (No Subject Checkboxes)
+            const classesList = ["Nursery", "Jr. KG", "Sr. KG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+            
+            classesList.forEach((cName, i) => {
+                const cKey = cleanClassStr(cName);
+                const classStudents = liveStudents.filter(s => cleanClassStr(s.class) === cKey);
+                if (classStudents.length === 0) return;
 
-            students.forEach(st => {
-                const stProg = allProgress[st.admn] ? allProgress[st.admn][sub] : null;
-                if(stProg) {
-                    subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
+                const classChaps = allChapters[cKey] || {};
+                if (Object.keys(classChaps).length === 0) return;
+
+                let clsPossible = 0;
+                let clsCompleted = 0;
+
+                Object.keys(classChaps).forEach(sub => {
+                    const subChapsList = classChaps[sub];
+                    if(Array.isArray(subChapsList)) {
+                        clsPossible += (subChapsList.length * classStudents.length);
+                        classStudents.forEach(st => {
+                            const stProg = allProgress[st.admn] ? allProgress[st.admn][sub] : null;
+                            if(stProg) {
+                                subChapsList.forEach(ch => { if(stProg[`ch_${ch.no}`]) clsCompleted++; });
+                            }
+                        });
+                    }
+                });
+
+                if (clsPossible > 0) {
+                    totalPossibleCompletions += clsPossible;
+                    actualCompletions += clsCompleted;
+                    const clsPercent = Math.round((clsCompleted / clsPossible) * 100);
+                    
+                    labels.push(`Class ${cName}`);
+                    dataVals.push(clsPercent);
+
+                    breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
+                        <span style="color:${bgColors[i % bgColors.length]}">● Class ${cName}</span>
+                        <span>${clsPercent}% Overall Completion</span>
+                    </div>`;
                 }
             });
 
-            totalPossibleCompletions += subPossible;
-            actualCompletions += subCompletedCount;
-            
-            const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
-            labels.push(sub);
-            dataVals.push(subPercent);
+            if(labels.length === 0) {
+                breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>No syllabus data available for any class.</div>";
+                if(adminSylChart) adminSylChart.destroy();
+                return;
+            }
 
-            breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
-                <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
-                <span>${subPercent}% Student Completion</span>
-            </div>`;
-        });
+        } else {
+            // TEACHER / SPECIFIC CLASS LOGIC
+            const allChk = document.getElementById("sylChkAll");
+            const chks = Array.from(document.querySelectorAll(".syl-filter-chk"));
+            if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
 
-        breakdownDiv.innerHTML = breakdownHtml || "No progress data generated.";
+            const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
+
+            if(selectedSubs.length === 0) {
+                breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>Select at least one subject to view graph.</div>";
+                if(adminSylChart) adminSylChart.destroy();
+                return;
+            }
+
+            const cleanCls = cleanClassStr(cls);
+            const classStudents = liveStudents.filter(s => cleanClassStr(s.class) === cleanCls);
+            const clsChaps = allChapters[cleanCls] || {};
+
+            selectedSubs.forEach((sub, i) => {
+                const subChaps = clsChaps[sub] || [];
+                if(subChaps.length === 0) return;
+
+                let subCompletedCount = 0;
+                let subPossible = subChaps.length * classStudents.length;
+
+                classStudents.forEach(st => {
+                    const stProg = allProgress[st.admn] ? allProgress[st.admn][sub] : null;
+                    if(stProg) {
+                        subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
+                    }
+                });
+
+                totalPossibleCompletions += subPossible;
+                actualCompletions += subCompletedCount;
+                
+                const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
+                labels.push(sub);
+                dataVals.push(subPercent);
+
+                breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
+                    <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
+                    <span>${subPercent}% Student Completion</span>
+                </div>`;
+            });
+        }
+
+        breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:12px; color:var(--text-muted); text-align:center;'>No progress data generated.</div>";
         const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
+
+        let finalLabels = labels;
+        let finalData = dataVals;
+        let finalColors = bgColors.slice(0, labels.length);
+
+        if (actualCompletions === 0) {
+            finalLabels = ['Not Started'];
+            finalData = [1];
+            finalColors = ['rgba(0,0,0,0.05)'];
+        }
 
         if(adminSylChart) adminSylChart.destroy();
         adminSylChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels: finalLabels,
                 datasets: [{
-                    data: dataVals,
-                    backgroundColor: bgColors.slice(0, labels.length),
+                    data: finalData,
+                    backgroundColor: finalColors,
                     borderWidth: 2, borderColor: 'var(--card-bg)',
-                    hoverOffset: 15 // This creates the 3D Pop Out interaction!
+                    hoverOffset: 15 
                 }]
             },
             options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } },
@@ -8913,13 +9010,14 @@ localStorage.setItem("loggedPass", p);
                     cCtx.restore();
                     var fontSize = (height / 114).toFixed(2);
                     cCtx.font = "900 " + fontSize + "em sans-serif";
-                    cCtx.textBaseline = "middle"; cCtx.fillStyle = "#0288d1";
+                    cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
                     var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
                     cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
     };
+
 
        // 2. STUDENT GRAPH LOGIC (Individual & Home)
     window.renderSyllabusGraphs = async function() {
