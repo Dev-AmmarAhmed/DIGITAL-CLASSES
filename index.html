@@ -3682,20 +3682,32 @@ Exact Output JSON Format Required:
     <!-- ====================================================================
        SECTION 5: CORE ENGINE LOGIC & FIREBASE REALTIME SYNC (FIXED)
        ==================================================================== -->
-  <!-- ADD SUBJECT MODAL -->
-  <div id="addSubjectModal" class="modal-overlay">
+   <!-- ADD SUBJECT MODAL -->
+  <div id="addSubjectModal" class="modal-overlay" style="z-index: 100050;">
     <div class="modal-content">
       <div class="modal-header">
         <span>➕ Add New Subject</span>
         <span class="close-modal" onclick="closeModal('addSubjectModal')">✕</span>
       </div>
       <div class="modal-body">
+        
+        <div id="adminAddSubClassBox" style="display:none; margin-bottom: 12px;">
+          <label>Select Target Class *:</label>
+          <select id="subAdminClassSelect">
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+
         <label>Subject Name *:</label>
         <input type="text" id="newSubjectNameInput" placeholder="e.g. Science / Mathematics / History">
         <button id="saveSubjectBtn" class="btn-primary btn-green" style="margin-top:14px;">💾 Save Subject</button>
       </div>
     </div>
   </div>
+
     <script type="module">
 
       
@@ -4389,7 +4401,16 @@ Exact Output JSON Format Required:
         }
       }
       if(id === "bulkStudentModal") { generateBulkStudentTable(); }
-     
+
+
+            if(id === "addSubjectModal") {
+          if(currentRole === "admin") {
+              document.getElementById("adminAddSubClassBox").style.display = "block";
+          } else {
+              document.getElementById("adminAddSubClassBox").style.display = "none";
+          }
+      }
+
       
             if(id === "addStudyMaterialModal") {
         if(currentRole === "admin") { 
@@ -6707,12 +6728,17 @@ localStorage.setItem("loggedPass", p);
       });
     };
 
-    addSafeListener("saveSubjectBtn", "click", () => {
+
+          addSafeListener("saveSubjectBtn", "click", () => {
       const btn = document.getElementById("saveSubjectBtn");
       runWithBtnSpinner(btn, "💾 Save Subject", async () => {
         const subjectName = document.getElementById("newSubjectNameInput").value.trim();
         if(!subjectName) { alert("Please enter a subject name."); return; }
-        const classKey = cleanClassStr(assignedClass);
+        
+        // Agar admin hai toh dropdown ki class lo, warna teacher ki assigned class lo
+        const targetClass = currentRole === "admin" ? document.getElementById("subAdminClassSelect").value : assignedClass;
+        const classKey = cleanClassStr(targetClass);
+        
         const subjId = Date.now().toString();
         await set(ref(db, `subjects/${classKey}/${subjId}`), { id: subjId, name: subjectName, class: classKey, date: getTodayFormattedDate() });
         alert(`✔ Subject "${subjectName}" saved successfully for Class ${assignedClass}!`);
@@ -9076,7 +9102,7 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10 
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
             plugins: [{
                 id: 'centerText',
                 beforeDraw: function(chart) {
@@ -9162,7 +9188,7 @@ localStorage.setItem("loggedPass", p);
                 stIndividualCharts[idx] = new Chart(ctx, {
                     type: 'doughnut',
                     data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: ['#16a34a', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 5 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                    options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
                 });
             }
         });
@@ -9201,7 +9227,7 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10 
                 }] 
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } },
+            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
             plugins: [{
                 id: 'centerTextHome',
                 beforeDraw: function(chart) {
@@ -9403,7 +9429,7 @@ localStorage.setItem("loggedPass", p);
                     hoverOffset: 10
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip:{enabled:false} } },
+            options: { events: [], responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip:{enabled:false} } },
             plugins: [{
                 id: 'centerTextSp',
                 beforeDraw: function(chart) {
