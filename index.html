@@ -2889,10 +2889,11 @@ Exact Output JSON Format Required:
           <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
       </select>
       
-      <!-- Graph Canvas -->
-      <div style="position: relative; height: 240px; width: 100%; margin-top: 16px;">
-         <canvas id="adminSyllabusChart" style="touch-action: pan-y;"></canvas>
+          <!-- Graph Canvas -->
+      <div style="position: relative; height: 240px; width: 100%; margin-top: 16px; touch-action: pan-y;">
+         <canvas id="adminSyllabusChart" style="pointer-events: none;"></canvas>
       </div>
+
 
       <!-- Selected Subjects Checkboxes -->
       <div class="checkbox-grid" id="sylAdminCheckboxes" style="margin-top: 16px;">
@@ -3006,11 +3007,12 @@ Exact Output JSON Format Required:
               </div>
             </div>
 
-            <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
+                      <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
             <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
-                <div style="position: relative; height: 180px; width: 100%;">
-                    <canvas id="spStudyChartCanvas" style="touch-action: pan-y;"></canvas>
+                <div style="position: relative; height: 180px; width: 100%; touch-action: pan-y;">
+                    <canvas id="spStudyChartCanvas" style="pointer-events: none;"></canvas>
                 </div>
+
                 
                 <div class="checkbox-grid" id="spStudySubjectCheckboxes" style="margin-top: 16px; max-height: 120px; overflow-y: auto;">
                     <!-- Auto loaded subjects -->
@@ -8932,7 +8934,7 @@ localStorage.setItem("loggedPass", p);
         window.refreshAdminSyllabusGraph();
     };
 
-    window.refreshAdminSyllabusGraph = async function() {
+      window.refreshAdminSyllabusGraph = async function() {
         const cls = document.getElementById("sylTrackClassSelect").value;
         const breakdownDiv = document.getElementById("sylTrackBreakdown");
         const ctx = document.getElementById("adminSyllabusChart");
@@ -8941,8 +8943,11 @@ localStorage.setItem("loggedPass", p);
         let totalPossibleCompletions = 0;
         let actualCompletions = 0;
         let breakdownHtml = "";
-        const labels = [];
-        const dataVals = [];
+        
+        // Hamein 'Done' aur 'Remaining' data ikattha karna hai
+        const chartLabels = [];
+        const chartData = [];
+        const chartColors = [];
         const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a', '#e11d48', '#059669', '#ea580c', '#4f46e5'];
 
         const allChapters = await safeDataFetch(`syllabus_chapters`) || {};
@@ -8950,7 +8955,6 @@ localStorage.setItem("loggedPass", p);
         const liveStudents = getLiveStudents();
 
         if (cls === "ALL") {
-            // ADMIN ALL CLASSES LOGIC (No Subject Checkboxes)
             const classesList = ["Nursery", "Jr. KG", "Sr. KG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
             
             classesList.forEach((cName, i) => {
@@ -8982,24 +8986,23 @@ localStorage.setItem("loggedPass", p);
                     actualCompletions += clsCompleted;
                     const clsPercent = Math.round((clsCompleted / clsPossible) * 100);
                     
-                    labels.push(`Class ${cName}`);
-                    dataVals.push(clsPercent);
+                    chartLabels.push(`Class ${cName} (Done)`);
+                    chartData.push(clsCompleted);
+                    chartColors.push(bgColors[i % bgColors.length]);
+                    
+                    // The Remaining (Grey) part for this class
+                    chartLabels.push(`Class ${cName} (Left)`);
+                    chartData.push(clsPossible - clsCompleted);
+                    chartColors.push('rgba(0,0,0,0.05)');
 
                     breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
                         <span style="color:${bgColors[i % bgColors.length]}">● Class ${cName}</span>
-                        <span>${clsPercent}% Overall Completion</span>
+                        <span>${clsPercent}% Overall</span>
                     </div>`;
                 }
             });
 
-            if(labels.length === 0) {
-                breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>No syllabus data available for any class.</div>";
-                if(adminSylChart) adminSylChart.destroy();
-                return;
-            }
-
         } else {
-            // TEACHER / SPECIFIC CLASS LOGIC
             const allChk = document.getElementById("sylChkAll");
             const chks = Array.from(document.querySelectorAll(".syl-filter-chk"));
             if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
@@ -9034,8 +9037,16 @@ localStorage.setItem("loggedPass", p);
                 actualCompletions += subCompletedCount;
                 
                 const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
-                labels.push(sub);
-                dataVals.push(subPercent);
+                
+                // Active Subject Color Arc
+                chartLabels.push(`${sub} (Done)`);
+                chartData.push(subCompletedCount);
+                chartColors.push(bgColors[i % bgColors.length]);
+                
+                // Grey remaining Arc for this subject
+                chartLabels.push(`${sub} (Left)`);
+                chartData.push(subPossible - subCompletedCount);
+                chartColors.push('rgba(0,0,0,0.05)');
 
                 breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
                     <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
@@ -9047,29 +9058,25 @@ localStorage.setItem("loggedPass", p);
         breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:12px; color:var(--text-muted); text-align:center;'>No progress data generated.</div>";
         const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
 
-        let finalLabels = labels;
-        let finalData = dataVals;
-        let finalColors = bgColors.slice(0, labels.length);
-
-        if (actualCompletions === 0) {
-            finalLabels = ['Not Started'];
-            finalData = [1];
-            finalColors = ['rgba(0,0,0,0.05)'];
+        if (actualCompletions === 0 && totalPossibleCompletions === 0) {
+            chartLabels.push('Not Started');
+            chartData.push(1);
+            chartColors.push('rgba(0,0,0,0.05)');
         }
 
         if(adminSylChart) adminSylChart.destroy();
         adminSylChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: finalLabels,
+                labels: chartLabels,
                 datasets: [{
-                    data: finalData,
-                    backgroundColor: finalColors,
-                    borderWidth: 2, borderColor: 'var(--card-bg)',
-                    hoverOffset: 15 
+                    data: chartData,
+                    backgroundColor: chartColors,
+                    borderWidth: 1, borderColor: 'var(--card-bg)',
+                    hoverOffset: 10 
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: false } } },
             plugins: [{
                 id: 'centerText',
                 beforeDraw: function(chart) {
@@ -9084,6 +9091,7 @@ localStorage.setItem("loggedPass", p);
             }]
         });
     };
+
 
 
        // 2. STUDENT GRAPH LOGIC (Individual & Home)
@@ -9314,7 +9322,7 @@ localStorage.setItem("loggedPass", p);
         window.refreshProfileStudyGraph(admn, cls);
     };
 
-    window.refreshProfileStudyGraph = async function(admn, cls) {
+      window.refreshProfileStudyGraph = async function(admn, cls) {
         const allChk = document.getElementById("spSylChkAll");
         const chks = Array.from(document.querySelectorAll(".sp-syl-filter-chk"));
         if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
@@ -9333,12 +9341,13 @@ localStorage.setItem("loggedPass", p);
         let totalPossibleCompletions = 0;
         let actualCompletions = 0;
         let breakdownHtml = "";
+        
+        const chartLabels = [];
+        const chartData = [];
+        const chartColors = [];
 
         const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
         const studentProgress = await safeDataFetch(`syllabus_progress/${admn}`) || {};
-
-        const labels = [];
-        const dataVals = [];
         const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
 
         selectedSubs.forEach((sub, i) => {
@@ -9355,13 +9364,17 @@ localStorage.setItem("loggedPass", p);
 
             totalPossibleCompletions += subPossible;
             actualCompletions += subCompletedCount;
-            
             const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
             
-            if(subCompletedCount > 0) {
-                labels.push(sub);
-                dataVals.push(subCompletedCount);
-            }
+            // Add Done Arc
+            chartLabels.push(`${sub} (Done)`);
+            chartData.push(subCompletedCount);
+            chartColors.push(bgColors[i % bgColors.length]);
+            
+            // Add Remaining Arc
+            chartLabels.push(`${sub} (Left)`);
+            chartData.push(subPossible - subCompletedCount);
+            chartColors.push('rgba(0,0,0,0.05)');
 
             breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color); font-size:11px; font-weight:800;">
                 <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
@@ -9372,29 +9385,25 @@ localStorage.setItem("loggedPass", p);
         breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:11px; color:var(--text-muted); text-align:center;'>No progress recorded yet for selected subjects.</div>";
         const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
 
-        let finalLabels = labels;
-        let finalData = dataVals;
-        let finalColors = bgColors.slice(0, labels.length);
-
-        if (actualCompletions === 0) {
-            finalLabels = ['Not Started'];
-            finalData = [1];
-            finalColors = ['rgba(0,0,0,0.05)'];
+        if (actualCompletions === 0 && totalPossibleCompletions === 0) {
+            chartLabels.push('Not Started');
+            chartData.push(1);
+            chartColors.push('rgba(0,0,0,0.05)');
         }
 
         if(spStudyChart) spStudyChart.destroy();
         spStudyChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: finalLabels,
+                labels: chartLabels,
                 datasets: [{
-                    data: finalData,
-                    backgroundColor: finalColors,
-                    borderWidth: 2, borderColor: 'var(--card-bg)',
+                    data: chartData,
+                    backgroundColor: chartColors,
+                    borderWidth: 1, borderColor: 'var(--card-bg)',
                     hoverOffset: 10
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip:{enabled:false} } },
             plugins: [{
                 id: 'centerTextSp',
                 beforeDraw: function(chart) {
@@ -9404,12 +9413,11 @@ localStorage.setItem("loggedPass", p);
                     cCtx.font = "900 " + fontSize + "em sans-serif";
                     cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
                     var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
-                                    cCtx.fillText(text, textX, textY); cCtx.save();
+                    cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
         
-        // ✅ YE EK LINE YAHAN BHI ADD KARNI HAI
         setTimeout(() => window.syncProfileModalHeight(), 150);
     };
 
