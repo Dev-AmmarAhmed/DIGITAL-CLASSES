@@ -1238,12 +1238,18 @@ body.dark-mode .btn-status-claimed {
           <input type="hidden" id="laLeaveId">
           <input type="hidden" id="laAdmn">
 
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                 <!-- Admin Actions -->
+          <div id="leaveActionButtonsGrid" style="display:none; grid-template-columns: 1fr 1fr; gap:10px;">
              <button class="btn-primary btn-green" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Approved')">✔ Approve</button>
              <button class="btn-primary btn-red" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Denied')">✖ Deny</button>
              <button class="btn-primary btn-orange" style="margin-top:0; padding:10px;" onclick="window.updateLeaveStatus('Pending')">⏳ Pending</button>
              <button class="btn-primary" style="margin-top:0; padding:10px; background:#64748b;" onclick="window.deleteLeaveApp()">🗑️ Delete</button>
           </div>
+          <!-- Teacher/Student Message -->
+          <div id="leaveActionReadOnlyMsg" style="display:none; text-align:center; padding:10px; font-weight:800; color:var(--text-muted); font-size:11px;">
+              🔒 Only Admins can modify leave status.
+          </div>
+
         </div>
       </div>
     </div>
@@ -2037,7 +2043,7 @@ body.dark-mode .btn-status-claimed {
         </div>
         
         <div style="position: relative; height: 180px; width: 100%;">
-           <canvas id="studentHomeSyllabusChart"></canvas>
+           <canvas id="studentHomeSyllabusChart" style="touch-action: pan-y;"></canvas>
         </div>
 
         <!-- NEW GRAPH BREAKDOWN / LEGEND -->
@@ -2133,13 +2139,27 @@ body.dark-mode .btn-status-claimed {
 
 
         
-        .slide-container { position
-        : relative; overflow: hidden; width: 100%; min-height: 400px; }
-        .slide-pane { position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; opacity: 0; pointer-events: none; }
-        .slide-pane.active { opacity: 1; pointer-events: auto; position: relative; transform: translateX(0); }
+        
+        .slide-container { 
+            position: relative; 
+            overflow: hidden; 
+            width: 100%; 
+            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+        .slide-pane { 
+            position: absolute; 
+            width: 100%; 
+            top: 0; 
+            left: 0; 
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease; 
+            opacity: 0; 
+            pointer-events: none; 
+        }
+        .slide-pane.active { opacity: 1; pointer-events: auto; transform: translateX(0); }
         .slide-pane.hidden-left { transform: translateX(-50px); }
         .slide-pane.hidden-right { transform: translateX(50px); }
       </style>
+
 
       <div class="slide-container">
         <!-- PANE 1: MATERIAL -->
@@ -2871,7 +2891,7 @@ Exact Output JSON Format Required:
       
       <!-- Graph Canvas -->
       <div style="position: relative; height: 240px; width: 100%; margin-top: 16px;">
-         <canvas id="adminSyllabusChart"></canvas>
+         <canvas id="adminSyllabusChart" style="touch-action: pan-y;"></canvas>
       </div>
 
       <!-- Selected Subjects Checkboxes -->
@@ -2989,7 +3009,7 @@ Exact Output JSON Format Required:
             <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
             <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
                 <div style="position: relative; height: 180px; width: 100%;">
-                    <canvas id="spStudyChartCanvas"></canvas>
+                    <canvas id="spStudyChartCanvas" style="touch-action: pan-y;"></canvas>
                 </div>
                 
                 <div class="checkbox-grid" id="spStudySubjectCheckboxes" style="margin-top: 16px; max-height: 120px; overflow-y: auto;">
@@ -8423,7 +8443,8 @@ localStorage.setItem("loggedPass", p);
         });
     };
 
-    window.openLeaveActionModal = function(id, admn, name, cls, reason, msg, date, status) {
+
+          window.openLeaveActionModal = function(id, admn, name, cls, reason, msg, date, status) {
         document.getElementById("laLeaveId").value = id;
         document.getElementById("laAdmn").value = admn;
         document.getElementById("laStudentName").innerText = name;
@@ -8432,8 +8453,18 @@ localStorage.setItem("loggedPass", p);
         document.getElementById("laReason").innerText = reason;
         document.getElementById("laMessage").innerText = msg;
         
+        // HIDE BUTTONS FOR TEACHERS/STUDENTS
+        if (currentRole === 'admin') {
+            document.getElementById("leaveActionButtonsGrid").style.display = "grid";
+            document.getElementById("leaveActionReadOnlyMsg").style.display = "none";
+        } else {
+            document.getElementById("leaveActionButtonsGrid").style.display = "none";
+            document.getElementById("leaveActionReadOnlyMsg").style.display = "block";
+        }
+        
         window.openModal("leaveActionModal");
     };
+
 
     window.updateLeaveStatus = async function(newStatus) {
         const leaveId = document.getElementById("laLeaveId").value;
@@ -8510,8 +8541,14 @@ localStorage.setItem("loggedPass", p);
     };
 
 
+    // HEIGHT SYNC ENGINE FOR STUDENT TAB
+    window.syncStudentStudyHeight = function() {
+        const container = document.querySelector(".slide-container");
+        const activePane = document.querySelector(".slide-pane.active");
+        if(container && activePane) { container.style.height = activePane.scrollHeight + "px"; }
+    };
 
-          // Smooth Sliding Animation for Student Study SubTabs
+    // Smooth Sliding Animation for Student Study SubTabs
     window.switchStudentStudySubTab = function(type) {
       document.getElementById("subTabMatBtn").classList.toggle("active", type === 'mat');
       document.getElementById("subTabHwBtn").classList.toggle("active", type === 'hw');
@@ -8535,10 +8572,11 @@ localStorage.setItem("loggedPass", p);
          matPane.classList.add("hidden-left");
          hwPane.classList.add("hidden-left");
          sylPane.classList.add("active");
-         // 🔥 NEW: Syllabus tab open hone par data auto-load hoga
          if(typeof window.initStudentSyllabusTab === 'function') window.initStudentSyllabusTab();
       }
+      setTimeout(() => window.syncStudentStudyHeight(), 150); // Height auto adjust
     };
+
 
 
 
@@ -9081,15 +9119,17 @@ localStorage.setItem("loggedPass", p);
                     homeData.push(subCompleted);
                 }
 
-                html += `
+                                html += `
                 <div class="card unfold-card" style="margin-top:16px; padding:16px; display:flex; align-items:center; gap:16px;">
-                    <div style="position:relative; width:80px; height:80px;"><canvas id="stSylChart_${idx}"></canvas></div>
+                    <!-- Yahan touch-action: pan-y; add kar diya gaya hai -->
+                    <div style="position:relative; width:80px; height:80px;"><canvas id="stSylChart_${idx}" style="touch-action: pan-y;"></canvas></div>
                     <div style="flex:1;">
                         <div style="font-size:14px; font-weight:900; color:var(--text-color);">${sub}</div>
                         <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:4px;">${subCompleted} out of ${subChaps.length} Chaps Completed</div>
                         <div style="font-size:18px; font-weight:900; color:#16a34a; margin-top:4px;">${subPercent}%</div>
                     </div>
                 </div>`;
+
             }
         });
 
