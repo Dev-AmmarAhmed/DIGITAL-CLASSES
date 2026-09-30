@@ -2885,7 +2885,7 @@ Exact Output JSON Format Required:
 
 
   
-     <!-- STUDENT PROFILE MODAL FOR ADMIN & TEACHER -->
+      <!-- STUDENT PROFILE MODAL FOR ADMIN & TEACHER -->
   <div id="studentProfileModal" class="modal-overlay" style="z-index: 100000;">
     <div class="modal-content">
       <div class="modal-header">
@@ -2904,57 +2904,84 @@ Exact Output JSON Format Required:
           </div>
         </div>
 
-        <!-- NEW TAB NAVIGATION -->
-        <div class="sub-nav-tabs" style="margin-bottom:16px;">
-          <div class="sub-tab-btn active" id="spTabProfileBtn" onclick="window.switchStudentProfileTab('profile')">👤 Profile Info</div>
-          <div class="sub-tab-btn" id="spTabLeavesBtn" onclick="window.switchStudentProfileTab('leaves')">📅 Applications</div>
+        <!-- NEW 3 TAB NAVIGATION -->
+        <div class="sub-nav-tabs" style="margin-bottom:16px; display:flex;">
+          <div class="sub-tab-btn active" id="spTabProfileBtn" onclick="window.switchStudentProfileTab('profile')" style="flex:1;">👤 Info</div>
+          <div class="sub-tab-btn" id="spTabLeavesBtn" onclick="window.switchStudentProfileTab('leaves')" style="flex:1;">📅 Leaves</div>
+          <div class="sub-tab-btn" id="spTabStudyBtn" onclick="window.switchStudentProfileTab('study')" style="flex:1;">📊 Status</div>
         </div>
 
-        <!-- TAB 1: PROFILE INFO -->
-        <div id="spProfileSection">
-          <label>Full Name *:</label>
-          <input type="text" id="profNameInput">
+        <!-- Sliding CSS Engine directly for this modal -->
+        <style>
+          .prof-slide-container { position: relative; overflow: hidden; width: 100%; min-height: 380px; }
+          .prof-slide-pane { position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s; opacity: 0; pointer-events: none; }
+          .prof-slide-pane.active { opacity: 1; pointer-events: auto; position: relative; transform: translateX(0); }
+          .prof-slide-pane.hidden-left { transform: translateX(-50px); }
+          .prof-slide-pane.hidden-right { transform: translateX(50px); }
+        </style>
 
-          <label>Admission No / ID * (Editable):</label>
-          <input type="text" id="profAdmnDisplay" style="font-weight:800;">
+        <div class="prof-slide-container">
+            <!-- TAB 1: PROFILE INFO -->
+            <div id="spProfileSection" class="prof-slide-pane active">
+              <label>Full Name *:</label>
+              <input type="text" id="profNameInput">
 
-          <label>Login Password:</label>
-          <input type="text" id="profPasswordInput" placeholder="Password">
+              <label>Admission No / ID * (Editable):</label>
+              <input type="text" id="profAdmnDisplay" style="font-weight:800;">
 
-          <label>Assigned Class:</label>
-          <select id="profClassSelect">
-            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-          </select>
+              <label>Login Password:</label>
+              <input type="text" id="profPasswordInput" placeholder="Password">
 
-          <label>Mobile / Phone Number:</label>
-          <input type="text" id="profPhoneInput">
+              <label>Assigned Class:</label>
+              <select id="profClassSelect">
+                <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+                <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+                <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+                <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+              </select>
 
-          <label>Date of Birth (DOB):</label>
-          <input type="text" id="profDobInput" placeholder="DD/MM/YYYY">
+              <label>Mobile / Phone Number:</label>
+              <input type="text" id="profPhoneInput">
 
-          <label>Total Performance Points (+ / -):</label>
-          <input type="number" id="profPointsInput" placeholder="0">
+              <label>Date of Birth (DOB):</label>
+              <input type="text" id="profDobInput" placeholder="DD/MM/YYYY">
 
-          <label>Change Photo (Optional):</label>
-          <input type="file" id="profPhotoFileInput" accept="image/*">
+              <label>Total Performance Points (+ / -):</label>
+              <input type="number" id="profPointsInput" placeholder="0">
 
-          <button id="updateStudentProfileBtn" class="btn-primary btn-green" style="margin-top:16px;">💾 Update Profile</button>
-          <button id="deleteAdminStudentBtn" class="btn-primary btn-red" style="margin-top:8px;">🗑️ Delete Student Account</button>
-        </div>
+              <label>Change Photo (Optional):</label>
+              <input type="file" id="profPhotoFileInput" accept="image/*">
 
-        <!-- TAB 2: LEAVE APPLICATIONS -->
-        <div id="spLeaveAppSection" style="display:none;">
-          <div id="spLeaveAppContainer" style="max-height: 40vh; overflow-y: auto;">
-            <!-- Leave cards will load here dynamically -->
-          </div>
+              <button id="updateStudentProfileBtn" class="btn-primary btn-green" style="margin-top:16px;">💾 Update Profile</button>
+              <button id="deleteAdminStudentBtn" class="btn-primary btn-red" style="margin-top:8px;">🗑️ Delete Student Account</button>
+            </div>
+
+            <!-- TAB 2: LEAVE APPLICATIONS -->
+            <div id="spLeaveAppSection" class="prof-slide-pane hidden-right">
+              <div id="spLeaveAppContainer" style="max-height: 40vh; overflow-y: auto;">
+                <!-- Leave cards will load here dynamically -->
+              </div>
+            </div>
+
+            <!-- TAB 3: INDIVIDUAL STUDY STATUS GRAPH -->
+            <div id="spStudyStatusSection" class="prof-slide-pane hidden-right">
+                <div style="position: relative; height: 180px; width: 100%;">
+                    <canvas id="spStudyChartCanvas"></canvas>
+                </div>
+                
+                <div class="checkbox-grid" id="spStudySubjectCheckboxes" style="margin-top: 16px; max-height: 120px; overflow-y: auto;">
+                    <!-- Auto loaded subjects -->
+                </div>
+
+                <div id="spStudyBreakdown" style="margin-top: 12px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 12px; border: 1px dashed var(--border-color);">
+                </div>
+            </div>
         </div>
 
       </div>
     </div>
   </div>
+
 
 
   <div id="registerStudentModal" class="modal-overlay">
@@ -9040,33 +9067,168 @@ localStorage.setItem("loggedPass", p);
     };
 
 
-          // ==========================================
-    // 🚀 STUDENT PROFILE MODAL - TABS ENGINE FIX
+             // ==========================================
+    // 🚀 STUDENT PROFILE MODAL - TABS & GRAPH ENGINE
     // ==========================================
+    let spStudyChart = null;
+
     window.switchStudentProfileTab = function(tabName) {
-        const btnProfile = document.getElementById("spTabProfileBtn");
-        const btnLeaves = document.getElementById("spTabLeavesBtn");
-        const secProfile = document.getElementById("spProfileSection");
-        const secLeaves = document.getElementById("spLeaveAppSection");
+        document.getElementById("spTabProfileBtn").classList.toggle("active", tabName === 'profile');
+        document.getElementById("spTabLeavesBtn").classList.toggle("active", tabName === 'leaves');
+        document.getElementById("spTabStudyBtn").classList.toggle("active", tabName === 'study');
+
+        const profPane = document.getElementById("spProfileSection");
+        const leavePane = document.getElementById("spLeaveAppSection");
+        const studyPane = document.getElementById("spStudyStatusSection");
+
+        [profPane, leavePane, studyPane].forEach(p => { p.className = "prof-slide-pane"; });
 
         if (tabName === 'profile') {
-            btnProfile.classList.add("active");
-            btnLeaves.classList.remove("active");
-            secProfile.style.display = "block";
-            secLeaves.style.display = "none";
+            profPane.classList.add("active");
+            leavePane.classList.add("hidden-right");
+            studyPane.classList.add("hidden-right");
         } else if (tabName === 'leaves') {
-            btnProfile.classList.remove("active");
-            btnLeaves.classList.add("active");
-            secProfile.style.display = "none";
-            secLeaves.style.display = "block";
+            profPane.classList.add("hidden-left");
+            leavePane.classList.add("active");
+            studyPane.classList.add("hidden-right");
             
-            // Student ka ID utha kar uski Leave Applications load karna
             const admn = document.getElementById("profStudentAdmn").value;
-            if (admn) {
-                window.loadStudentProfileLeaves(admn);
-            }
+            if (admn) window.loadStudentProfileLeaves(admn);
+            
+        } else if (tabName === 'study') {
+            profPane.classList.add("hidden-left");
+            leavePane.classList.add("hidden-left");
+            studyPane.classList.add("active");
+            
+            const admn = document.getElementById("profStudentAdmn").value;
+            const cls = document.getElementById("profClassSelect").value;
+            if (admn && cls) window.initProfileStudyStatus(admn, cls);
         }
     };
+
+    window.initProfileStudyStatus = async function(admn, clsStr) {
+        const cls = cleanClassStr(clsStr);
+        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
+        const chkContainer = document.getElementById("spStudySubjectCheckboxes");
+        
+        chkContainer.innerHTML = `<div class="checkbox-item" style="font-weight:900;"><input type="checkbox" id="spSylChkAll" checked onchange="window.toggleAllSpSylSubjects(this, '${admn}', '${cls}')"> ALL</div>`;
+
+        let hasSub = false;
+        Object.keys(enabledSubjects).forEach(sub => {
+            if(enabledSubjects[sub]) {
+                hasSub = true;
+                chkContainer.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="sp-syl-filter-chk" value="${sub}" checked onchange="window.refreshProfileStudyGraph('${admn}', '${cls}')"> ${sub}</div>`;
+            }
+        });
+
+        if(!hasSub) {
+            chkContainer.innerHTML = "<div style='grid-column:span 3; font-size:11px; color:var(--text-muted); text-align:center;'>No syllabus subjects configured for this class yet.</div>";
+        }
+        
+        window.refreshProfileStudyGraph(admn, cls);
+    };
+
+    window.toggleAllSpSylSubjects = function(el, admn, cls) {
+        document.querySelectorAll(".sp-syl-filter-chk").forEach(chk => chk.checked = el.checked);
+        window.refreshProfileStudyGraph(admn, cls);
+    };
+
+    window.refreshProfileStudyGraph = async function(admn, cls) {
+        const allChk = document.getElementById("spSylChkAll");
+        const chks = Array.from(document.querySelectorAll(".sp-syl-filter-chk"));
+        if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
+
+        const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
+        const breakdownDiv = document.getElementById("spStudyBreakdown");
+        const ctx = document.getElementById("spStudyChartCanvas");
+        if(!ctx) return;
+
+        if(selectedSubs.length === 0) {
+            breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>Select at least one subject to view graph.</div>";
+            if(spStudyChart) spStudyChart.destroy();
+            return;
+        }
+
+        let totalPossibleCompletions = 0;
+        let actualCompletions = 0;
+        let breakdownHtml = "";
+
+        const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
+        const studentProgress = await safeDataFetch(`syllabus_progress/${admn}`) || {};
+
+        const labels = [];
+        const dataVals = [];
+        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
+
+        selectedSubs.forEach((sub, i) => {
+            const subChaps = allChapters[sub] || [];
+            if(subChaps.length === 0) return;
+
+            let subCompletedCount = 0;
+            let subPossible = subChaps.length;
+
+            const stProg = studentProgress[sub];
+            if(stProg) {
+                subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
+            }
+
+            totalPossibleCompletions += subPossible;
+            actualCompletions += subCompletedCount;
+            
+            const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
+            
+            if(subCompletedCount > 0) {
+                labels.push(sub);
+                dataVals.push(subCompletedCount);
+            }
+
+            breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color); font-size:11px; font-weight:800;">
+                <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
+                <span>${subCompletedCount}/${subPossible} Chaps (${subPercent}%)</span>
+            </div>`;
+        });
+
+        breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:11px; color:var(--text-muted); text-align:center;'>No progress recorded yet for selected subjects.</div>";
+        const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
+
+        let finalLabels = labels;
+        let finalData = dataVals;
+        let finalColors = bgColors.slice(0, labels.length);
+
+        if (actualCompletions === 0) {
+            finalLabels = ['Not Started'];
+            finalData = [1];
+            finalColors = ['rgba(0,0,0,0.05)'];
+        }
+
+        if(spStudyChart) spStudyChart.destroy();
+        spStudyChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: finalLabels,
+                datasets: [{
+                    data: finalData,
+                    backgroundColor: finalColors,
+                    borderWidth: 2, borderColor: 'var(--card-bg)',
+                    hoverOffset: 10
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } },
+            plugins: [{
+                id: 'centerTextSp',
+                beforeDraw: function(chart) {
+                    var width = chart.width, height = chart.height, cCtx = chart.ctx;
+                    cCtx.restore();
+                    var fontSize = (height / 100).toFixed(2);
+                    cCtx.font = "900 " + fontSize + "em sans-serif";
+                    cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
+                    var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
+                    cCtx.fillText(text, textX, textY); cCtx.save();
+                }
+            }]
+        });
+    };
+
 
       
     </script>
