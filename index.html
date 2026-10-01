@@ -4586,10 +4586,24 @@ Exact Output JSON Format Required:
       window.closeDrawer();
     };
 
-    addSafeListener("darkModeCheckbox", "change", (e) => {
+      addSafeListener("darkModeCheckbox", "change", (e) => {
       if(e.target.checked) { document.body.classList.add("dark-mode"); localStorage.setItem("darkMode", "enabled"); } 
       else { document.body.classList.remove("dark-mode"); localStorage.setItem("darkMode", "disabled"); }
+      
+      // Dark/Light mode badalte hi saare Graphs ke colors turant shift karo
+      if (typeof window.refreshAdminSyllabusGraph === "function" && document.getElementById("mgmtTabStudyMaterial")?.classList.contains("active")) {
+        window.refreshAdminSyllabusGraph();
+      }
+      if (currentRole === "student" && typeof window.renderSyllabusGraphs === "function") {
+        window.renderSyllabusGraphs();
+      }
+      if (document.getElementById("studentProfileModal")?.classList.contains("active") && document.getElementById("spStudyStatusSection")?.classList.contains("active")) {
+        const admn = document.getElementById("profStudentAdmn")?.value;
+        const cls = document.getElementById("profClassSelect")?.value;
+        if (admn && cls && typeof window.refreshProfileStudyGraph === "function") window.refreshProfileStudyGraph(admn, cls);
+      }
     });
+
 
     addSafeListener("checkForUpdatesBtn", "click", () => {
       const btn = document.getElementById("checkForUpdatesBtn");
@@ -9329,21 +9343,40 @@ window.syncProfileModalHeight = function() {
         window.refreshAdminSyllabusGraph();
     };
 
+
+
+            // Smart Theme Helper for Charts (Light vs Dark Mode)
+      window.getChartThemeColors = function() {
+        const isDark = document.body.classList.contains("dark-mode");
+        return {
+          isDark: isDark,
+          emptyArc: isDark ? "rgba(255, 255, 255, 0.14)" : "rgba(15, 23, 42, 0.08)",
+          borderColor: isDark ? "#1e293b" : "#ffffff",
+          mutedText: isDark ? "#94a3b8" : "#64748b",
+          activeText: isDark ? "#38bdf8" : "#0288d1",
+          // Dark mode me #0f172a (kaale) ki jagah bright cyan (#06b6d4) aur vibrant colors aayenge
+          palette: isDark 
+            ? ['#38bdf8', '#4ade80', '#fbbf24', '#c084fc', '#f87171', '#22d3ee', '#fb7185', '#34d399', '#fb923c', '#818cf8']
+            : ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#e11d48', '#059669', '#ea580c', '#4f46e5']
+        };
+      };
+
       window.refreshAdminSyllabusGraph = async function() {
         const cls = document.getElementById("sylTrackClassSelect").value;
         const breakdownDiv = document.getElementById("sylTrackBreakdown");
         const ctx = document.getElementById("adminSyllabusChart");
         if(!ctx) return;
 
+        const theme = window.getChartThemeColors();
+        const bgColors = theme.palette;
+
         let totalPossibleCompletions = 0;
         let actualCompletions = 0;
         let breakdownHtml = "";
         
-        // Hamein 'Done' aur 'Remaining' data ikattha karna hai
         const chartLabels = [];
         const chartData = [];
         const chartColors = [];
-        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a', '#e11d48', '#059669', '#ea580c', '#4f46e5'];
 
         const allChapters = await safeDataFetch(`syllabus_chapters`) || {};
         const allProgress = await safeDataFetch(`syllabus_progress`) || {};
@@ -9380,18 +9413,18 @@ window.syncProfileModalHeight = function() {
                     totalPossibleCompletions += clsPossible;
                     actualCompletions += clsCompleted;
                     const clsPercent = Math.round((clsCompleted / clsPossible) * 100);
+                    const color = bgColors[i % bgColors.length];
                     
                     chartLabels.push(`Class ${cName} (Done)`);
                     chartData.push(clsCompleted);
-                    chartColors.push(bgColors[i % bgColors.length]);
+                    chartColors.push(color);
                     
-                    // The Remaining (Grey) part for this class
                     chartLabels.push(`Class ${cName} (Left)`);
                     chartData.push(clsPossible - clsCompleted);
-                    chartColors.push('rgba(0,0,0,0.05)');
+                    chartColors.push(theme.emptyArc);
 
                     breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
-                        <span style="color:${bgColors[i % bgColors.length]}">● Class ${cName}</span>
+                        <span style="color:${color} !important;">● Class ${cName}</span>
                         <span>${clsPercent}% Overall</span>
                     </div>`;
                 }
@@ -9432,19 +9465,18 @@ window.syncProfileModalHeight = function() {
                 actualCompletions += subCompletedCount;
                 
                 const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
+                const color = bgColors[i % bgColors.length];
                 
-                // Active Subject Color Arc
                 chartLabels.push(`${sub} (Done)`);
                 chartData.push(subCompletedCount);
-                chartColors.push(bgColors[i % bgColors.length]);
+                chartColors.push(color);
                 
-                // Grey remaining Arc for this subject
                 chartLabels.push(`${sub} (Left)`);
                 chartData.push(subPossible - subCompletedCount);
-                chartColors.push('rgba(0,0,0,0.05)');
+                chartColors.push(theme.emptyArc);
 
                 breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px; font-weight:800;">
-                    <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
+                    <span style="color:${color} !important;">● ${sub}</span>
                     <span>${subPercent}% Student Completion</span>
                 </div>`;
             });
@@ -9456,7 +9488,7 @@ window.syncProfileModalHeight = function() {
         if (actualCompletions === 0 && totalPossibleCompletions === 0) {
             chartLabels.push('Not Started');
             chartData.push(1);
-            chartColors.push('rgba(0,0,0,0.05)');
+            chartColors.push(theme.emptyArc);
         }
 
         if(adminSylChart) adminSylChart.destroy();
@@ -9467,34 +9499,34 @@ window.syncProfileModalHeight = function() {
                 datasets: [{
                     data: chartData,
                     backgroundColor: chartColors,
-                    borderWidth: 1, borderColor: 'var(--card-bg)',
+                    borderWidth: 1.5, 
+                    borderColor: theme.borderColor,
                     hoverOffset: 10 
                 }]
             },
-                   options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
-
-          plugins: [{
+            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
+            plugins: [{
                 id: 'centerText',
                 beforeDraw: function(chart) {
                     var width = chart.width, height = chart.height, cCtx = chart.ctx;
                     cCtx.restore();
                     var fontSize = (height / 114).toFixed(2);
                     cCtx.font = "900 " + fontSize + "em sans-serif";
-                    cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
+                    cCtx.textBaseline = "middle"; 
+                    cCtx.fillStyle = actualCompletions === 0 ? theme.mutedText : theme.activeText;
                     var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
                     cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
-    };
+      };
 
-
-
-       // 2. STUDENT GRAPH LOGIC (Individual & Home)
-    window.renderSyllabusGraphs = async function() {
+      // 2. STUDENT GRAPH LOGIC (Individual & Home)
+      window.renderSyllabusGraphs = async function() {
         const student = await getStudentRecord(currentStudentAdmn);
         if(!student) return;
         const cls = cleanClassStr(student.class);
+        const theme = window.getChartThemeColors();
         
         const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
         const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
@@ -9506,10 +9538,9 @@ window.syncProfileModalHeight = function() {
         let html = "";
         let totalChapsOverall = 0; let completedChapsOverall = 0;
         
-        // Arrays for new Subject-wise breakdown on Home Chart
         const homeLabels = [];
         const homeData = [];
-        const homeColorsList = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
+        const homeColorsList = theme.palette;
 
         Object.keys(enabledSubjects).forEach((sub, idx) => {
             if(enabledSubjects[sub]) {
@@ -9523,23 +9554,20 @@ window.syncProfileModalHeight = function() {
                 completedChapsOverall += subCompleted;
                 const subPercent = Math.round((subCompleted / subChaps.length) * 100);
 
-                // Add to Home Chart
                 if(subCompleted > 0) {
                     homeLabels.push(sub);
                     homeData.push(subCompleted);
                 }
 
-                                html += `
+                html += `
                 <div class="card unfold-card" style="margin-top:16px; padding:16px; display:flex; align-items:center; gap:16px;">
-                    <!-- Yahan touch-action: pan-y; add kar diya gaya hai -->
                     <div style="position:relative; width:80px; height:80px;"><canvas id="stSylChart_${idx}" style="touch-action: pan-y;"></canvas></div>
                     <div style="flex:1;">
                         <div style="font-size:14px; font-weight:900; color:var(--text-color);">${sub}</div>
                         <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:4px;">${subCompleted} out of ${subChaps.length} Chaps Completed</div>
-                        <div style="font-size:18px; font-weight:900; color:#16a34a; margin-top:4px;">${subPercent}%</div>
+                        <div style="font-size:18px; font-weight:900; color:${theme.isDark ? '#4ade80' : '#16a34a'}; margin-top:4px;">${subPercent}%</div>
                     </div>
                 </div>`;
-
             }
         });
 
@@ -9557,32 +9585,30 @@ window.syncProfileModalHeight = function() {
                 if(stIndividualCharts[idx]) stIndividualCharts[idx].destroy();
                 stIndividualCharts[idx] = new Chart(ctx, {
                     type: 'doughnut',
-                    data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: ['#16a34a', 'rgba(0,0,0,0.05)'], borderWidth: 0, hoverOffset: 5 }] },
-                                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
-
+                    data: { labels: ['Done', 'Left'], datasets: [{ data: [subCompleted, remain], backgroundColor: [theme.isDark ? '#4ade80' : '#16a34a', theme.emptyArc], borderWidth: 1, borderColor: theme.borderColor, hoverOffset: 5 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
                 });
             }
         });
 
-        // Trigger Home Widget Graph Update (With Subject Breakdown)
         let finalLabels = homeLabels;
         let finalData = homeData;
         let finalColors = homeColorsList.slice(0, homeLabels.length);
 
-        // Fallback agar bilkul bhi progress na ho (Empty Grey Donut)
         if (completedChapsOverall === 0) {
             finalLabels = ['Not Started'];
             finalData = [1];
-            finalColors = ['rgba(0,0,0,0.05)'];
+            finalColors = [theme.emptyArc];
         }
 
         window.renderStudentHomeSyllabusChart(totalChapsOverall, completedChapsOverall, finalLabels, finalData, finalColors);
-    };
+      };
 
       window.renderStudentHomeSyllabusChart = function(total, completed, labels, dataVals, colors) {
         const ctx = document.getElementById("studentHomeSyllabusChart");
         const breakdownDiv = document.getElementById("sHomeSyllabusBreakdown");
         if(!ctx) return;
+        const theme = window.getChartThemeColors();
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
         if(stHomeSylChart) stHomeSylChart.destroy();
@@ -9594,7 +9620,7 @@ window.syncProfileModalHeight = function() {
                     data: dataVals, 
                     backgroundColor: colors, 
                     borderWidth: 2,
-                    borderColor: 'var(--card-bg)',
+                    borderColor: theme.borderColor,
                     hoverOffset: 10 
                 }] 
             },
@@ -9604,14 +9630,14 @@ window.syncProfileModalHeight = function() {
                 beforeDraw: function(chart) {
                     var width = chart.width, height = chart.height, cCtx = chart.ctx; cCtx.restore();
                     var fontSize = (height / 100).toFixed(2); cCtx.font = "900 " + fontSize + "em sans-serif";
-                    cCtx.textBaseline = "middle"; cCtx.fillStyle = completed === 0 ? "var(--text-muted)" : "#0288d1";
+                    cCtx.textBaseline = "middle"; 
+                    cCtx.fillStyle = completed === 0 ? theme.mutedText : theme.activeText;
                     var text = percent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
                     cCtx.fillText(text, textX, textY); cCtx.save();
                 }
             }]
         });
 
-        // NEW: Generate Subject-wise Breakdown HTML
         if(breakdownDiv) {
             let bHtml = "";
             if (completed === 0) {
@@ -9619,199 +9645,188 @@ window.syncProfileModalHeight = function() {
             } else {
                 labels.forEach((lbl, i) => {
                     bHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; font-size:12px; font-weight:800; border-bottom:1px solid var(--border-color);">
-                      <span style="color:${colors[i]}">● ${lbl}</span>
+                      <span style="color:${colors[i]} !important;">● ${lbl}</span>
                       <span>${dataVals[i]} Chaps Completed</span>
                     </div>`;
                 });
             }
             breakdownDiv.innerHTML = bHtml;
         }
-    };
+      };
 
+      const oldInitStudentSylTab = window.initStudentSyllabusTab;
+      window.initStudentSyllabusTab = async function() {
+          await oldInitStudentSylTab();
+          window.renderSyllabusGraphs();
+      };
 
+      // ==========================================
+      // 🚀 STUDENT PROFILE MODAL - TABS & GRAPH ENGINE
+      // ==========================================
+      let spStudyChart = null;
 
+      window.switchStudentProfileTab = function(tabName) {
+          document.getElementById("spTabProfileBtn").classList.toggle("active", tabName === 'profile');
+          document.getElementById("spTabLeavesBtn").classList.toggle("active", tabName === 'leaves');
+          document.getElementById("spTabStudyBtn").classList.toggle("active", tabName === 'study');
 
-    // Phase 4 Hook: Also trigger graph render when student opens syllabus tab
-    const oldInitStudentSylTab = window.initStudentSyllabusTab;
-    window.initStudentSyllabusTab = async function() {
-        await oldInitStudentSylTab();
-        window.renderSyllabusGraphs();
-    };
+          const profPane = document.getElementById("spProfileSection");
+          const leavePane = document.getElementById("spLeaveAppSection");
+          const studyPane = document.getElementById("spStudyStatusSection");
 
+          [profPane, leavePane, studyPane].forEach(p => { p.className = "prof-slide-pane"; });
 
-     // ==========================================
-    // 🚀 STUDENT PROFILE MODAL - TABS & GRAPH ENGINE
-    // ==========================================
-    let spStudyChart = null;
+          if (tabName === 'profile') {
+              profPane.classList.add("active");
+              leavePane.classList.add("hidden-right");
+              studyPane.classList.add("hidden-right");
+              setTimeout(() => window.syncProfileModalHeight(), 150);
+          } else if (tabName === 'leaves') {
+              profPane.classList.add("hidden-left");
+              leavePane.classList.add("active");
+              studyPane.classList.add("hidden-right");
+              const admn = document.getElementById("profStudentAdmn").value;
+              if (admn) window.loadStudentProfileLeaves(admn);
+              setTimeout(() => window.syncProfileModalHeight(), 150);
+          } else if (tabName === 'study') {
+              profPane.classList.add("hidden-left");
+              leavePane.classList.add("hidden-left");
+              studyPane.classList.add("active");
+              const admn = document.getElementById("profStudentAdmn").value;
+              const cls = document.getElementById("profClassSelect").value;
+              if (admn && cls) window.initProfileStudyStatus(admn, cls);
+              setTimeout(() => window.syncProfileModalHeight(), 150);
+          }
+      };
 
-  
+      window.initProfileStudyStatus = async function(admn, clsStr) {
+          const cls = cleanClassStr(clsStr);
+          const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
+          const chkContainer = document.getElementById("spStudySubjectCheckboxes");
+          
+          chkContainer.innerHTML = `<div class="checkbox-item" style="font-weight:900;"><input type="checkbox" id="spSylChkAll" checked onchange="window.toggleAllSpSylSubjects(this, '${admn}', '${cls}')"> ALL</div>`;
 
-    window.switchStudentProfileTab = function(tabName) {
-        document.getElementById("spTabProfileBtn").classList.toggle("active", tabName === 'profile');
-        document.getElementById("spTabLeavesBtn").classList.toggle("active", tabName === 'leaves');
-        document.getElementById("spTabStudyBtn").classList.toggle("active", tabName === 'study');
+          let hasSub = false;
+          Object.keys(enabledSubjects).forEach(sub => {
+              if(enabledSubjects[sub]) {
+                  hasSub = true;
+                  chkContainer.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="sp-syl-filter-chk" value="${sub}" checked onchange="window.refreshProfileStudyGraph('${admn}', '${cls}')"> ${sub}</div>`;
+              }
+          });
 
-        const profPane = document.getElementById("spProfileSection");
-        const leavePane = document.getElementById("spLeaveAppSection");
-        const studyPane = document.getElementById("spStudyStatusSection");
+          if(!hasSub) {
+              chkContainer.innerHTML = "<div style='grid-column:span 3; font-size:11px; color:var(--text-muted); text-align:center;'>No syllabus subjects configured for this class yet.</div>";
+          }
+          
+          window.refreshProfileStudyGraph(admn, cls);
+      };
 
-        [profPane, leavePane, studyPane].forEach(p => { p.className = "prof-slide-pane"; });
-
-        if (tabName === 'profile') {
-            profPane.classList.add("active");
-            leavePane.classList.add("hidden-right");
-            studyPane.classList.add("hidden-right");
-            setTimeout(() => window.syncProfileModalHeight(), 150);
-            
-        } else if (tabName === 'leaves') {
-            profPane.classList.add("hidden-left");
-            leavePane.classList.add("active");
-            studyPane.classList.add("hidden-right");
-            
-            const admn = document.getElementById("profStudentAdmn").value;
-            if (admn) window.loadStudentProfileLeaves(admn);
-            setTimeout(() => window.syncProfileModalHeight(), 150);
-            
-        } else if (tabName === 'study') {
-            profPane.classList.add("hidden-left");
-            leavePane.classList.add("hidden-left");
-            studyPane.classList.add("active");
-            
-            const admn = document.getElementById("profStudentAdmn").value;
-            const cls = document.getElementById("profClassSelect").value;
-            if (admn && cls) window.initProfileStudyStatus(admn, cls);
-            setTimeout(() => window.syncProfileModalHeight(), 150);
-        }
-    };
-
-
-    window.initProfileStudyStatus = async function(admn, clsStr) {
-        const cls = cleanClassStr(clsStr);
-        const enabledSubjects = await safeDataFetch(`enabled_syllabus/${cls}`) || {};
-        const chkContainer = document.getElementById("spStudySubjectCheckboxes");
-        
-        chkContainer.innerHTML = `<div class="checkbox-item" style="font-weight:900;"><input type="checkbox" id="spSylChkAll" checked onchange="window.toggleAllSpSylSubjects(this, '${admn}', '${cls}')"> ALL</div>`;
-
-        let hasSub = false;
-        Object.keys(enabledSubjects).forEach(sub => {
-            if(enabledSubjects[sub]) {
-                hasSub = true;
-                chkContainer.innerHTML += `<div class="checkbox-item"><input type="checkbox" class="sp-syl-filter-chk" value="${sub}" checked onchange="window.refreshProfileStudyGraph('${admn}', '${cls}')"> ${sub}</div>`;
-            }
-        });
-
-        if(!hasSub) {
-            chkContainer.innerHTML = "<div style='grid-column:span 3; font-size:11px; color:var(--text-muted); text-align:center;'>No syllabus subjects configured for this class yet.</div>";
-        }
-        
-        window.refreshProfileStudyGraph(admn, cls);
-    };
-
-    window.toggleAllSpSylSubjects = function(el, admn, cls) {
-        document.querySelectorAll(".sp-syl-filter-chk").forEach(chk => chk.checked = el.checked);
-        window.refreshProfileStudyGraph(admn, cls);
-    };
+      window.toggleAllSpSylSubjects = function(el, admn, cls) {
+          document.querySelectorAll(".sp-syl-filter-chk").forEach(chk => chk.checked = el.checked);
+          window.refreshProfileStudyGraph(admn, cls);
+      };
 
       window.refreshProfileStudyGraph = async function(admn, cls) {
-        const allChk = document.getElementById("spSylChkAll");
-        const chks = Array.from(document.querySelectorAll(".sp-syl-filter-chk"));
-        if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
+          const allChk = document.getElementById("spSylChkAll");
+          const chks = Array.from(document.querySelectorAll(".sp-syl-filter-chk"));
+          if(allChk) allChk.checked = chks.every(c => c.checked) && chks.length > 0;
 
-        const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
-        const breakdownDiv = document.getElementById("spStudyBreakdown");
-        const ctx = document.getElementById("spStudyChartCanvas");
-        if(!ctx) return;
+          const selectedSubs = chks.filter(c => c.checked).map(c => c.value);
+          const breakdownDiv = document.getElementById("spStudyBreakdown");
+          const ctx = document.getElementById("spStudyChartCanvas");
+          if(!ctx) return;
 
-        if(selectedSubs.length === 0) {
-            breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>Select at least one subject to view graph.</div>";
-            if(spStudyChart) spStudyChart.destroy();
-            return;
-        }
+          if(selectedSubs.length === 0) {
+              breakdownDiv.innerHTML = "<div style='font-size:12px; font-weight:700; color:var(--text-muted); text-align:center;'>Select at least one subject to view graph.</div>";
+              if(spStudyChart) spStudyChart.destroy();
+              return;
+          }
 
-        let totalPossibleCompletions = 0;
-        let actualCompletions = 0;
-        let breakdownHtml = "";
-        
-        const chartLabels = [];
-        const chartData = [];
-        const chartColors = [];
+          const theme = window.getChartThemeColors();
+          const bgColors = theme.palette;
 
-        const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
-        const studentProgress = await safeDataFetch(`syllabus_progress/${admn}`) || {};
-        const bgColors = ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0f172a'];
+          let totalPossibleCompletions = 0;
+          let actualCompletions = 0;
+          let breakdownHtml = "";
+          
+          const chartLabels = [];
+          const chartData = [];
+          const chartColors = [];
 
-        selectedSubs.forEach((sub, i) => {
-            const subChaps = allChapters[sub] || [];
-            if(subChaps.length === 0) return;
+          const allChapters = await safeDataFetch(`syllabus_chapters/${cls}`) || {};
+          const studentProgress = await safeDataFetch(`syllabus_progress/${admn}`) || {};
 
-            let subCompletedCount = 0;
-            let subPossible = subChaps.length;
+          selectedSubs.forEach((sub, i) => {
+              const subChaps = allChapters[sub] || [];
+              if(subChaps.length === 0) return;
 
-            const stProg = studentProgress[sub];
-            if(stProg) {
-                subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
-            }
+              let subCompletedCount = 0;
+              let subPossible = subChaps.length;
 
-            totalPossibleCompletions += subPossible;
-            actualCompletions += subCompletedCount;
-            const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
-            
-            // Add Done Arc
-            chartLabels.push(`${sub} (Done)`);
-            chartData.push(subCompletedCount);
-            chartColors.push(bgColors[i % bgColors.length]);
-            
-            // Add Remaining Arc
-            chartLabels.push(`${sub} (Left)`);
-            chartData.push(subPossible - subCompletedCount);
-            chartColors.push('rgba(0,0,0,0.05)');
+              const stProg = studentProgress[sub];
+              if(stProg) {
+                  subChaps.forEach(ch => { if(stProg[`ch_${ch.no}`]) subCompletedCount++; });
+              }
 
-            breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color); font-size:11px; font-weight:800;">
-                <span style="color:${bgColors[i % bgColors.length]}">● ${sub}</span>
-                <span>${subCompletedCount}/${subPossible} Chaps (${subPercent}%)</span>
-            </div>`;
-        });
+              totalPossibleCompletions += subPossible;
+              actualCompletions += subCompletedCount;
+              const subPercent = subPossible > 0 ? Math.round((subCompletedCount / subPossible) * 100) : 0;
+              const color = bgColors[i % bgColors.length];
+              
+              chartLabels.push(`${sub} (Done)`);
+              chartData.push(subCompletedCount);
+              chartColors.push(color);
+              
+              chartLabels.push(`${sub} (Left)`);
+              chartData.push(subPossible - subCompletedCount);
+              chartColors.push(theme.emptyArc);
 
-        breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:11px; color:var(--text-muted); text-align:center;'>No progress recorded yet for selected subjects.</div>";
-        const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
+              breakdownHtml += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border-color); font-size:11px; font-weight:800;">
+                  <span style="color:${color} !important;">● ${sub}</span>
+                  <span>${subCompletedCount}/${subPossible} Chaps (${subPercent}%)</span>
+              </div>`;
+          });
 
-        if (actualCompletions === 0 && totalPossibleCompletions === 0) {
-            chartLabels.push('Not Started');
-            chartData.push(1);
-            chartColors.push('rgba(0,0,0,0.05)');
-        }
+          breakdownDiv.innerHTML = breakdownHtml || "<div style='font-size:11px; color:var(--text-muted); text-align:center;'>No progress recorded yet for selected subjects.</div>";
+          const overallPercent = totalPossibleCompletions > 0 ? Math.round((actualCompletions / totalPossibleCompletions) * 100) : 0;
 
-        if(spStudyChart) spStudyChart.destroy();
-        spStudyChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    data: chartData,
-                    backgroundColor: chartColors,
-                    borderWidth: 1, borderColor: 'var(--card-bg)',
-                    hoverOffset: 10
-                }]
-            },
-                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
-       plugins: [{
-                id: 'centerTextSp',
-                beforeDraw: function(chart) {
-                    var width = chart.width, height = chart.height, cCtx = chart.ctx;
-                    cCtx.restore();
-                    var fontSize = (height / 100).toFixed(2);
-                    cCtx.font = "900 " + fontSize + "em sans-serif";
-                    cCtx.textBaseline = "middle"; cCtx.fillStyle = actualCompletions === 0 ? "var(--text-muted)" : "#0288d1";
-                    var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
-                    cCtx.fillText(text, textX, textY); cCtx.save();
-                }
-            }]
-        });
-        
-        setTimeout(() => window.syncProfileModalHeight(), 150);
-    };
+          if (actualCompletions === 0 && totalPossibleCompletions === 0) {
+              chartLabels.push('Not Started');
+              chartData.push(1);
+              chartColors.push(theme.emptyArc);
+          }
 
-
+          if(spStudyChart) spStudyChart.destroy();
+          spStudyChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                  labels: chartLabels,
+                  datasets: [{
+                      data: chartData,
+                      backgroundColor: chartColors,
+                      borderWidth: 1.5, 
+                      borderColor: theme.borderColor,
+                      hoverOffset: 10
+                  }]
+              },
+              options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: true } } },
+              plugins: [{
+                  id: 'centerTextSp',
+                  beforeDraw: function(chart) {
+                      var width = chart.width, height = chart.height, cCtx = chart.ctx;
+                      cCtx.restore();
+                      var fontSize = (height / 100).toFixed(2);
+                      cCtx.font = "900 " + fontSize + "em sans-serif";
+                      cCtx.textBaseline = "middle"; 
+                      cCtx.fillStyle = actualCompletions === 0 ? theme.mutedText : theme.activeText;
+                      var text = overallPercent + "%", textX = Math.round((width - cCtx.measureText(text).width) / 2), textY = height / 2;
+                      cCtx.fillText(text, textX, textY); cCtx.save();
+                  }
+              }]
+          });
+          
+          setTimeout(() => window.syncProfileModalHeight(), 150);
+      };
 
       
     </script>
