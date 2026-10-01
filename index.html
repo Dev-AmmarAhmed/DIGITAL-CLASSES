@@ -2253,7 +2253,7 @@ canvas { touch-action: pan-y !important; }
       </div>
     </section>
 
-    <!-- ADMIN MUSTER SECTION (Moved inside Main Container to fix layout) -->
+       <!-- ADMIN MUSTER SECTION (Moved inside Main Container to fix layout) -->
     <section id="adminTabMuster" class="tab-section admin-tab">
       <div class="card">
         <div class="card-title">📖 Teachers' Muster Record</div>
@@ -2282,7 +2282,68 @@ canvas { touch-action: pan-y !important; }
         <button class="btn-primary btn-red" onclick="openModal('deleteMusterModal')">Delete Teacher Muster Data</button>
       </div>
     </section>
+
+    <!-- ====================================================================
+         ADMIN & TEACHER STUDY MATERIAL & SYLLABUS TAB (FIXED INSIDE MAIN)
+         ==================================================================== -->
+    <section id="mgmtTabStudyMaterial" class="tab-section admin-tab teacher-tab">
+      <div class="card unfold-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+          <div class="card-title" style="border:none; margin-bottom:0;">📚 Manage Study Materials</div>
+          <button class="btn-primary btn-purple" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="openModal('addStudyMaterialModal')">➕ Add Material</button>
+        </div>
+
+        <div id="adminManageClassBoxTab" style="display:none; margin-bottom:10px;">
+          <label>Select Class to Manage Materials:</label>
+          <select id="matAdminManageClassSelectTab" onchange="window.loadTeacherStudyMaterials(this.value)">
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+        </div>
+
+        <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:10px;" id="manageClassTextTab">
+          Materials List
+        </div>
+        <div class="table-container" style="max-height: 35vh; overflow-y: auto;">
+          <table style="min-width: 100%;">
+            <thead><tr><th>Title</th><th>Type</th><th>Action</th></tr></thead>
+            <tbody id="manageMaterialTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SYLLABUS STATUS BOX (INTERACTIVE GRAPH UI) -->
+      <div class="card unfold-card" style="margin-top: 16px; margin-bottom: 80px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
+          <div class="card-title" style="border:none; margin-bottom:0;">📊 Syllabus Status</div>
+          <button class="btn-primary btn-blue" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="window.openUpdateSyllabusModal()">✏️ Update Syllabus</button>
+        </div>
+        
+        <label>Select Target Standard:</label>
+        <select id="sylTrackClassSelect" onchange="window.initAdminSyllabusTracker()">
+            <option value="ALL">All Standard</option>
+            <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
+            <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
+            <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+            <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+        
+        <!-- Graph Canvas -->
+        <div style="position: relative; height: 240px; width: 100%; margin-top: 16px;">
+           <canvas id="adminSyllabusChart"></canvas>
+        </div>
+
+        <!-- Selected Subjects Checkboxes -->
+        <div class="checkbox-grid" id="sylAdminCheckboxes" style="margin-top: 16px;"></div>
+
+        <!-- Graph Data Breakdown -->
+        <div id="sylTrackBreakdown" style="margin-top: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 12px; border: 1px dashed var(--border-color);"></div>
+      </div>
+    </section>
   </main>
+
 
 
 
@@ -2803,7 +2864,8 @@ Exact Output JSON Format Required:
     </div>
   </div>
 
-  <!-- ADD STUDY MATERIAL MODAL -->
+  
+    <!-- ADD STUDY MATERIAL MODAL -->
   <div id="addStudyMaterialModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -2843,79 +2905,6 @@ Exact Output JSON Format Required:
       </div>
     </div>
   </div>
-
-
-  <!-- ====================================================================
-       ADMIN & TEACHER STUDY MATERIAL & SYLLABUS TAB
-       ==================================================================== -->
-  <section id="mgmtTabStudyMaterial" class="tab-section admin-tab teacher-tab">
-    <div class="card unfold-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
-        <div class="card-title" style="border:none; margin-bottom:0;">📚 Manage Study Materials</div>
-        <button class="btn-primary btn-purple" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="openModal('addStudyMaterialModal')">➕ Add Material</button>
-      </div>
-
-      <div id="adminManageClassBoxTab" style="display:none; margin-bottom:10px;">
-        <label>Select Class to Manage Materials:</label>
-        <select id="matAdminManageClassSelectTab" onchange="window.loadTeacherStudyMaterials(this.value)">
-          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-          <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-        </select>
-      </div>
-
-      <div style="font-size:12px; font-weight:800; color:var(--text-muted); margin-bottom:10px;" id="manageClassTextTab">
-        Materials List
-      </div>
-      <div class="table-container" style="max-height: 35vh; overflow-y: auto;">
-        <table style="min-width: 100%;">
-          <thead><tr><th>Title</th><th>Type</th><th>Action</th></tr></thead>
-          <tbody id="manageMaterialTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-
-    
-    <!-- SYLLABUS STATUS BOX (INTERACTIVE GRAPH UI) -->
-    <!-- Scrolling fix: Added margin-bottom 80px to clear the nav bar -->
-    <div class="card unfold-card" style="margin-top: 16px; margin-bottom: 80px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:2px solid var(--border-color); padding-bottom:8px;">
-        <div class="card-title" style="border:none; margin-bottom:0;">📊 Syllabus Status</div>
-        <button class="btn-primary btn-blue" style="width:auto; padding:6px 12px; font-size:11px; margin-top:0;" onclick="window.openUpdateSyllabusModal()">✏️ Update Syllabus</button>
-      </div>
-      
-      <label>Select Target Standard:</label>
-      <!-- Dropdown badalte hi Graph load hoga -->
-      <select id="sylTrackClassSelect" onchange="window.initAdminSyllabusTracker()">
-          <option value="ALL">All Standard</option>
-          <option value="Nursery">Nursery</option><option value="Jr. KG">Jr. KG</option><option value="Sr. KG">Sr. KG</option>
-      <option value="1" selected>Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option><option value="4">Class 4</option>
-          <option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
-          <option value="9">Class 9</option><option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-      </select>
-      
-             <!-- Graph Canvas -->
-      <div style="position: relative; height: 240px; width: 100%; margin-top: 16px;">
-         <canvas id="adminSyllabusChart"></canvas>
-      </div>
-
-
-
-
-      <!-- Selected Subjects Checkboxes -->
-      <div class="checkbox-grid" id="sylAdminCheckboxes" style="margin-top: 16px;">
-         <!-- JavaScript se auto fill hoga -->
-      </div>
-
-      <!-- Graph Data Breakdown -->
-      <div id="sylTrackBreakdown" style="margin-top: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; padding: 12px; border: 1px dashed var(--border-color);">
-         <!-- Percentages will appear here -->
-      </div>
-    </div>
-
-  </section>
 
 
   
