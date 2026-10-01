@@ -9344,22 +9344,19 @@ window.syncProfileModalHeight = function() {
     };
 
 
-
-            // Smart Theme Helper for Charts (Light vs Dark Mode)
+      // Smart Theme Helper for Charts (Original Crisp Look + White Outline in Dark Mode)
       window.getChartThemeColors = function() {
         const isDark = document.body.classList.contains("dark-mode");
         return {
           isDark: isDark,
-          emptyArc: isDark ? "rgba(255, 255, 255, 0.14)" : "rgba(15, 23, 42, 0.08)",
-          borderColor: isDark ? "#1e293b" : "#ffffff",
-          mutedText: isDark ? "#94a3b8" : "#64748b",
-          activeText: isDark ? "#38bdf8" : "#0288d1",
-          // Dark mode me #0f172a (kaale) ki jagah bright cyan (#06b6d4) aur vibrant colors aayenge
-          palette: isDark 
-            ? ['#38bdf8', '#4ade80', '#fbbf24', '#c084fc', '#f87171', '#22d3ee', '#fb7185', '#34d399', '#fb923c', '#818cf8']
-            : ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#e11d48', '#059669', '#ea580c', '#4f46e5']
+          emptyArc: "rgba(0,0,0,0.05)", // Aapka original slice fill
+          borderColor: isDark ? "#ffffff" : "#000000", // Light mode me Black outline, Dark mode me White outline!
+          mutedText: "#0288d1",
+          activeText: "#0288d1",
+          palette: ['#0288d1', '#16a34a', '#d97706', '#9333ea', '#dc2626', isDark ? '#38bdf8' : '#0f172a', '#e11d48', '#059669', '#ea580c', '#4f46e5']
         };
       };
+
 
       window.refreshAdminSyllabusGraph = async function() {
         const cls = document.getElementById("sylTrackClassSelect").value;
