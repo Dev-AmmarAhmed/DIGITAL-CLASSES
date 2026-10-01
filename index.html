@@ -1205,11 +1205,16 @@ canvas { touch-action: pan-y !important; }
   </section>
 
 
-      <!-- ADMIN & TEACHER LEAVE MANAGEMENT TAB -->
+        <!-- ADMIN & TEACHER LEAVE MANAGEMENT TAB -->
     <section id="mgmtTabLeave" class="tab-section admin-tab teacher-tab">
       <div class="card">
         <div class="card-title">📅 Student Leave Applications</div>
         
+        <!-- Search Box Above Filters -->
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="leaveSearchInput" placeholder="🔍 Search by Student Name or Admission No..." oninput="window.renderLeaves()" style="width: 100%; padding: 12px 14px; border: 1.5px solid #0288d1; border-radius: 14px; font-size: 13px; font-weight: 700;">
+        </div>
+
         <!-- Status Filters -->
         <div class="class-chips-container" style="margin-bottom: 16px;">
           <div class="class-chip active" id="lf-all" onclick="window.filterLeaves('All', this)">All</div>
@@ -1222,6 +1227,7 @@ canvas { touch-action: pan-y !important; }
         <div id="leaveMgmtContainer">Loading applications...</div>
       </div>
     </section>
+
 
     
       <!-- LEAVE ACTION MODAL -->
@@ -1525,11 +1531,16 @@ canvas { touch-action: pan-y !important; }
       </div>
     </div>
 
-    <!-- STUDENTS SECTION FOR ADMIN DASHBOARD -->
+      <!-- STUDENTS SECTION FOR ADMIN DASHBOARD -->
     <section id="adminTabStudents" class="tab-section admin-tab">
+      <!-- Search Box Above Class Filters -->
+      <div style="margin-bottom: 12px;">
+        <input type="text" id="adminStudentSearchInput" placeholder="🔍 Search Student Name or Admission No..." oninput="window.triggerAdminStudentSearch()" style="width: 100%; padding: 12px 14px; border: 1.5px solid #0288d1; border-radius: 14px; font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(2, 136, 209, 0.1);">
+      </div>
+
       <div class="class-chips-container">
         <div class="class-chip active" onclick="filterAdminStudentByClass('All', this)">All</div>
-        <div class="class-chip" onclick="filterAdminStudentByClass('Nursery', this)">Nursery</div>
+      <div class="class-chip" onclick="filterAdminStudentByClass('Nursery', this)">Nursery</div>
         <div class="class-chip" onclick="filterAdminStudentByClass('Jr. KG', this)">Jr. KG</div>
         <div class="class-chip" onclick="filterAdminStudentByClass('Sr. KG', this)">Sr. KG</div>
         <div class="class-chip" onclick="filterAdminStudentByClass('1', this)">Class 1</div>
@@ -1906,12 +1917,16 @@ canvas { touch-action: pan-y !important; }
       </div>
     </section>
 
-    <section id="teacherTabStudents" class="tab-section teacher-tab">
+      <section id="teacherTabStudents" class="tab-section teacher-tab">
       <div class="card">
         <div class="card-title">🎓 Class Registered Students</div>
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="teacherStudentSearchInput" placeholder="🔍 Search Student Name or Admission No..." oninput="window.triggerTeacherStudentSearch()" style="width: 100%; padding: 12px 14px; border: 1.5px solid #7c3aed; border-radius: 14px; font-size: 13px; font-weight: 700;">
+        </div>
         <div id="studentsTabDirectoryContainer">Loading students...</div>
       </div>
     </section>
+>
 
     <section id="teacherTabPerform" class="tab-section teacher-tab">
       <div class="card">
@@ -4898,31 +4913,73 @@ localStorage.setItem("loggedPass", p);
       renderAdminStudentsDirectory();
     };
 
+       window.triggerAdminStudentSearch = function() {
+      renderAdminStudentsDirectory();
+    };
+
     async function renderAdminStudentsDirectory() {
       const container = document.getElementById("adminStudentsDirectoryContainer");
       if(!container) return;
       container.innerHTML = "";
       const students = getLiveStudents();
       const usersData = await safeDataFetch("users") || {};
-      let count = 0;
+      const searchInput = document.getElementById("adminStudentSearchInput");
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
       if(students.length === 0) {
         container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students registered yet.</p>`;
         document.getElementById("adminStudentCountText").innerText = "0"; return;
       }
-      students.forEach(s => {
-        if(selectedAdminClassFilter === "All" || cleanClassStr(s.class) === cleanClassStr(selectedAdminClassFilter)) {
-          count++;
-          const pass = usersData[s.admn] ? usersData[s.admn].password : "MM";
-          const card = document.createElement("div");
-          card.className = "student-grid-card";
-          card.onclick = () => window.openStudentProfileModal(s.admn);
-          card.innerHTML = `<img src="${s.photo || 'https://via.placeholder.com/150'}" class="student-avatar" alt="Avatar"><div style="flex:1;"><div style="font-size:13px; font-weight:800;">${s.name}</div><div style="font-size:11px; color:var(--text-muted);">ID: ${s.admn} | Class: ${s.class} | Pass: <b>${pass}</b></div><div style="font-size:10px; font-weight:700; color:#0288d1; margin-top:2px;">Phone: ${s.phone || '-'} | PTS: ${s.points || 0}</div></div><div style="font-size:16px;">✏️</div>`;
-          container.appendChild(card);
+
+      // 1. Pehle selected Class Filter lagao
+      let filteredList = students.filter(s => 
+        selectedAdminClassFilter === "All" || cleanClassStr(s.class) === cleanClassStr(selectedAdminClassFilter)
+      );
+
+      // 2. Agar search box me kuch likha hai, toh matching walo ko sabse upar (Top) par le aao
+      if(query !== "") {
+        filteredList.sort((a, b) => {
+          const aName = (a.name || "").toLowerCase();
+          const bName = (b.name || "").toLowerCase();
+          const aAdmn = String(a.admn || "").toLowerCase();
+          const bAdmn = String(b.admn || "").toLowerCase();
+
+          const aMatch = aName.includes(query) || aAdmn.includes(query);
+          const bMatch = bName.includes(query) || bAdmn.includes(query);
+
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+
+          // Exact match ya starting match ko aur upar rakho
+          const aStarts = aName.startsWith(query) || aAdmn === query;
+          const bStarts = bName.startsWith(query) || bAdmn === query;
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+
+          return 0;
+        });
+      }
+
+      let count = filteredList.length;
+      filteredList.forEach(s => {
+        const pass = usersData[s.admn] ? usersData[s.admn].password : "MM";
+        const isMatched = query !== "" && ((s.name || "").toLowerCase().includes(query) || String(s.admn || "").toLowerCase().includes(query));
+        const card = document.createElement("div");
+        card.className = "student-grid-card";
+        if(isMatched) {
+          card.style.border = "2px solid #0288d1";
+          card.style.background = "rgba(2, 136, 209, 0.08)";
         }
+        card.onclick = () => window.openStudentProfileModal(s.admn);
+        card.innerHTML = `<img src="${s.photo || 'https://via.placeholder.com/150'}" class="student-avatar" alt="Avatar"><div style="flex:1;"><div style="font-size:13px; font-weight:800;">${s.name} ${isMatched ? '<span style="font-size:10px; background:#0288d1; color:white; padding:2px 6px; border-radius:6px; margin-left:4px;">Match</span>' : ''}</div><div style="font-size:11px; color:var(--text-muted);">ID: ${s.admn} | Class: ${s.class} | Pass: <b>${pass}</b></div><div style="font-size:10px; font-weight:700; color:#0288d1; margin-top:2px;">Phone: ${s.phone || '-'} | PTS: ${s.points || 0}</div></div><div style="font-size:16px;">✏️</div>`;
+        container.appendChild(card);
       });
+
       document.getElementById("adminStudentCountText").innerText = count;
       if(count === 0) container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students found in ${selectedAdminClassFilter}.</p>`;
     }
+
+      
 
     function generateBulkStudentTable() {
       const tbody = document.getElementById("bulkTableBody");
@@ -5676,21 +5733,44 @@ localStorage.setItem("loggedPass", p);
       }
     });
 
+      window.triggerTeacherStudentSearch = function() {
+      loadTeacherStudentsDirectory();
+    };
+
     function loadTeacherStudentsDirectory() {
       const container = document.getElementById("studentsTabDirectoryContainer");
-      const students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      if(!container) return;
+      let students = getLiveStudents().filter(s => cleanClassStr(s.class) === cleanClassStr(assignedClass));
+      const searchInput = document.getElementById("teacherStudentSearchInput");
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
       container.innerHTML = "";
 
       if(students.length === 0) { container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No students registered in Class ${assignedClass}</p>`; return; }
 
+      if(query !== "") {
+        students.sort((a, b) => {
+          const aMatch = (a.name || "").toLowerCase().includes(query) || String(a.admn || "").toLowerCase().includes(query);
+          const bMatch = (b.name || "").toLowerCase().includes(query) || String(b.admn || "").toLowerCase().includes(query);
+          if (aMatch && !bMatch) return -1;
+          if (!aMatch && bMatch) return 1;
+          return 0;
+        });
+      }
+
       students.forEach(s => {
+        const isMatched = query !== "" && ((s.name || "").toLowerCase().includes(query) || String(s.admn || "").toLowerCase().includes(query));
         const card = document.createElement("div");
         card.className = "student-grid-card";
+        if(isMatched) {
+          card.style.border = "2px solid #7c3aed";
+          card.style.background = "rgba(124, 58, 237, 0.08)";
+        }
         card.onclick = () => window.openStudentProfileModal(s.admn);
-        card.innerHTML = `<img src="${s.photo || 'https://via.placeholder.com/150'}" class="student-avatar" alt="Avatar"><div style="flex:1;"><div style="font-size:13px; font-weight:800;">${s.name}</div><div style="font-size:11px; color:var(--text-muted);">Admn No: ${s.admn} | Phone: ${s.phone}</div><div style="font-size:10px; font-weight:700; color:#0288d1; margin-top:2px;">DOB: ${s.dob || '-'} | PTS: ${s.points || 0}</div></div><div style="font-size:16px;">✏️</div>`;
+        card.innerHTML = `<img src="${s.photo || 'https://via.placeholder.com/150'}" class="student-avatar" alt="Avatar"><div style="flex:1;"><div style="font-size:13px; font-weight:800;">${s.name} ${isMatched ? '<span style="font-size:10px; background:#7c3aed; color:white; padding:2px 6px; border-radius:6px; margin-left:4px;">Match</span>' : ''}</div><div style="font-size:11px; color:var(--text-muted);">Admn No: ${s.admn} | Phone: ${s.phone}</div><div style="font-size:10px; font-weight:700; color:#0288d1; margin-top:2px;">DOB: ${s.dob || '-'} | PTS: ${s.points || 0}</div></div><div style="font-size:16px;">✏️</div>`;
         container.appendChild(card);
       });
     }
+
 
       // --- UPDATED STUDENT PROFILE MODAL WITH TABS ---
     window.openStudentProfileModal = async function(admn) {
@@ -7976,7 +8056,7 @@ localStorage.setItem("loggedPass", p);
           let permission = Notification.permission;
           if (permission === 'denied' && isFromClick && !isNagging) {
              isNagging = true;
-             alert("🔔 Aapne Notifications block ki hui hain!\n\nPlease Chrome ki 'Site Settings' mein ja kar Allow karein taake important updates mil sakein.");
+             alert("🔔 You have blocked Notification!\n\nPlease allow notifications from app setting.");
              setTimeout(() => { isNagging = false; }, 5000); 
              return;
           }
@@ -8462,13 +8542,18 @@ localStorage.setItem("loggedPass", p);
         }
     };
 
-    window.renderLeaves = function() {
+
+          window.renderLeaves = function() {
         const container = document.getElementById("leaveMgmtContainer");
         if (!container) return;
         container.innerHTML = "";
 
-        let filteredLeaves = allLeavesCache;
+        const searchInput = document.getElementById("leaveSearchInput");
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+        let filteredLeaves = [...allLeavesCache];
         
+        // 1. Role aur Status Filter lagao
         if (currentRole === 'teacher') {
             filteredLeaves = filteredLeaves.filter(l => cleanClassStr(l.class) === cleanClassStr(assignedClass));
         }
@@ -8482,6 +8567,29 @@ localStorage.setItem("loggedPass", p);
             return;
         }
 
+        // 2. Search karne par matching student/admission no. ko sabse upar (Top) par lao
+        if (query !== "") {
+            filteredLeaves.sort((a, b) => {
+                const aName = (a.name || "").toLowerCase();
+                const bName = (b.name || "").toLowerCase();
+                const aAdmn = String(a.admn || "").toLowerCase();
+                const bAdmn = String(b.admn || "").toLowerCase();
+
+                const aMatch = aName.includes(query) || aAdmn.includes(query);
+                const bMatch = bName.includes(query) || bAdmn.includes(query);
+
+                if (aMatch && !bMatch) return -1;
+                if (!aMatch && bMatch) return 1;
+
+                const aStarts = aName.startsWith(query) || aAdmn === query;
+                const bStarts = bName.startsWith(query) || bAdmn === query;
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+
+                return b.timestamp - a.timestamp;
+            });
+        }
+
         const liveStudents = getLiveStudents();
 
         filteredLeaves.forEach(l => {
@@ -8492,15 +8600,18 @@ localStorage.setItem("loggedPass", p);
             if (l.status === 'Approved') statusColor = "#16a34a"; 
             if (l.status === 'Denied') statusColor = "#dc2626"; 
 
+            const isMatched = query !== "" && ((l.name || "").toLowerCase().includes(query) || String(l.admn || "").toLowerCase().includes(query));
+            const highlightStyle = isMatched ? "border: 2px solid #0288d1; background: rgba(2, 136, 209, 0.08);" : "background: var(--card-bg);";
+
             const safeMsg = (l.message || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const safeReason = (l.reason || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
             
             container.innerHTML += `
-            <div class="student-grid-card" style="padding:14px; display:flex; gap:12px; align-items:center; background:var(--card-bg);" 
+            <div class="student-grid-card" style="padding:14px; display:flex; gap:12px; align-items:center; ${highlightStyle}" 
                  onclick="window.openLeaveActionModal('${l.id}', '${l.admn}', '${(l.name||'').replace(/'/g, "\\'")}', '${l.class}', '${safeReason}', '${safeMsg}', '${l.displayLeaveDate}', '${l.status}')">
                 <img src="${photo}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid ${statusColor}; flex-shrink:0;">
                 <div style="flex:1;">
-                    <div style="font-size:14px; font-weight:800; color:var(--text-color);">${l.name} <span style="font-size:10px; color:var(--text-muted);">(Cls ${l.class})</span></div>
+                    <div style="font-size:14px; font-weight:800; color:var(--text-color);">${l.name} <span style="font-size:10px; color:var(--text-muted);">(ID: ${l.admn} | Cls ${l.class})</span> ${isMatched ? '<span style="font-size:9px; background:#0288d1; color:white; padding:2px 6px; border-radius:6px; margin-left:4px;">Match</span>' : ''}</div>
                     <div style="font-size:11px; font-weight:800; color:#0288d1; margin-top:2px;">📅 ${l.displayLeaveDate}</div>
                     <div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-top:2px;">Reason: ${l.reason}</div>
                 </div>
@@ -8510,6 +8621,7 @@ localStorage.setItem("loggedPass", p);
             </div>`;
         });
     };
+
 
 
           window.openLeaveActionModal = function(id, admn, name, cls, reason, msg, date, status) {
