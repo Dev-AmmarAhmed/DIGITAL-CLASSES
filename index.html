@@ -302,248 +302,393 @@ body.dark-mode.teacher-mode {
 }
 
 
+  
      /* ====================================================================
-   8 PREMIUM THEME PALETTES + ROLE DEFAULTS + NEON & EXTRA ANIMATIONS
+   8 ULTRA-POLISHED THEMES + READABLE TYPOGRAPHY + PROXIMITY NEON + 60FPS
    ==================================================================== */
 body {
   --theme-glow: 37, 99, 235;
   --theme-accent: #2563eb;
+  --neon-intensity: 0.42;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Default Role Styles (Used when 'Role Default' is selected) */
+/* Global Lag Fix: Stop * selector from lagging animations */
+* {
+  transition: none;
+}
+.card, .student-grid-card, .tb-table-card, .daily-reward-card, .btn-primary, .class-chip, .sub-tab-btn, .nav-item {
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Default Role Styles (When 'Role Default' is selected) */
 body.admin-mode {
-  --header-bg: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  --header-bg: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
   --primary-btn-bg: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --theme-glow: 37, 99, 235;
+  --theme-glow: 59, 130, 246;
   --theme-accent: #2563eb;
+  --app-bg: #f1f5f9;
+  --card-bg: #ffffff;
+  --text-color: #0f172a;
+  --text-muted: #475569;
 }
 body.teacher-mode {
-  --header-bg: linear-gradient(135deg, #5b21b6 0%, #2e1065 100%);
+  --header-bg: linear-gradient(135deg, #3b0764 0%, #6d28d9 100%);
   --primary-btn-bg: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
-  --theme-glow: 139, 92, 246;
+  --theme-glow: 168, 85, 247;
   --theme-accent: #7c3aed;
+  --app-bg: #f5f3ff;
+  --card-bg: #ffffff;
+  --text-color: #1e1b4b;
+  --text-muted: #5b21b6;
 }
 body.student-mode {
-  --header-bg: linear-gradient(135deg, #0369a1 0%, #082f49 100%);
-  --primary-btn-bg: linear-gradient(135deg, #0288d1 0%, #0369a1 100%);
+  --header-bg: linear-gradient(135deg, #082f49 0%, #0284c7 100%);
+  --primary-btn-bg: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   --theme-glow: 14, 165, 233;
-  --theme-accent: #0288d1;
+  --theme-accent: #0284c7;
+  --app-bg: #f0f9ff;
+  --card-bg: #ffffff;
+  --text-color: #0c4a6e;
+  --text-muted: #0369a1;
 }
 
-/* 1. Ocean Sapphire (Navy & Electric Blue) */
+/* 1. Ocean Sapphire (Royal Navy & Electric Blue) */
 body.theme-navy {
-  --header-bg: linear-gradient(135deg, #1e3a8a 0%, #172554 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  --header-bg: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
   --theme-glow: 59, 130, 246 !important;
   --theme-accent: #2563eb !important;
+  --app-bg: #eff6ff !important;
+  --card-bg: #ffffff !important;
+  --text-color: #0f172a !important;
+  --text-muted: #475569 !important;
+  --border-color: #dbeafe !important;
 }
 body.dark-mode.theme-navy {
-  --header-bg: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  --header-bg: linear-gradient(135deg, #090d16 0%, #1e3a8a 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  --app-bg: #070b14 !important;
+  --card-bg: #10192d !important;
+  --text-color: #f8fafc !important;
+  --text-muted: #93c5fd !important;
+  --border-color: #1e3a8a !important;
 }
 
-/* 2. Royal Amethyst (Deep Violet & Purple) */
+/* 2. Royal Amethyst (Velvet Purple & Lavender) */
 body.theme-amethyst {
-  --header-bg: linear-gradient(135deg, #5b21b6 0%, #3b0764 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  --header-bg: linear-gradient(135deg, #2e1065 0%, #7c3aed 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
   --theme-glow: 168, 85, 247 !important;
   --theme-accent: #7c3aed !important;
+  --app-bg: #f5f3ff !important;
+  --card-bg: #ffffff !important;
+  --text-color: #1e1b4b !important;
+  --text-muted: #5b21b6 !important;
+  --border-color: #ede9fe !important;
 }
 body.dark-mode.theme-amethyst {
-  --header-bg: linear-gradient(135deg, #2e1065 0%, #4c1d95 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important;
+  --header-bg: linear-gradient(135deg, #13072e 0%, #5b21b6 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%) !important;
+  --app-bg: #0b0518 !important;
+  --card-bg: #170d2e !important;
+  --text-color: #faf5ff !important;
+  --text-muted: #d8b4fe !important;
+  --border-color: #4c1d95 !important;
 }
 
-/* 3. Cyber Cyan (Sky & Aqua Tech) */
+/* 3. Cyber Cyan (Neon Aqua & Deep Teal) */
 body.theme-cyan {
-  --header-bg: linear-gradient(135deg, #0e7490 0%, #164e63 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%) !important;
+  --header-bg: linear-gradient(135deg, #083344 0%, #0891b2 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%) !important;
   --theme-glow: 6, 182, 212 !important;
   --theme-accent: #0891b2 !important;
+  --app-bg: #ecfeff !important;
+  --card-bg: #ffffff !important;
+  --text-color: #083344 !important;
+  --text-muted: #0e7490 !important;
+  --border-color: #cffafe !important;
 }
 body.dark-mode.theme-cyan {
-  --header-bg: linear-gradient(135deg, #083344 0%, #0e7490 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #22d3ee 0%, #0284c7 100%) !important;
+  --header-bg: linear-gradient(135deg, #041f2a 0%, #0e7490 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%) !important;
+  --app-bg: #04131a !important;
+  --card-bg: #08222e !important;
+  --text-color: #ecfeff !important;
+  --text-muted: #67e8f9 !important;
+  --border-color: #155e75 !important;
 }
 
-/* 4. Royal Emerald (Lush Green & Gold) */
+/* 4. Royal Emerald (Mint Forest & Jade) */
 body.theme-emerald {
-  --header-bg: linear-gradient(135deg, #065f46 0%, #064e3b 100%) !important;
+  --header-bg: linear-gradient(135deg, #022c22 0%, #059669 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
   --theme-glow: 16, 185, 129 !important;
   --theme-accent: #059669 !important;
+  --app-bg: #ecfdf5 !important;
+  --card-bg: #ffffff !important;
+  --text-color: #064e3b !important;
+  --text-muted: #047857 !important;
+  --border-color: #d1fae5 !important;
 }
 body.dark-mode.theme-emerald {
-  --header-bg: linear-gradient(135deg, #022c22 0%, #065f46 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  --header-bg: linear-gradient(135deg, #021a14 0%, #065f46 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
+  --app-bg: #03120e !important;
+  --card-bg: #07221b !important;
+  --text-color: #ecfdf5 !important;
+  --text-muted: #6ee7b7 !important;
+  --border-color: #065f46 !important;
 }
 
-/* 5. Crimson Rose (Ruby & Neon Pink) */
+/* 5. Crimson Rose (Ruby Red & Hot Pink) */
 body.theme-rose {
-  --header-bg: linear-gradient(135deg, #9f1239 0%, #4c0519 100%) !important;
+  --header-bg: linear-gradient(135deg, #4c0519 0%, #e11d48 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #f43f5e 0%, #be123c 100%) !important;
   --theme-glow: 244, 63, 94 !important;
   --theme-accent: #e11d48 !important;
+  --app-bg: #fff1f2 !important;
+  --card-bg: #ffffff !important;
+  --text-color: #4c0519 !important;
+  --text-muted: #9f1239 !important;
+  --border-color: #ffe4e6 !important;
 }
 body.dark-mode.theme-rose {
-  --header-bg: linear-gradient(135deg, #4c0519 0%, #881337 100%) !important;
+  --header-bg: linear-gradient(135deg, #2a030e 0%, #9f1239 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
+  --app-bg: #140409 !important;
+  --card-bg: #260812 !important;
+  --text-color: #fff1f2 !important;
+  --text-muted: #fda4af !important;
+  --border-color: #881337 !important;
 }
 
-/* 6. Sunset Amber (Warm Orange & Gold) */
+/* 6. Sunset Amber (Solar Gold & Tangerine) */
 body.theme-amber {
-  --header-bg: linear-gradient(135deg, #9a3412 0%, #431407 100%) !important;
+  --header-bg: linear-gradient(135deg, #431407 0%, #ea580c 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #f97316 0%, #c2410c 100%) !important;
   --theme-glow: 249, 115, 22 !important;
   --theme-accent: #ea580c !important;
+  --app-bg: #fff7ed !important;
+  --card-bg: #ffffff !important;
+  --text-color: #431407 !important;
+  --text-muted: #9a3412 !important;
+  --border-color: #ffedd5 !important;
 }
 body.dark-mode.theme-amber {
-  --header-bg: linear-gradient(135deg, #431407 0%, #7c2d12 100%) !important;
+  --header-bg: linear-gradient(135deg, #270b03 0%, #9a3412 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #fb923c 0%, #ea580c 100%) !important;
+  --app-bg: #140804 !important;
+  --card-bg: #261008 !important;
+  --text-color: #fff7ed !important;
+  --text-muted: #fdba74 !important;
+  --border-color: #7c2d12 !important;
 }
 
-/* 7. Midnight Indigo (Cosmic Blue-Violet) */
+/* 7. Midnight Indigo (Nebula Blue & Periwinkle) */
 body.theme-indigo {
-  --header-bg: linear-gradient(135deg, #3730a3 0%, #1e1b4b 100%) !important;
+  --header-bg: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important;
   --theme-glow: 99, 102, 241 !important;
   --theme-accent: #4f46e5 !important;
+  --app-bg: #eef2ff !important;
+  --card-bg: #ffffff !important;
+  --text-color: #1e1b4b !important;
+  --text-muted: #4338ca !important;
+  --border-color: #e0e7ff !important;
 }
 body.dark-mode.theme-indigo {
-  --header-bg: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%) !important;
+  --header-bg: linear-gradient(135deg, #0f0d26 0%, #3730a3 100%) !important;
   --primary-btn-bg: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%) !important;
+  --app-bg: #080716 !important;
+  --card-bg: #13112e !important;
+  --text-color: #eef2ff !important;
+  --text-muted: #a5b4fc !important;
+  --border-color: #3730a3 !important;
 }
 
-/* 8. Obsidian Slate (Titanium & Neon Blue) */
+/* 8. Obsidian Slate (Carbon Titanium & Ice Blue) */
 body.theme-slate {
-  --header-bg: linear-gradient(135deg, #334155 0%, #0f172a 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #475569 0%, #1e293b 100%) !important;
+  --header-bg: linear-gradient(135deg, #0f172a 0%, #475569 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #334155 0%, #0f172a 100%) !important;
   --theme-glow: 56, 189, 248 !important;
-  --theme-accent: #334155 !important;
+  --theme-accent: #0284c7 !important;
+  --app-bg: #f8fafc !important;
+  --card-bg: #ffffff !important;
+  --text-color: #0f172a !important;
+  --text-muted: #475569 !important;
+  --border-color: #e2e8f0 !important;
 }
 body.dark-mode.theme-slate {
-  --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-  --primary-btn-bg: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+  --header-bg: linear-gradient(135deg, #020617 0%, #334155 100%) !important;
+  --primary-btn-bg: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%) !important;
+  --app-bg: #030712 !important;
+  --card-bg: #111827 !important;
+  --text-color: #f9fafb !important;
+  --text-muted: #9ca3af !important;
+  --border-color: #374151 !important;
 }
 
+/* Base Dark Mode Fallback */
 body.dark-mode {
-  --app-bg: #0b0f19;
-  --card-bg: #131c2e;
-  --text-color: #f1f5f9;
+  --app-bg: #080c16;
+  --card-bg: #111827;
+  --text-color: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: #1e293b;
-  --nav-bg: #131c2e;
-  --input-bg: #1a2338;
+  --nav-bg: #111827;
+  --input-bg: #1e293b;
   --table-header-bg: #0f172a;
 }
 
+/* Theme-Aware Dynamic Text Readability */
+.card-title, .header-title {
+  letter-spacing: 0.3px;
+}
+body.dark-mode .card-title {
+  color: #f8fafc !important;
+}
+.nav-item.active, .sub-tab-btn.active {
+  color: var(--theme-accent) !important;
+  border-bottom-color: var(--theme-accent) !important;
+}
+body.dark-mode .nav-item.active, body.dark-mode .sub-tab-btn.active {
+  color: rgb(var(--theme-glow)) !important;
+  border-bottom-color: rgb(var(--theme-glow)) !important;
+}
+.class-chip.active {
+  background: var(--primary-btn-bg) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
 /* ====================================================================
-   NEON UNDERGLOW ENGINE (GLOW FROM BENEATH CARDS)
+   STATIC + PROXIMITY FALLOFF NEON UNDERGLOW ENGINE
+   (Always-on static underglow; touched card = MAX, far cards = fade out)
    ==================================================================== */
 body.neon-mode .card,
 body.neon-mode .student-grid-card,
 body.neon-mode .tb-table-card,
 body.neon-mode .daily-reward-card {
   position: relative;
-  border-color: rgba(var(--theme-glow), 0.45) !important;
-  box-shadow: 0 14px 28px -6px rgba(var(--theme-glow), 0.38), 
-              0 4px 12px -2px rgba(var(--theme-glow), 0.25) !important;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+  --neon-intensity: 0.44; /* Default static glow for all cards */
+  --neon-spread: 26px;
+  --neon-border-alpha: 0.48;
+  border: 1.5px solid rgba(var(--theme-glow), var(--neon-border-alpha)) !important;
+  box-shadow: 0 14px var(--neon-spread) -4px rgba(var(--theme-glow), var(--neon-intensity)),
+              0 4px 12px -2px rgba(var(--theme-glow), calc(var(--neon-intensity) * 0.6)) !important;
+  transition: box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.35s ease,
+              transform 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 body.dark-mode.neon-mode .card,
 body.dark-mode.neon-mode .student-grid-card,
 body.dark-mode.neon-mode .tb-table-card,
 body.dark-mode.neon-mode .daily-reward-card {
-  border-color: rgba(var(--theme-glow), 0.6) !important;
-  box-shadow: 0 16px 34px -6px rgba(var(--theme-glow), 0.55), 
-              0 0 18px -2px rgba(var(--theme-glow), 0.35) !important;
+  --neon-intensity: 0.58; /* Stronger static underglow in Dark Mode */
+  --neon-spread: 32px;
+  --neon-border-alpha: 0.65;
 }
 
-/* Interactive Touch/Hover Neon Boost */
-body.neon-mode .card:hover,
-body.neon-mode .card:active,
-body.neon-mode .student-grid-card:active,
-body.neon-mode .tb-table-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(var(--theme-glow), 0.9) !important;
-  box-shadow: 0 20px 38px -4px rgba(var(--theme-glow), 0.65), 
-              0 0 24px 0px rgba(var(--theme-glow), 0.5) !important;
+/* Proximity Level 0: The Touched / Active Card (MAXIMUM GLOW) */
+body.neon-mode .neon-prox-0 {
+  --neon-intensity: 0.95 !important;
+  --neon-spread: 44px !important;
+  --neon-border-alpha: 1 !important;
+  transform: translate3d(0, -3px, 0) scale(1.01) !important;
+  z-index: 5;
+}
+
+/* Proximity Level 1: Immediate Neighbor Cards (MEDIUM-HIGH GLOW) */
+body.neon-mode .neon-prox-1 {
+  --neon-intensity: 0.62 !important;
+  --neon-spread: 30px !important;
+  --neon-border-alpha: 0.72 !important;
+}
+
+/* Proximity Level 2: 2 Steps Away Cards (LOW-MEDIUM GLOW) */
+body.neon-mode .neon-prox-2 {
+  --neon-intensity: 0.35 !important;
+  --neon-spread: 20px !important;
+  --neon-border-alpha: 0.40 !important;
+}
+
+/* Proximity Level 3: Far Away Cards (DIM GLOW) */
+body.neon-mode .neon-prox-3 {
+  --neon-intensity: 0.16 !important;
+  --neon-spread: 12px !important;
+  --neon-border-alpha: 0.22 !important;
 }
 
 body.neon-mode .bottom-nav {
-  border-top: 1.5px solid rgba(var(--theme-glow), 0.5) !important;
-  box-shadow: 0 -10px 30px rgba(var(--theme-glow), 0.3) !important;
+  border-top: 1.5px solid rgba(var(--theme-glow), 0.55) !important;
+  box-shadow: 0 -10px 28px -4px rgba(var(--theme-glow), 0.38) !important;
 }
 
 body.neon-mode .app-header {
-  box-shadow: 0 10px 30px rgba(var(--theme-glow), 0.45) !important;
+  box-shadow: 0 10px 28px -4px rgba(var(--theme-glow), 0.48) !important;
 }
 
 /* ====================================================================
-   MORE ANIMATIONS ENGINE (TOGGLED VIA CUSTOM THEME MODAL)
+   ULTRA-SMOOTH 60FPS "MORE ANIMATIONS" ENGINE (GPU ACCELERATED)
    ==================================================================== */
-@keyframes extraCardEntrance {
-  0% { opacity: 0; transform: translateY(28px) scale(0.94); }
-  70% { transform: translateY(-4px) scale(1.01); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes smoothCardSpringIn {
+  0% { opacity: 0; transform: translate3d(0, 22px, 0) scale(0.96); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
-@keyframes extraBtnSheen {
-  0% { left: -120%; }
-  25% { left: 120%; }
-  100% { left: 120%; }
+@keyframes smoothFloatIcon {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -4px, 0); }
 }
 
-@keyframes extraIconBob {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.12); }
+@keyframes smoothBtnShine {
+  0% { transform: translate3d(-140%, 0, 0) skewX(-20deg); }
+  30%, 100% { transform: translate3d(240%, 0, 0) skewX(-20deg); }
 }
 
-@keyframes extraPulseGlow {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(var(--theme-glow), 0.4)); }
-  50% { filter: drop-shadow(0 0 10px rgba(var(--theme-glow), 0.9)); }
+/* Override heavy 3D perspective rotateX with butter-smooth GPU spring */
+.unfold-card {
+  animation: smoothCardSpringIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both !important;
 }
 
 body.more-animations .tab-section.active .card,
 body.more-animations .tab-section.active .student-grid-card,
 body.more-animations .tab-section.active .tb-table-card {
-  animation: extraCardEntrance 0.65s cubic-bezier(0.22, 1, 0.36, 1) backwards !important;
+  animation: smoothCardSpringIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both !important;
 }
 
-body.more-animations .tab-section.active .card:nth-child(1),
-body.more-animations .tab-section.active .student-grid-card:nth-child(1),
-body.more-animations .tab-section.active .tb-table-card:nth-child(1) { animation-delay: 0.04s !important; }
-body.more-animations .tab-section.active .card:nth-child(2),
-body.more-animations .tab-section.active .student-grid-card:nth-child(2),
-body.more-animations .tab-section.active .tb-table-card:nth-child(2) { animation-delay: 0.1s !important; }
-body.more-animations .tab-section.active .card:nth-child(3),
-body.more-animations .tab-section.active .student-grid-card:nth-child(3),
-body.more-animations .tab-section.active .tb-table-card:nth-child(3) { animation-delay: 0.16s !important; }
-body.more-animations .tab-section.active .card:nth-child(4),
-body.more-animations .tab-section.active .student-grid-card:nth-child(4),
-body.more-animations .tab-section.active .tb-table-card:nth-child(4) { animation-delay: 0.22s !important; }
+body.more-animations .tab-section.active > *:nth-child(1) { animation-delay: 0.02s !important; }
+body.more-animations .tab-section.active > *:nth-child(2) { animation-delay: 0.07s !important; }
+body.more-animations .tab-section.active > *:nth-child(3) { animation-delay: 0.12s !important; }
+body.more-animations .tab-section.active > *:nth-child(4) { animation-delay: 0.17s !important; }
 
 body.more-animations .btn-primary::after {
   content: "";
   position: absolute;
-  top: 0; left: -120%; width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-  transform: skewX(-25deg);
-  animation: extraBtnSheen 4.5s infinite;
+  top: 0; left: 0; width: 45%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  transform: translate3d(-140%, 0, 0) skewX(-20deg);
+  animation: smoothBtnShine 5s ease-in-out infinite;
   pointer-events: none;
 }
 
 body.more-animations .nav-item.active .nav-icon {
-  animation: extraIconBob 1.8s ease-in-out infinite, extraPulseGlow 2s infinite !important;
+  animation: smoothFloatIcon 2s ease-in-out infinite !important;
 }
 
 body.more-animations .stat-card {
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
-body.more-animations .stat-card:hover {
-  transform: translateY(-5px) scale(1.03) !important;
+body.more-animations .stat-card:active {
+  transform: translate3d(0, 2px, 0) scale(0.96) !important;
 }
+
 
 
 * {
@@ -4857,10 +5002,57 @@ Exact Output JSON Format Required:
       localStorage.setItem("moreAnimations", enabled ? "enabled" : "disabled");
     };
 
-    window.toggleNeonEffect = function(enabled) {
+        window.toggleNeonEffect = function(enabled) {
       document.body.classList.toggle("neon-mode", enabled);
       localStorage.setItem("neonEffect", enabled ? "enabled" : "disabled");
+      if (!enabled) window.clearNeonProximity();
     };
+
+    // Proximity Falloff Engine: Touched card glows MAX (0), nearby cards fade out (1 -> 2 -> 3)
+    window.clearNeonProximity = function() {
+      document.querySelectorAll(".neon-prox-0, .neon-prox-1, .neon-prox-2, .neon-prox-3").forEach(el => {
+        el.classList.remove("neon-prox-0", "neon-prox-1", "neon-prox-2", "neon-prox-3");
+      });
+    };
+
+    window.applyNeonProximity = function(targetCard) {
+      if (!document.body.classList.contains("neon-mode") || !targetCard) return;
+      const activeSection = targetCard.closest(".tab-section, .modal-content") || document;
+      const allCards = Array.from(activeSection.querySelectorAll(".card, .student-grid-card, .tb-table-card, .daily-reward-card"));
+      
+      const targetRect = targetCard.getBoundingClientRect();
+      const targetCenterY = targetRect.top + (targetRect.height / 2);
+
+      allCards.forEach(c => {
+        c.classList.remove("neon-prox-0", "neon-prox-1", "neon-prox-2", "neon-prox-3");
+        if (c === targetCard) {
+          c.classList.add("neon-prox-0");
+          return;
+        }
+        const rect = c.getBoundingClientRect();
+        const centerY = rect.top + (rect.height / 2);
+        const dist = Math.abs(centerY - targetCenterY);
+
+        if (dist < 180) {
+          c.classList.add("neon-prox-1"); // Immediate neighbor (Bright)
+        } else if (dist < 360) {
+          c.classList.add("neon-prox-2"); // Medium distance (Soft)
+        } else {
+          c.classList.add("neon-prox-3"); // Far away (Dimmed)
+        }
+      });
+    };
+
+    document.addEventListener("pointerdown", (e) => {
+      if (!document.body.classList.contains("neon-mode")) return;
+      const card = e.target.closest(".card, .student-grid-card, .tb-table-card, .daily-reward-card");
+      if (card) {
+        window.applyNeonProximity(card);
+      } else {
+        window.clearNeonProximity();
+      }
+    }, { passive: true });
+
 
     // Initialize saved visual preferences on startup
     window.applyActiveTheme();
